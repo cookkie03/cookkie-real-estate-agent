@@ -1499,6 +1499,16 @@ async function main() {
   console.log('=====================================\n');
 }
 
+// Execute main function
+main()
+  .catch((e) => {
+    console.error('❌ Errore durante il seeding:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+
 main()
   .catch((e) => {
     console.error('❌ Errore durante il seeding:', e);
