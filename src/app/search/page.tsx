@@ -1,11 +1,12 @@
-import { useSearchParams } from "react-router-dom";
+"use client";
+
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
-const Search = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+export default function SearchPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get("q") || "";
 
   return (
@@ -13,7 +14,7 @@ const Search = () => {
       <div className="container max-w-4xl">
         <Button
           variant="ghost"
-          onClick={() => navigate("/")}
+          onClick={() => router.push("/")}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -34,6 +35,4 @@ const Search = () => {
       </div>
     </div>
   );
-};
-
-export default Search;
+}

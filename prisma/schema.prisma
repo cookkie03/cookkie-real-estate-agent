@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Immobile {
+  id          String   @id @default(cuid())
+  titolo      String
+  tipologia   String   // appartamento, villa, etc
+  prezzo      Float
+  superficie  Float
+  locali      Int
+  bagni       Int
+
+  // Location
+  indirizzo   String
+  citta       String
+  cap         String
+  provincia   String
+  latitudine  Float?
+  longitudine Float?
+  zona        String?
+
+  // Details
+  descrizione String
+  caratteristiche String // JSON serializzato come stringa per SQLite
+  foto        String  // Array serializzato come stringa per SQLite
+
+  // Metadata
+  fonte       String?
+  urlOriginale String?
+  stato       String   // disponibile, venduto, etc
+
+  // Relations
+  matches     Match[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Cliente {
+  id          String   @id @default(cuid())
+  nome        String
+  cognome     String
+  email       String?  @unique
+  telefono    String?
+
+  // Search preferences
+  tipologiaRichiesta String?
+  budgetMin   Float?
+  budgetMax   Float?
+  superficieMin Float?
+  localiMin   Int?
+  zoneInteresse String  // Array serializzato come stringa per SQLite
+
+  // Status
+  priorita    String   // alta, media, bassa
+  stato       String   // attivo, in_trattativa, etc
+  note        String?
+
+  // Relations
+  matches     Match[]
+  azioni      Azione[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Match {
+  id          String   @id @default(cuid())
+  immobileId  String
+  clienteId   String
+  score       Float    // 0-100
+  motivi      String   // JSON serializzato come stringa per SQLite
+  stato       String   // proposto, visto, interessato, etc
+
+  immobile    Immobile @relation(fields: [immobileId], references: [id], onDelete: Cascade)
+  cliente     Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Azione {
+  id          String   @id @default(cuid())
+  tipo        String   // chiamata, visita, email, etc
+  descrizione String
+  clienteId   String?
+  immobileId  String?
+
+  priorita    String
+  stato       String   // da_fare, completata, etc
+  dataScadenza DateTime?
+
+  cliente     Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+}

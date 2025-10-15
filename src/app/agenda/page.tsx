@@ -1,16 +1,18 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
-const Agenda = () => {
-  const navigate = useNavigate();
+export default function AgendaPage() {
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gradient-subtle p-8">
       <div className="container max-w-4xl">
         <Button
           variant="ghost"
-          onClick={() => navigate("/")}
+          onClick={() => router.push("/")}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -27,6 +29,4 @@ const Agenda = () => {
       </div>
     </div>
   );
-};
-
-export default Agenda;
+}

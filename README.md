@@ -1,73 +1,146 @@
-# Welcome to your Lovable project
+# CRM Immobiliare - Next.js Migration
 
-## Project info
+Migrazione del progetto da Vite + React Router a Next.js 14 con App Router.
 
-**URL**: https://lovable.dev/projects/77ddfc23-8d55-4ea2-bc68-72422f2860ea
+## Stack Tecnologico
 
-## How can I edit this code?
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **UI Library**: shadcn/ui (Radix UI)
+- **Styling**: Tailwind CSS
+- **Database**: Prisma + SQLite
+- **State Management**: @tanstack/react-query
+- **Forms**: react-hook-form + zod
 
-There are several ways of editing your application.
+## Comandi Disponibili
 
-**Use Lovable**
+```bash
+# Installare dipendenze
+npm install
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/77ddfc23-8d55-4ea2-bc68-72422f2860ea) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Avviare server di sviluppo
 npm run dev
+
+# Build per produzione
+npm run build
+
+# Avviare server produzione
+npm start
+
+# Linting
+npm run lint
+
+# Prisma commands
+npm run prisma:generate    # Genera Prisma Client
+npm run prisma:push        # Push schema al database
+npm run prisma:studio      # Apri Prisma Studio GUI
+npm run prisma:seed        # Esegui seed del database
 ```
 
-**Edit a file directly in GitHub**
+## Setup Iniziale
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Installare dipendenze**:
+   ```bash
+   npm install
+   ```
 
-**Use GitHub Codespaces**
+2. **Configurare database**:
+   ```bash
+   npm run prisma:generate
+   npm run prisma:push
+   npm run prisma:seed
+   ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+3. **Avviare server di sviluppo**:
+   ```bash
+   npm run dev
+   ```
 
-## What technologies are used for this project?
+4. Aprire [http://localhost:3000](http://localhost:3000) nel browser
 
-This project is built with:
+## Struttura Progetto
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+next-migration/
+├── src/
+│   ├── app/                # App Router (Next.js 14)
+│   │   ├── layout.tsx      # Root layout
+│   │   ├── page.tsx        # Homepage
+│   │   ├── providers.tsx   # React Query + UI providers
+│   │   └── [routes]/       # Route pages
+│   ├── components/
+│   │   ├── ui/            # shadcn/ui components
+│   │   └── ...            # Feature components
+│   ├── lib/
+│   │   ├── db/            # Prisma client
+│   │   ├── mockData.ts    # Mock data (temporaneo)
+│   │   └── utils.ts       # Utilities
+│   └── hooks/             # Custom React hooks
+├── prisma/
+│   ├── schema.prisma      # Database schema
+│   └── seed.ts            # Seed script
+├── public/                # Static assets
+└── .env.local            # Environment variables
+```
 
-## How can I deploy this project?
+## Database Schema
 
-Simply open [Lovable](https://lovable.dev/projects/77ddfc23-8d55-4ea2-bc68-72422f2860ea) and click on Share -> Publish.
+Il database include i seguenti modelli:
 
-## Can I connect a custom domain to my Lovable project?
+- **Immobile**: Proprietà immobiliari
+- **Cliente**: Clienti (buyer/seller/owner)
+- **Match**: Matching immobili-clienti con score AI
+- **Azione**: Task e follow-up da completare
 
-Yes, you can!
+Vedi `prisma/schema.prisma` per dettagli completi.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Environment Variables
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Copia `.env.local` e configura le variabili necessarie:
+
+```env
+DATABASE_URL="file:./dev.db"
+# Altre variabili opzionali...
+```
+
+## Differenze rispetto a Vite
+
+### Routing
+- ✅ File-based routing con App Router
+- ✅ `useRouter()` da `next/navigation` invece di `useNavigate()`
+- ✅ Client Components con `"use client"` dove necessario
+
+### Componenti
+- ✅ Tutti i componenti UI shadcn/ui mantenuti intatti
+- ✅ Keyboard shortcuts preservati
+- ✅ Tema Tailwind custom mantenuto
+
+### Features da Implementare
+- [ ] API Routes per CRUD operations
+- [ ] Autenticazione (single-user)
+- [ ] Sostituire mockData con chiamate database reali
+- [ ] Implementare matching algorithm
+- [ ] RAG system per ricerca AI
+- [ ] Web scraping per portali immobiliari
+
+## Prossimi Passi
+
+1. Testare tutte le pagine e la navigazione
+2. Creare prime API routes (`/api/immobili`, `/api/clienti`)
+3. Sostituire mock data con query Prisma reali
+4. Implementare autenticazione base
+5. Aggiungere features avanzate (matching, RAG, etc.)
+
+## Note
+
+- Il progetto usa SQLite per semplicità (perfetto per single-user)
+- Tutti gli stili e animazioni custom sono preservati
+- I componenti shadcn/ui NON sono stati modificati
+- Il database è già seedato con dati di esempio
+
+## Supporto
+
+Per problemi o domande, consultare:
+- [Next.js Docs](https://nextjs.org/docs)
+- [Prisma Docs](https://www.prisma.io/docs)
+- [shadcn/ui Docs](https://ui.shadcn.com)

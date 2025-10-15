@@ -1,16 +1,18 @@
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Zap } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+"use client";
 
-const Actions = () => {
-  const navigate = useNavigate();
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+export default function SettingsPage() {
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gradient-subtle p-8">
       <div className="container max-w-4xl">
         <Button
           variant="ghost"
-          onClick={() => navigate("/")}
+          onClick={() => router.push("/")}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -18,15 +20,13 @@ const Actions = () => {
         </Button>
 
         <div className="text-center py-16">
-          <Zap className="h-16 w-16 mx-auto mb-4 text-accent" />
-          <h1 className="text-4xl font-bold mb-4">Azioni Suggerite</h1>
+          <SettingsIcon className="h-16 w-16 mx-auto mb-4 text-primary" />
+          <h1 className="text-4xl font-bold mb-4">Impostazioni</h1>
           <p className="text-lg text-muted-foreground">
-            Coming soon: Liste complete di azioni suggerite dalla AI con priorità
+            Coming soon: Preferenze, scorciatoie, temi e configurazioni
           </p>
         </div>
       </div>
     </div>
   );
-};
-
-export default Actions;
+}

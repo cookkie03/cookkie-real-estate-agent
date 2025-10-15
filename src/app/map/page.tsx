@@ -1,16 +1,18 @@
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+"use client";
 
-const Settings = () => {
-  const navigate = useNavigate();
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+export default function MapPage() {
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gradient-subtle p-8">
       <div className="container max-w-4xl">
         <Button
           variant="ghost"
-          onClick={() => navigate("/")}
+          onClick={() => router.push("/")}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -18,15 +20,13 @@ const Settings = () => {
         </Button>
 
         <div className="text-center py-16">
-          <SettingsIcon className="h-16 w-16 mx-auto mb-4 text-primary" />
-          <h1 className="text-4xl font-bold mb-4">Impostazioni</h1>
+          <MapPin className="h-16 w-16 mx-auto mb-4 text-primary" />
+          <h1 className="text-4xl font-bold mb-4">Mappa Copertura Zone</h1>
           <p className="text-lg text-muted-foreground">
-            Coming soon: Preferenze, scorciatoie, temi e configurazioni
+            Coming soon: Visualizzazione interattiva zone con heatmap e filtri avanzati
           </p>
         </div>
       </div>
     </div>
   );
-};
-
-export default Settings;
+}

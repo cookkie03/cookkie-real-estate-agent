@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { Menu, Bell, HelpCircle, Command as CommandIcon, Phone, Calendar as CalendarIcon, Zap, MapPin, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -25,8 +27,8 @@ import {
   mockFeedEvents,
 } from "@/lib/mockData";
 
-const Index = () => {
-  const navigate = useNavigate();
+export default function HomePage() {
+  const router = useRouter();
   const [commandOpen, setCommandOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -44,28 +46,28 @@ const Index = () => {
         const target = e.target as HTMLElement;
         if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") {
           e.preventDefault();
-          navigate("/agenda");
+          router.push("/agenda");
         }
       }
       if (e.key === "a" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const target = e.target as HTMLElement;
         if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") {
           e.preventDefault();
-          navigate("/actions");
+          router.push("/actions");
         }
       }
       if (e.key === "m" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const target = e.target as HTMLElement;
         if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") {
           e.preventDefault();
-          navigate("/map");
+          router.push("/map");
         }
       }
     };
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, [navigate]);
+  }, [router]);
 
   const actionLists = mockSuggestedActions.map((list) => ({
     ...list,
@@ -138,28 +140,28 @@ const Index = () => {
               value={5}
               icon={Phone}
               variant="urgent"
-              onClick={() => navigate("/actions?type=urgent")}
+              onClick={() => router.push("/actions?type=urgent")}
             />
             <StatPill
               label="Appuntamenti oggi"
               value={3}
               icon={CalendarIcon}
               variant="success"
-              onClick={() => navigate("/agenda")}
+              onClick={() => router.push("/agenda")}
             />
             <StatPill
               label="Follow-up post visita"
               value={4}
               icon={Zap}
               variant="warning"
-              onClick={() => navigate("/actions?type=followup")}
+              onClick={() => router.push("/actions?type=followup")}
             />
             <StatPill
               label="Lead nuovi"
               value={2}
               icon={TrendingUp}
               variant="default"
-              onClick={() => navigate("/actions?type=new")}
+              onClick={() => router.push("/actions?type=new")}
             />
           </div>
         </section>
@@ -211,7 +213,7 @@ const Index = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/")}
+              onClick={() => router.push("/")}
               className="flex-col h-auto py-2"
             >
               <Menu className="h-5 w-5 mb-1" />
@@ -220,7 +222,7 @@ const Index = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/search")}
+              onClick={() => router.push("/search")}
               className="flex-col h-auto py-2"
             >
               <CommandIcon className="h-5 w-5 mb-1" />
@@ -229,7 +231,7 @@ const Index = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/agenda")}
+              onClick={() => router.push("/agenda")}
               className="flex-col h-auto py-2"
             >
               <CalendarIcon className="h-5 w-5 mb-1" />
@@ -238,7 +240,7 @@ const Index = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/actions")}
+              onClick={() => router.push("/actions")}
               className="flex-col h-auto py-2"
             >
               <Zap className="h-5 w-5 mb-1" />
@@ -254,7 +256,7 @@ const Index = () => {
               variant="ghost"
               size="sm"
               className="w-full flex-col h-auto py-3"
-              onClick={() => navigate("/search")}
+              onClick={() => router.push("/search")}
             >
               <CommandIcon className="h-5 w-5" />
             </Button>
@@ -262,7 +264,7 @@ const Index = () => {
               variant="ghost"
               size="sm"
               className="w-full flex-col h-auto py-3"
-              onClick={() => navigate("/agenda")}
+              onClick={() => router.push("/agenda")}
             >
               <CalendarIcon className="h-5 w-5" />
             </Button>
@@ -270,7 +272,7 @@ const Index = () => {
               variant="ghost"
               size="sm"
               className="w-full flex-col h-auto py-3"
-              onClick={() => navigate("/actions")}
+              onClick={() => router.push("/actions")}
             >
               <Zap className="h-5 w-5" />
             </Button>
@@ -278,7 +280,7 @@ const Index = () => {
               variant="ghost"
               size="sm"
               className="w-full flex-col h-auto py-3"
-              onClick={() => navigate("/map")}
+              onClick={() => router.push("/map")}
             >
               <MapPin className="h-5 w-5" />
             </Button>
@@ -286,7 +288,7 @@ const Index = () => {
               variant="ghost"
               size="sm"
               className="w-full flex-col h-auto py-3"
-              onClick={() => navigate("/settings")}
+              onClick={() => router.push("/settings")}
             >
               <Settings className="h-5 w-5" />
             </Button>
@@ -295,6 +297,4 @@ const Index = () => {
       </div>
     </div>
   );
-};
-
-export default Index;
+}

@@ -1,8 +1,10 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Search, Users, MapPin, Calendar, Zap, Settings, FileText } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface CommandPaletteProps {
   open: boolean;
@@ -20,7 +22,7 @@ const commands = [
 ];
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   }, [open, onOpenChange]);
 
   const handleSelect = (path: string) => {
-    navigate(path);
+    router.push(path);
     onOpenChange(false);
     setSearch("");
   };
