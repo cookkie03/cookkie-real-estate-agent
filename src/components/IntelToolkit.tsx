@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { formatNumber } from "@/lib/utils";
 
 interface AreaStats {
   medianPrice: number;
@@ -43,7 +44,7 @@ export function IntelToolkit({ areaStats, buildingInfo, similars = [] }: IntelTo
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg bg-muted/50">
                     <p className="text-xs text-muted-foreground mb-1">Prezzo mediano</p>
-                    <p className="text-lg font-bold">{areaStats.medianPrice.toLocaleString()} €/mq</p>
+                    <p className="text-lg font-bold">{formatNumber(areaStats.medianPrice)} €/mq</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50">
                     <p className="text-xs text-muted-foreground mb-1">Tempo medio</p>

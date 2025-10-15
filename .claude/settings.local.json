@@ -19,7 +19,14 @@
       "Bash(timeout 30 npm run dev)",
       "Bash(npm run dev)",
       "Bash(taskkill:*)",
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(powershell:*)",
+      "Bash(npm run prisma:generate:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run prisma:seed:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
