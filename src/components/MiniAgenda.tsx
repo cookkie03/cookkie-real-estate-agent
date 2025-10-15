@@ -1,7 +1,9 @@
+"use client";
+
 import { Calendar, Phone, MapPin, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface AgendaItem {
   id: string;
@@ -16,7 +18,7 @@ interface MiniAgendaProps {
 }
 
 export function MiniAgenda({ items }: MiniAgendaProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   if (items.length === 0) {
     return (
@@ -74,7 +76,7 @@ export function MiniAgenda({ items }: MiniAgendaProps) {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => navigate("/agenda")}
+          onClick={() => router.push("/agenda")}
         >
           <ExternalLink className="h-4 w-4 mr-2" />
           Vedi tutto

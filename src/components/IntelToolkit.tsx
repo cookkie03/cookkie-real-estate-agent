@@ -1,8 +1,10 @@
+"use client";
+
 import { MapPin, Building, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface AreaStats {
   medianPrice: number;
@@ -17,7 +19,7 @@ interface IntelToolkitProps {
 }
 
 export function IntelToolkit({ areaStats, buildingInfo, similars = [] }: IntelToolkitProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <Card>
@@ -48,7 +50,7 @@ export function IntelToolkit({ areaStats, buildingInfo, similars = [] }: IntelTo
                     <p className="text-lg font-bold">{areaStats.timeToSell} giorni</p>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full" onClick={() => navigate("/map")}>
+                <Button variant="outline" className="w-full" onClick={() => router.push("/map")}>
                   <MapPin className="h-4 w-4 mr-2" />
                   Apri in mappa
                 </Button>

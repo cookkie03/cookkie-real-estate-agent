@@ -1,14 +1,16 @@
+"use client";
+
 import { MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface MapPreviewProps {
   zones?: Array<{ name: string; dormant: number; inSale: number; owned: number }>;
 }
 
 export function MapPreview({ zones = [] }: MapPreviewProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const total = zones.reduce((acc, z) => ({
     dormant: acc.dormant + z.dormant,
@@ -53,7 +55,7 @@ export function MapPreview({ zones = [] }: MapPreviewProps) {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => navigate("/map")}
+          onClick={() => router.push("/map")}
         >
           Apri mappa completa
         </Button>

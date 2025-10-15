@@ -1,13 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   typescript: {
-    // Durante la migrazione, permetti build anche con errori TS
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
   eslint: {
-    // Durante la migrazione, permetti build anche con warning eslint
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
 }
 

@@ -1,8 +1,10 @@
+"use client";
+
 import { Plug, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface Connector {
   name: string;
@@ -21,7 +23,7 @@ const statusConfig = {
 };
 
 export function ConnectorsStatus({ connectors }: ConnectorsStatusProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <Card>
@@ -68,7 +70,7 @@ export function ConnectorsStatus({ connectors }: ConnectorsStatusProps) {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => navigate("/connectors")}
+          onClick={() => router.push("/connectors")}
         >
           Configura connettori
         </Button>

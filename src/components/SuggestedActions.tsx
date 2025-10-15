@@ -1,7 +1,9 @@
+"use client";
+
 import { Sparkles, TrendingUp, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface ActionItem {
   id: string;
@@ -28,7 +30,7 @@ const variantStyles = {
 };
 
 export function SuggestedActions({ lists }: SuggestedActionsProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <Card>
@@ -81,7 +83,7 @@ export function SuggestedActions({ lists }: SuggestedActionsProps) {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => navigate("/actions")}
+          onClick={() => router.push("/actions")}
         >
           Vedi tutte le azioni
         </Button>

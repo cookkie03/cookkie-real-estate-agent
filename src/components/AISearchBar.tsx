@@ -1,8 +1,10 @@
+"use client";
+
 import { useState } from "react";
 import { Search, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface AISearchBarProps {
   placeholder?: string;
@@ -10,12 +12,12 @@ interface AISearchBarProps {
 
 export function AISearchBar({ placeholder = "Cerca: 'appartamenti con terrazzo in Brera sotto 500k'" }: AISearchBarProps) {
   const [query, setQuery] = useState("");
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query)}`);
+      router.push(`/search?q=${encodeURIComponent(query)}`);
     }
   };
 
