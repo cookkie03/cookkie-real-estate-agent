@@ -171,6 +171,7 @@ export default function PropertiesPage() {
                       size="icon"
                       onClick={() => setViewMode("grid")}
                       className="rounded-r-none"
+                      title="Visualizzazione griglia"
                     >
                       <LayoutGrid className="h-4 w-4" />
                     </Button>
@@ -178,16 +179,79 @@ export default function PropertiesPage() {
                       variant={viewMode === "list" ? "default" : "ghost"}
                       size="icon"
                       onClick={() => setViewMode("list")}
-                      className="rounded-l-none"
+                      className="rounded-none"
+                      title="Visualizzazione lista"
                     >
                       <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === "map" ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => setViewMode("map")}
+                      className="rounded-l-none"
+                      title="Visualizzazione mappa"
+                    >
+                      <Map className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* Content */}
+            {/* Map View */}
+            {viewMode === "map" && (
+              <section className="space-y-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <SatelliteMap
+                      properties={filteredProperties}
+                      onPropertyClick={setSelectedProperty}
+                      height="500px"
+                    />
+                  </CardContent>
+                </Card>
+
+                {selectedProperty && (
+                  <Card className="border-l-4 border-l-primary">
+                    <CardHeader>
+                      <CardTitle className="text-lg">{selectedProperty.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Posizione</p>
+                          <p className="font-medium">{selectedProperty.location}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Zona</p>
+                          <Badge>{selectedProperty.zone}</Badge>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Prezzo</p>
+                          <p className="font-semibold text-primary">
+                            €{selectedProperty.price.toLocaleString("it-IT")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Superficie</p>
+                          <p className="font-medium">{selectedProperty.surface}m²</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Stanze</p>
+                          <p className="font-medium">{selectedProperty.rooms}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Bagni</p>
+                          <p className="font-medium">{selectedProperty.baths}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </section>
+            )}
+
+            {/* Grid & List View */}
             {viewMode === "grid" ? (
               <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredProperties.map((property) => (
