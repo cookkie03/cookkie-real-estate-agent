@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import L from "leaflet";
+import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 
 interface Property {
