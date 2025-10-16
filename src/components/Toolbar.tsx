@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Users, MapPin, Settings, Home } from "lucide-react";
+import { Building2, Users, Settings, Home, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,7 +10,7 @@ const navigationItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/properties", label: "Immobili", icon: Building2 },
   { href: "/clients", label: "Clienti", icon: Users },
-  { href: "/map", label: "Mappa", icon: MapPin },
+  { href: "/tools", label: "Tools", icon: Wrench },
   { href: "/settings", label: "Impostazioni", icon: Settings },
 ];
 
