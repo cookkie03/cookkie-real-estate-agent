@@ -1,95 +1,32 @@
-/**
- * Helper functions for creating standardized API responses
- */
-
+// src/lib/api/helpers.ts
 import { NextResponse } from 'next/server';
-import type { ApiResponse, ApiError, PaginatedResponse } from './types';
 
 /**
- * Creates a successful API response
+ * Creates a standardized JSON success response.
+ * @param data The payload to send.
+ * @param status The HTTP status code.
+ * @returns A NextResponse object.
  */
-export function successResponse<T>(data: T, status = 200): NextResponse<ApiResponse<T>> {
-  return NextResponse.json(
-    {
-      success: true,
-      data,
-    },
-    { status }
-  );
+export function jsonResponse<T>(data: T, status: number = 200) {
+  return NextResponse.json({ success: true, data }, { status });
 }
 
 /**
- * Creates an error API response
+ * Creates a standardized JSON error response.
+ * @param message The error message.
+ * @param status The HTTP status code.
+ * @returns A NextResponse object.
  */
-export function errorResponse(
-  message: string,
-  status = 400,
-  code?: string,
-  details?: unknown
-): NextResponse<ApiError> {
-  return NextResponse.json(
-    {
-      success: false,
-      error: {
-        message,
-        code,
-        details,
-      },
-    },
-    { status }
-  );
+export function errorResponse(message: string, status: number = 500) {
+  return NextResponse.json({ success: false, error: message }, { status });
 }
 
 /**
- * Creates a paginated API response
+ * Handles Zod validation errors.
+ * @param error A Zod error object.
+ * @returns A 400 Bad Request error response.
  */
-export function paginatedResponse<T>(
-  data: T[],
-  page: number,
-  limit: number,
-  total: number,
-  status = 200
-): NextResponse<PaginatedResponse<T>> {
-  const totalPages = Math.ceil(total / limit);
-
-  return NextResponse.json(
-    {
-      success: true,
-      data,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-      },
-    },
-    { status }
-  );
-}
-
-/**
- * Creates a not found error response
- */
-export function notFoundResponse(resource: string): NextResponse<ApiError> {
-  return errorResponse(`${resource} non trovato`, 404, 'NOT_FOUND');
-}
-
-/**
- * Creates a validation error response
- */
-export function validationErrorResponse(details: unknown): NextResponse<ApiError> {
-  return errorResponse('Errore di validazione', 400, 'VALIDATION_ERROR', details);
-}
-
-/**
- * Creates an internal server error response
- */
-export function serverErrorResponse(error?: unknown): NextResponse<ApiError> {
-  console.error('Server error:', error);
-  return errorResponse(
-    'Errore interno del server',
-    500,
-    'INTERNAL_SERVER_ERROR',
-    process.env.NODE_ENV === 'development' ? error : undefined
-  );
+export function validationErrorResponse(_error: any) {
+    // In a real app, you might want to format the error messages
+    return errorResponse('Dati non validi', 400);
 }

@@ -4,14 +4,7 @@ import { Calendar, Phone, MapPin, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-
-interface AgendaItem {
-  id: string;
-  time: string;
-  title: string;
-  client: string;
-  address?: string;
-}
+import { AgendaItem } from "@/types";
 
 interface MiniAgendaProps {
   items: AgendaItem[];

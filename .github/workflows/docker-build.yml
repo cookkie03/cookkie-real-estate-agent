@@ -35,10 +35,18 @@ jobs:
           type=ref,event=pr
           type=raw,value=latest,enable={{is_default_branch}}
           
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v6
+    - name: Build and push Next.js image
+      uses: docker/build-push-action@v5
       with:
         context: .
+        file: ./docker/Dockerfile.nextjs
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ secrets.DOCKER_USERNAME }}/cookkie-real-estate-agent-nextjs:latest
+
+    - name: Build and push Python AI image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./docker/Dockerfile.python
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/cookkie-real-estate-agent-python-ai:latest

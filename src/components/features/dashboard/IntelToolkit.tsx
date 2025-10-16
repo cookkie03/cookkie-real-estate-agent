@@ -1,17 +1,13 @@
 "use client";
 
-import { MapPin, Building, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MapPin, Building } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { formatNumber } from "@/lib/utils";
-
-interface AreaStats {
-  medianPrice: number;
-  timeToSell: number;
-  trend: "up" | "down" | "stable";
-}
+import { formatNumber } from "@/lib/formatters";
+import { AreaStats } from "@/types";
 
 interface IntelToolkitProps {
   areaStats?: AreaStats;
@@ -21,6 +17,15 @@ interface IntelToolkitProps {
 
 export function IntelToolkit({ areaStats, buildingInfo, similars = [] }: IntelToolkitProps) {
   const router = useRouter();
+  const [formattedPrice, setFormattedPrice] = useState<string | number>(
+    areaStats?.medianPrice ?? ""
+  );
+
+  useEffect(() => {
+    if (areaStats?.medianPrice) {
+      setFormattedPrice(formatNumber(areaStats.medianPrice));
+    }
+  }, [areaStats?.medianPrice]);
 
   return (
     <Card>
@@ -44,7 +49,7 @@ export function IntelToolkit({ areaStats, buildingInfo, similars = [] }: IntelTo
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg bg-muted/50">
                     <p className="text-xs text-muted-foreground mb-1">Prezzo mediano</p>
-                    <p className="text-lg font-bold">{formatNumber(areaStats.medianPrice)} €/mq</p>
+                    <p className="text-lg font-bold">{formattedPrice} €/mq</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50">
                     <p className="text-xs text-muted-foreground mb-1">Tempo medio</p>

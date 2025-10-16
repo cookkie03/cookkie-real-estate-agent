@@ -5,21 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-
-interface Connector {
-  name: string;
-  status: "ok" | "error" | "idle";
-  lastSync?: string;
-}
+import { Connector } from "@/types";
 
 interface ConnectorsStatusProps {
   connectors: Connector[];
 }
 
 const statusConfig = {
-  ok: { icon: CheckCircle, color: "text-success", badge: "bg-success/10 text-success border-success/20" },
+  connected: { icon: CheckCircle, color: "text-success", badge: "bg-success/10 text-success border-success/20" },
   error: { icon: XCircle, color: "text-destructive", badge: "bg-destructive/10 text-destructive border-destructive/20" },
-  idle: { icon: Clock, color: "text-muted-foreground", badge: "bg-muted text-muted-foreground border-border" },
+  pending: { icon: Clock, color: "text-muted-foreground", badge: "bg-muted text-muted-foreground border-border" },
 };
 
 export function ConnectorsStatus({ connectors }: ConnectorsStatusProps) {

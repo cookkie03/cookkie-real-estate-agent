@@ -1,0 +1,91 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Node.js
+node_modules
+npm-debug.log
+.npm
+.next
+.cache
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+.venv
+venv
+env
+ENV
+
+# Database
+*.db
+*.db-journal
+
+# Environment
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs
+
+# Temporary
+tmp
+temp
+*.tmp
+*.bak
+
+# Documentation (exclude most markdown files)
+CLAUDE.md
+GEMINI.md
+MIGRATION_NOTES.md
+SECURITY_AUDIT.md
+DATAPIZZA*.md
+START_AI_SYSTEM.md
+AI_SYSTEM_READY.md
+!README.md
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Testing
+coverage
+.pytest_cache
+test-results
+
+# Build artifacts
+dist
+build
+out
+
+# Prisma
+prisma/migrations
+
+# Python AI specific
+python_ai/.venv
+python_ai/.cache
+python_ai/.env

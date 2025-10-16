@@ -1,23 +1,10 @@
 "use client";
 
-import { Sparkles, TrendingUp, Clock } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-
-interface ActionItem {
-  id: string;
-  label: string;
-  reason: string;
-  score?: number;
-}
-
-interface ActionList {
-  title: string;
-  icon: any;
-  items: ActionItem[];
-  variant?: "default" | "success" | "warning";
-}
+import { ActionList } from "@/types";
 
 interface SuggestedActionsProps {
   lists: ActionList[];

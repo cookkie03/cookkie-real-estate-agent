@@ -34,7 +34,11 @@
       "Bash(if [ -f \"prisma/dev.db\" ])",
       "Bash(else echo \"No database file found\")",
       "Bash(git checkout:*)",
-      "Bash(npm run prisma:push:*)"
+      "Bash(npm run prisma:push:*)",
+      "Bash(if [ -f \"python_ai/requirements.txt\" ])",
+      "Bash(then cat python_ai/requirements.txt)",
+      "Bash(else echo \"No requirements.txt found\")",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

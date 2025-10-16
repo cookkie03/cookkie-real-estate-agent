@@ -7,6 +7,7 @@ export const mockAgendaItems = [
     title: "Visita trilocale",
     client: "Mario Rossi",
     address: "Via Torino 42, Milano",
+    type: "meeting" as const,
   },
   {
     id: "2",
@@ -14,12 +15,14 @@ export const mockAgendaItems = [
     title: "Follow-up post visita",
     client: "Laura Bianchi",
     address: "Corso Buenos Aires 15",
+    type: "call" as const,
   },
   {
     id: "3",
     time: "16:00",
     title: "Presentazione nuova proprietà",
     client: "Giuseppe Verdi",
+    type: "meeting" as const,
   },
 ];
 
@@ -141,10 +144,10 @@ export const mockMapZones = [
 ];
 
 export const mockConnectors = [
-  { name: "PortaleX", status: "ok" as const, lastSync: "12:30" },
-  { name: "Rubrica Google", status: "ok" as const, lastSync: "11:15" },
+  { name: "PortaleX", status: "connected" as const, lastSync: "12:30" },
+  { name: "Rubrica Google", status: "connected" as const, lastSync: "11:15" },
   { name: "CRM CSV Import", status: "error" as const },
-  { name: "Idealista Scraper", status: "idle" as const },
+  { name: "Idealista Scraper", status: "pending" as const },
 ];
 
 export const mockFeedEvents = [
@@ -152,7 +155,7 @@ export const mockFeedEvents = [
     id: "1",
     type: "new" as const,
     title: "Nuovo trilocale con terrazzo",
-    time: "2 ore fa",
+    timestamp: "2 ore fa",
     zone: "Brera",
     price: "485.000 €",
   },
@@ -160,7 +163,7 @@ export const mockFeedEvents = [
     id: "2",
     type: "discount" as const,
     title: "Bilocale ristrutturato",
-    time: "5 ore fa",
+    timestamp: "5 ore fa",
     zone: "Isola",
     price: "320.000 € (-8%)",
   },
@@ -168,7 +171,7 @@ export const mockFeedEvents = [
     id: "3",
     type: "sold" as const,
     title: "Attico panoramico",
-    time: "1 giorno fa",
+    timestamp: "1 giorno fa",
     zone: "City Life",
     price: "890.000 €",
   },
@@ -176,7 +179,7 @@ export const mockFeedEvents = [
     id: "4",
     type: "new" as const,
     title: "Villa indipendente",
-    time: "1 giorno fa",
+    timestamp: "1 giorno fa",
     zone: "San Siro",
     price: "1.250.000 €",
   },

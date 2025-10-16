@@ -60,7 +60,7 @@ export default function ImmobiliPage() {
             onClick={() => router.push("/")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Home
+            Indietro
           </Button>
           <h1 className="text-xl font-bold">Immobili</h1>
         </div>

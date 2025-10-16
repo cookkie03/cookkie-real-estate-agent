@@ -1,24 +1,17 @@
 import { TrendingDown, Home, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface FeedEvent {
-  id: string;
-  type: "new" | "discount" | "sold";
-  title: string;
-  time: string;
-  zone?: string;
-  price?: string;
-}
+import { FeedEvent } from "@/types";
 
 interface ActivityFeedProps {
   events: FeedEvent[];
 }
 
-const typeConfig = {
+const typeConfig: { [key: string]: { icon: React.ElementType, color: string, label: string } } = {
   new: { icon: Home, color: "bg-primary/10 text-primary border-primary/20", label: "Nuovo" },
   discount: { icon: TrendingDown, color: "bg-warning/10 text-warning border-warning/20", label: "Ribasso" },
   sold: { icon: DollarSign, color: "bg-success/10 text-success border-success/20", label: "Venduto" },
+  default: { icon: Home, color: "", label: "" },
 };
 
 export function ActivityFeed({ events }: ActivityFeedProps) {
@@ -38,7 +31,7 @@ export function ActivityFeed({ events }: ActivityFeedProps) {
         ) : (
           <div className="space-y-2">
             {events.map((event) => {
-              const config = typeConfig[event.type];
+              const config = typeConfig[event.type] || typeConfig.default;
               const Icon = config.icon;
               return (
                 <div
@@ -60,7 +53,7 @@ export function ActivityFeed({ events }: ActivityFeedProps) {
                       </div>
                       <p className="font-medium text-sm mb-1">{event.title}</p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{event.time}</span>
+                        <span>{event.timestamp}</span>
                         {event.price && (
                           <>
                             <span>•</span>

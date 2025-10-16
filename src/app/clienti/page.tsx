@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Filter, ArrowUpDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Search, Filter, ArrowUpDown, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
 export default function ClientiPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
@@ -27,7 +29,17 @@ export default function ClientiPage() {
       <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="container px-4 py-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Clienti</h1>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/")}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Indietro
+              </Button>
+              <h1 className="text-2xl font-bold">Clienti</h1>
+            </div>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
               Nuovo Cliente

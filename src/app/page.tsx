@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, Bell, HelpCircle, Command as CommandIcon, Phone, Calendar as CalendarIcon, Zap, MapPin, Settings, Home, Users, Wrench } from "lucide-react";
+import { Menu, Bell, HelpCircle, Command as CommandIcon, Phone, Calendar as CalendarIcon, Zap, Settings, Home, Users, Wrench, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/layouts/CommandPalette";
-import { AISearchBar } from "@/components/layouts/AISearchBar";
 import { StatPill } from "@/components/features/dashboard/StatPill";
 import { MiniAgenda } from "@/components/features/dashboard/MiniAgenda";
 import { QuickDialer } from "@/components/features/dashboard/QuickDialer";
@@ -39,7 +38,7 @@ export default function HomePage() {
         const target = e.target as HTMLElement;
         if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") {
           e.preventDefault();
-          document.querySelector<HTMLInputElement>('input[placeholder*="Cerca"]')?.focus();
+          router.push("/search");
         }
       }
       if (e.key === "g" && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -165,18 +164,46 @@ export default function HomePage() {
               La tua <span className="bg-gradient-accent bg-clip-text text-transparent">AI</span> per il real estate
             </h2>
             <p className="text-muted-foreground text-center mb-6">
-              Cerca clienti, immobili, vie e molto altro con l'intelligenza artificiale
+              Cerca clienti, immobili, vie e molto altro con l&apos;intelligenza artificiale
             </p>
-            <AISearchBar />
+            <div
+              onClick={() => router.push('/search')}
+              className="relative group cursor-pointer"
+            >
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <div className="pl-12 pr-36 h-16 text-base bg-card border-2 rounded-md flex items-center text-muted-foreground shadow-md group-hover:shadow-glow transition-all">
+                  Cerca: &apos;appartamenti con terrazzo in Brera...&apos;
+                </div>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 h-12 px-4 rounded-md bg-primary text-primary-foreground">
+                  <Sparkles className="h-4 w-4" />
+                  Cerca AI
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
         {/* Quick Actions Pills */}
         <section className="mb-8 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
           <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
-            Prossime azioni
+            Azioni Rapide
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <StatPill
+              label="Immobili"
+              value={120}
+              icon={Home}
+              variant="default"
+              onClick={() => router.push("/immobili")}
+            />
+            <StatPill
+              label="Clienti"
+              value={45}
+              icon={Users}
+              variant="default"
+              onClick={() => router.push("/clienti")}
+            />
             <StatPill
               label="Chiamate urgenti"
               value={5}
@@ -185,14 +212,14 @@ export default function HomePage() {
               onClick={() => router.push("/actions?type=urgent")}
             />
             <StatPill
-              label="Appuntamenti oggi"
+              label="Appuntamenti"
               value={3}
               icon={CalendarIcon}
               variant="success"
               onClick={() => router.push("/agenda")}
             />
             <StatPill
-              label="Follow-up post visita"
+              label="Follow-up"
               value={4}
               icon={Zap}
               variant="warning"

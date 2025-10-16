@@ -7,6 +7,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+
+  // Enable standalone output for Docker
+  output: 'standalone',
+
   // Configurazione per ridurre problemi di cache su Windows
   onDemandEntries: {
     maxInactiveAge: 60 * 1000,

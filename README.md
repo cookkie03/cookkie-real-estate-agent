@@ -1,242 +1,374 @@
-# CRM Immobiliare - Next.js Migration
+# 🚀 CRM Immobiliare AI - Sistema Completo
 
-Migrazione del progetto da Vite + React Router a Next.js 14 con App Router.
+## ⚡ **AVVIO IMMEDIATO - 1 COMANDO**
 
-## Stack Tecnologico
-
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **UI Library**: shadcn/ui (Radix UI)
-- **Styling**: Tailwind CSS
-- **Database**: Prisma + SQLite
-- **State Management**: @tanstack/react-query
-- **Forms**: react-hook-form + zod
-
-## Comandi Disponibili
-
+### Windows
 ```bash
-# Installare dipendenze
-npm install
-
-# Avviare server di sviluppo
-npm run dev
-
-# Build per produzione
-npm run build
-
-# Avviare server produzione
-npm start
-
-# Linting
-npm run lint
-
-# Prisma commands
-npm run prisma:generate    # Genera Prisma Client
-npm run prisma:push        # Push schema al database
-npm run prisma:studio      # Apri Prisma Studio GUI
-npm run prisma:seed        # Esegui seed del database
+run.bat
 ```
 
-## Setup Iniziale
+### Linux/Mac
+```bash
+chmod +x run.sh
+./run.sh
+```
 
-1. **Installare dipendenze**:
-   ```bash
-   npm install
-   ```
+**✅ FATTO! Il sistema:**
+- Compila automaticamente tutto (build completa)
+- Avvia Backend Python AI (porta 8000)
+- Avvia Frontend Next.js (porta 3000)
+- Configura database e dipendenze
+- **ZERO configurazione manuale richiesta!**
 
-2. **Configurare database**:
-   ```bash
-   npm run prisma:generate
-   npm run prisma:push
-   npm run prisma:seed
-   ```
+---
 
-3. **Avviare server di sviluppo**:
-   ```bash
-   npm run dev
-   ```
+## 🎯 Accesso Rapido
 
-4. Aprire [http://localhost:3000](http://localhost:3000) nel browser
+Una volta avviato con `run.bat`:
 
-## Struttura Progetto
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8000
+- **API Docs Interactive:** http://localhost:8000/docs
+
+---
+
+## 📋 Modalità di Avvio
+
+### 1. Automatica (RACCOMANDATO)
+
+```bash
+run.bat  # Windows
+./run.sh # Linux/Mac
+```
+
+Lo script rileva automaticamente:
+- ✅ Se hai Docker → Usa Docker (containerizzato)
+- ✅ Se non hai Docker → Installa e avvia manualmente
+
+### 2. Docker Manuale
+
+```bash
+docker-compose up
+```
+
+### 3. Tradizionale Manuale
+
+```bash
+# Windows
+start-ai-system.bat
+
+# Linux/Mac
+./start-ai-system.sh
+```
+
+---
+
+## 🤖 Sistema AI Integrato
+
+### DataPizza AI Framework
+
+**3 Agenti AI Pronti:**
+1. **RAG Assistant** - Chat intelligente con database access
+2. **AI Matching** - Matching semantico property-request
+3. **Daily Briefing** - Briefing automatico giornaliero
+
+**7 Custom Tools:**
+- Query properties/contacts/requests/matches
+- Ricerca semantica immobili e contatti
+- Dettagli completi e statistiche
+
+**Powered by Google Gemini** (API key già configurata)
+
+---
+
+## 🧪 Test Immediato
+
+1. Avvia: `run.bat`
+2. Vai su: http://localhost:3000
+3. Clicca la **search bar** (grande, al centro homepage)
+4. Scrivi: `Mostrami tutti gli appartamenti a Corbetta sotto 200k`
+5. **L'AI interrogherà il database SQLite e risponderà!**
+
+---
+
+## 📚 Stack Tecnologico
+
+### Frontend
+- **Next.js 14** (App Router)
+- **TypeScript**
+- **shadcn/ui** (Radix UI)
+- **Tailwind CSS**
+- **React Query**
+
+### Backend AI
+- **FastAPI** + **DataPizza AI**
+- **Google Gemini** (LLM)
+- **SQLAlchemy** (Database ORM)
+- **Qdrant** (Vector Store - opzionale)
+
+### Database
+- **Prisma** + **SQLite**
+- Database condiviso tra Next.js e Python
+- Seed automatico con dati di esempio
+
+---
+
+## 🔑 Prerequisiti
+
+### Con Docker (Automatico)
+- ✅ Docker Desktop
+- ✅ Nient'altro!
+
+### Senza Docker (Automatico)
+- ✅ Node.js 20+
+- ✅ Python 3.11+
+- ✅ Lo script installerà tutto automaticamente
+
+---
+
+## 📖 Documentazione
+
+| Documento | Descrizione |
+|-----------|-------------|
+| **`README_DOCKER.md`** | Guida Docker completa |
+| **`QUICK_START.md`** | Quick start con esempi |
+| **`DOCKER_GUIDE.md`** | Docker avanzato |
+| **`DATAPIZZA_SETUP.md`** | Setup AI dettagliato |
+| **`AI_SYSTEM_READY.md`** | Funzionalità AI |
+
+---
+
+## 🛠️ Comandi Sviluppo
+
+### Docker
+
+```bash
+# Avvia
+docker-compose up
+
+# Background
+docker-compose up -d
+
+# Logs
+docker-compose logs -f
+
+# Ferma
+docker-compose down
+
+# Rebuild
+docker-compose build --no-cache
+```
+
+### Tradizionale
+
+```bash
+# Frontend
+npm run dev
+
+# Backend Python
+cd python_ai
+uvicorn main:app --reload
+
+# Database
+npm run prisma:studio
+```
+
+---
+
+## 🌟 Funzionalità AI
+
+### RAG Assistant
+Dalla **search bar** puoi chiedere:
+
+**Immobili:**
+- "Mostrami appartamenti a Corbetta sotto 200k"
+- "Trova immobili con giardino e parcheggio"
+- "Quanti trilocali in vendita abbiamo?"
+
+**Clienti:**
+- "Chi sono i clienti VIP?"
+- "Mostrami clienti con budget 150k-250k"
+- "Quali clienti cercano casa a Milano?"
+
+**Statistiche:**
+- "Dammi statistiche immobili in vendita"
+- "Quanti clienti attivi abbiamo?"
+- "Quali sono le richieste urgenti?"
+
+**L'AI ha accesso a 7 custom tools per interrogare il database!**
+
+---
+
+## 🏗️ Struttura Progetto
 
 ```
 cookkie-real-estate-agent/
-├── src/
-│   ├── app/                        # 🎨 FRONTEND - Next.js App Router
-│   │   ├── page.tsx               # 🏠 Homepage/Dashboard
-│   │   ├── immobili/              # 🏘️ Gestione Immobili
-│   │   │   └── page.tsx
-│   │   ├── clienti/               # 👥 Gestione Clienti
-│   │   │   └── page.tsx
-│   │   ├── tool/                  # 🔧 Toolkit Intelligente
-│   │   │   └── page.tsx
-│   ��   ├── agenda/                # 📅 Calendario
-│   │   │   └── page.tsx
-│   │   ├── actions/               # ⚡ Azioni Suggerite
-│   │   │   └── page.tsx
-│   │   ├── search/                # 🔍 Ricerca AI
-│   │   │   └── page.tsx
-│   │   ├── map/                   # 🗺️ Mappa
-│   │   │   └── page.tsx
-│   │   ├── settings/              # ⚙️ Impostazioni
-│   │   │   └── page.tsx
-│   │   ├── connectors/            # 🔌 Connettori
-│   │   │   └── page.tsx
-│   │   ├── api/                   # 🔌 API Routes (future)
-│   │   │   ├── immobili/
-│   │   │   ├── clienti/
-│   │   │   ├── matches/
-│   │   │   └── azioni/
-│   │   ├── layout.tsx             # Root layout
-│   │   ├── providers.tsx          # React Query + UI providers
-│   │   └── globals.css
-│   │
-│   ├── components/                 # 🎨 FRONTEND - React Components
-│   │   ├── ui/                    # shadcn/ui components (DO NOT EDIT)
-│   │   ├── features/              # Feature-specific components
-│   │   │   ├── dashboard/         # Dashboard components
-│   │   │   ├── immobili/          # Property components
-│   │   │   ├── clienti/           # Client components
-│   │   │   └── matches/           # Match components
-│   │   └── layouts/               # Layout components
-│   │       ├── CommandPalette.tsx
-│   │       └── AISearchBar.tsx
-│   │
-│   ├── lib/                       # 🛠️ UTILITIES & TOOLS
-│   │   ├── db/                    # 💾 DATABASE Layer
-│   │   │   ├── index.ts           # Prisma client singleton
-│   │   │   └── helpers.ts         # Query helpers
-│   │   ├── api/                   # API utilities
-│   │   ├── validation/            # Zod schemas
-│   │   ├── ai/                    # AI tools (future)
-│   │   │   └── .cache/            # 🗂️ AI cache (git-ignored)
-│   │   ├── scraping/              # Web scraping (future)
-│   │   │   └── .cache/            # 🗂️ Scraping cache (git-ignored)
-│   │   ├── utils.ts
-│   │   └── mockData.ts            # TEMPORARY mock data
-│   │
-│   └── hooks/                     # Custom React hooks
+├── run.bat / run.sh              # 🚀 AVVIO UNICO
+├── docker-compose.yml            # 🐳 Docker orchestration
+├── Dockerfile.python             # Python backend image
+├── Dockerfile.nextjs             # Next.js frontend image
 │
-├── prisma/                        # 💾 DATABASE
-│   ├── schema.prisma              # Database schema
-│   ├── seed.ts                    # 🌱 Seed data (mock)
-│   ├── migrations/                # Schema migrations (git-ignored)
-│   └── dev.db                     # SQLite database (git-ignored)
+├── src/                          # Next.js Frontend
+│   ├── app/                      # Pages (App Router)
+│   │   ├── page.tsx              # Homepage con search bar
+│   │   ├── search/page.tsx       # Chat AI (RAG)
+│   │   └── api/ai/               # API proxy to Python
+│   ├── components/               # React components
+│   ├── hooks/                    # React Query hooks
+│   └── lib/                      # Utilities
 │
-├── public/                        # Static assets
-├── STRUCTURE.md                   # 📋 Documentazione struttura dettagliata
-├── .env.example                   # ✅ Public template
-├── .env.local                     # 🔒 Your secrets (git-ignored)
-└── .gitignore                     # Git exclusions
+├── python_ai/                    # Python AI Backend
+│   ├── main.py                   # FastAPI server
+│   ├── app/
+│   │   ├── agents/               # 3 AI agents
+│   │   ├── tools/                # 7 custom tools
+│   │   ├── routers/              # API endpoints
+│   │   └── models.py             # Database models
+│   └── requirements.txt          # Python dependencies
+│
+└── prisma/                       # Database
+    ├── schema.prisma             # Schema definition
+    ├── seed.ts                   # Seed data
+    └── dev.db                    # SQLite database
 ```
 
-Per una descrizione dettagliata di ogni pagina e funzionalità, consulta [STRUCTURE.md](./STRUCTURE.md).
+---
 
-## Database Schema
+## 🔐 Sicurezza
 
-Il database include i seguenti modelli:
+✅ **Google API Key** già configurata in:
+- `.env.local` (Next.js)
+- `python_ai/.env` (Python)
 
-- **Immobile**: Proprietà immobiliari
-- **Cliente**: Clienti (buyer/seller/owner)
-- **Match**: Matching immobili-clienti con score AI
-- **Azione**: Task e follow-up da completare
+✅ **File sensibili git-ignored:**
+- `.env`, `.env.local`
+- `*.db` files
+- `python_ai/.cache/`
+- `node_modules/`
 
-Vedi `prisma/schema.prisma` per dettagli completi.
+---
 
-## Environment Variables
+## 🐛 Troubleshooting
 
-**IMPORTANTE**: Non committare mai file `.env.local` o `.env` su Git!
+### Porta già in uso
 
-1. Copia `.env.example` come `.env.local`:
-   ```bash
-   cp .env.example .env.local
-   ```
+```bash
+# Windows
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F
 
-2. Configura le variabili con le tue credenziali reali
+# Linux/Mac
+lsof -ti:8000 | xargs kill -9
+```
 
-3. Il file `.env.local` è automaticamente escluso da Git tramite `.gitignore`
+### Docker non si avvia
 
-## 🔒 Sicurezza e Best Practices
+```bash
+docker-compose down -v
+docker-compose build --no-cache
+docker-compose up
+```
 
-### Dati Sensibili
+### Dipendenze mancanti
 
-Questo progetto è configurato per **NON includere MAI** dati sensibili nel repository:
+```bash
+# Python
+cd python_ai
+pip install -r requirements.txt
 
-✅ **File esclusi da Git (via .gitignore)**:
-- `.env`, `.env.local`, `.env.production` - Variabili d'ambiente e credenziali
-- `/prisma/*.db`, `/prisma/*.db-journal` - Database SQLite popolati
-- `/src/lib/ai/.cache/` - Cache tool AI
-- `/src/lib/scraping/.cache/` - Cache web scraping
-- `node_modules/`, `.next/`, build artifacts
-- File temporanei, backup, log
+# Node.js
+npm install
+```
 
-✅ **Dati mock sicuri**:
-- Il file `prisma/seed.ts` contiene SOLO dati fittizi
-- Nomi: Laura Bianchi, Marco Rossi, ecc. (inventati)
-- Email: `@email.com` (non reali)
-- Telefoni: generici italiani
-- Indirizzi: realistici ma non personali
+---
 
-⚠️ **PRIMA DI FARE PUSH**:
-1. Verifica che `.env.local` NON sia tracciato: `git status`
-2. Controlla che il database non contenga dati reali
-3. Assicurati che nessuna API key sia hardcoded nel codice
-4. Usa sempre `.env.example` per documentare variabili necessarie
+## 🎯 Cosa Include
 
-### Come Gestire Credenziali
+✅ **Frontend Next.js 14**
+- Homepage con dashboard
+- Search bar AI-powered
+- Gestione immobili e clienti
+- Agenda e azioni suggerite
+- Mappa interattiva
 
-1. **API Keys**: Sempre in `.env.local`, mai nel codice
-2. **Database**: SQLite locale è escluso automaticamente
-3. **Scraping credentials**: Solo in `.env.local`
-4. **JWT secrets**: Generati random, mai committati
+✅ **Backend Python AI**
+- 3 agenti AI (RAG, Matching, Briefing)
+- 7 custom tools per database
+- FastAPI con Swagger docs
+- Google Gemini integration
 
-### Checklist Pre-Push
+✅ **Database SQLite**
+- Schema Prisma completo
+- Seed con dati di esempio
+- Condiviso Next.js/Python
 
-- [ ] `git status` non mostra file `.env*` (eccetto `.env.example`)
-- [ ] Nessun file `.db` nei file tracciati
-- [ ] Nessuna password o API key hardcoded
-- [ ] File di cache esclusi
-- [ ] Dati seed sono solo mock/fittizi
+✅ **Docker Setup**
+- Build multi-stage ottimizzato
+- Health checks automatici
+- Auto-restart on failure
+- Volume persistence
 
-## Differenze rispetto a Vite
+✅ **Documentazione Completa**
+- Guide quick start
+- Setup AI dettagliato
+- Docker guide avanzata
 
-### Routing
-- ✅ File-based routing con App Router
-- ✅ `useRouter()` da `next/navigation` invece di `useNavigate()`
-- ✅ Client Components con `"use client"` dove necessario
+---
 
-### Componenti
-- ✅ Tutti i componenti UI shadcn/ui mantenuti intatti
-- ✅ Keyboard shortcuts preservati
-- ✅ Tema Tailwind custom mantenuto
+## 🚀 Deploy Production
 
-### Features da Implementare
-- [ ] API Routes per CRUD operations
-- [ ] Autenticazione (single-user)
-- [ ] Sostituire mockData con chiamate database reali
-- [ ] Implementare matching algorithm
-- [ ] RAG system per ricerca AI
-- [ ] Web scraping per portali immobiliari
+```bash
+# Docker production build
+docker-compose -f docker-compose.yml up -d
 
-## Prossimi Passi
+# Oppure deploy su cloud:
+# - Google Cloud Run
+# - AWS ECS/Fargate
+# - Azure Container Instances
+# - DigitalOcean App Platform
+# - Railway / Render
+```
 
-1. Testare tutte le pagine e la navigazione
-2. Creare prime API routes (`/api/immobili`, `/api/clienti`)
-3. Sostituire mock data con query Prisma reali
-4. Implementare autenticazione base
-5. Aggiungere features avanzate (matching, RAG, etc.)
+---
 
-## Note
+## 📊 Performance
 
-- Il progetto usa SQLite per semplicità (perfetto per single-user)
-- Tutti gli stili e animazioni custom sono preservati
-- I componenti shadcn/ui NON sono stati modificati
-- Il database è già seedato con dati di esempio
+**Risorse richieste:**
+- RAM: ~2GB totale
+- CPU: 2+ cores raccomandati
+- Disk: ~500MB (immagini Docker)
 
-## Supporto
+**Tempi:**
+- First build: ~5-10 minuti
+- Avvio: ~30 secondi
+- Rebuild: ~2-3 minuti (cache)
 
-Per problemi o domande, consultare:
+---
+
+## ✨ Features in Arrivo
+
+- [ ] Qdrant vector store per ricerca semantica
+- [ ] Document processing (PDF upload/analysis)
+- [ ] Web scraping portali immobiliari
+- [ ] Voice assistant integration
+- [ ] Mobile app (React Native)
+
+---
+
+## 🤝 Supporto
+
+**Guide:**
+- Quick start → `QUICK_START.md`
+- Docker → `DOCKER_GUIDE.md`
+- AI Setup → `DATAPIZZA_SETUP.md`
+
+**Resources:**
 - [Next.js Docs](https://nextjs.org/docs)
-- [Prisma Docs](https://www.prisma.io/docs)
-- [shadcn/ui Docs](https://ui.shadcn.com)
+- [DataPizza AI](https://docs.datapizza.ai)
+- [FastAPI Docs](https://fastapi.tiangolo.com)
+
+---
+
+**🎉 Esegui `run.bat` e il sistema parte! Zero configurazione! 🚀**
+
+**Un comando. Tutto funziona. 🐳**
