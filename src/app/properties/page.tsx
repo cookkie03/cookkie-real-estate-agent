@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { Toolbar } from "@/components/Toolbar";
+import { SatelliteMap } from "@/components/SatelliteMap";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search,
   LayoutGrid,
@@ -14,6 +16,7 @@ import {
   DollarSign,
   Home,
   Filter,
+  Map,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
