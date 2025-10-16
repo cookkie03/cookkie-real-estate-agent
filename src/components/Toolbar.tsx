@@ -20,7 +20,7 @@ export function Toolbar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:fixed lg:left-0 lg:top-16 lg:w-20 lg:h-[calc(100vh-4rem)] lg:border-r lg:bg-card lg:flex lg:flex-col lg:items-center lg:pt-4 lg:gap-2 lg:z-40">
+      <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:w-20 lg:h-screen lg:border-r lg:bg-card lg:flex lg:flex-col lg:items-center lg:pt-4 lg:gap-2 lg:z-40">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           const isActive =
