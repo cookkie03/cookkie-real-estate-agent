@@ -46,6 +46,30 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
+    /* Priority Colors */
+    --priority-urgent: 0 84% 60%;
+    --priority-high: 38 92% 50%;
+    --priority-medium: 215 90% 50%;
+    --priority-low: 142 76% 45%;
+
+    /* Client Status Colors */
+    --client-hot: 0 84% 60%;
+    --client-warm: 38 92% 50%;
+    --client-cold: 215 90% 50%;
+    --client-inactive: 215 15% 50%;
+
+    /* Property Status Colors */
+    --property-available: 142 76% 45%;
+    --property-reserved: 38 92% 50%;
+    --property-sold: 215 15% 50%;
+    --property-draft: 215 15% 70%;
+
+    /* Match Score Colors */
+    --match-excellent: 142 76% 45%;
+    --match-good: 84 81% 44%;
+    --match-medium: 38 92% 50%;
+    --match-low: 0 84% 60%;
+
     --gradient-primary: linear-gradient(135deg, hsl(215 90% 25%) 0%, hsl(215 90% 40%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(175 75% 45%) 0%, hsl(175 75% 60%) 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(210 20% 98%) 0%, hsl(210 15% 95%) 100%);
@@ -104,6 +128,30 @@ All colors MUST be HSL.
     --input: 215 20% 20%;
     --ring: 215 90% 60%;
 
+    /* Priority Colors - Dark Mode */
+    --priority-urgent: 0 84% 65%;
+    --priority-high: 38 92% 55%;
+    --priority-medium: 215 90% 60%;
+    --priority-low: 142 76% 50%;
+
+    /* Client Status Colors - Dark Mode */
+    --client-hot: 0 84% 65%;
+    --client-warm: 38 92% 55%;
+    --client-cold: 215 90% 60%;
+    --client-inactive: 215 15% 55%;
+
+    /* Property Status Colors - Dark Mode */
+    --property-available: 142 76% 50%;
+    --property-reserved: 38 92% 55%;
+    --property-sold: 215 15% 55%;
+    --property-draft: 215 15% 65%;
+
+    /* Match Score Colors - Dark Mode */
+    --match-excellent: 142 76% 50%;
+    --match-good: 84 81% 49%;
+    --match-medium: 38 92% 55%;
+    --match-low: 0 84% 65%;
+
     --gradient-primary: linear-gradient(135deg, hsl(215 90% 50%) 0%, hsl(215 90% 70%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(175 75% 45%) 0%, hsl(175 75% 65%) 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(215 30% 8%) 0%, hsl(215 25% 12%) 100%);
@@ -133,5 +181,35 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes circularProgress {
+  0% {
+    stroke-dashoffset: 282.74;
+  }
+  100% {
+    stroke-dashoffset: var(--progress-offset);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
   }
 }

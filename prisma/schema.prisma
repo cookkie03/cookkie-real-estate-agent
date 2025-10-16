@@ -1,5 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Prisma Schema - CRM Immobiliare V3
+// Adapted from PostgreSQL design for SQLite compatibility
+// learn more: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -10,92 +11,600 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Immobile {
-  id          String   @id @default(cuid())
-  titolo      String
-  tipologia   String   // appartamento, villa, etc
-  prezzo      Float
-  superficie  Float
-  locali      Int
-  bagni       Int
+// ============================================================================
+// 1. USER PROFILE - Single Agent Profile
+// ============================================================================
+model UserProfile {
+  id String @id @default(cuid())
 
-  // Location
-  indirizzo   String
-  citta       String
-  cap         String
-  provincia   String
-  latitudine  Float?
-  longitudine Float?
-  zona        String?
+  // Personal & Agency Info
+  fullName     String
+  email        String  @unique
+  phone        String?
+  agencyName   String?
+  agencyVat    String?
+  agencyAddress String?
 
-  // Details
-  descrizione String
-  caratteristiche String // JSON serializzato come stringa per SQLite
-  foto        String  // Array serializzato come stringa per SQLite
+  // Settings (stored as JSON string in SQLite)
+  settings String @default("{\"commissionPercent\":3.0,\"workHours\":{\"start\":\"09:00\",\"end\":\"19:00\"},\"autoMatchEnabled\":false,\"notificationEmail\":true}")
 
-  // Metadata
-  fonte       String?
-  urlOriginale String?
-  stato       String   // disponibile, venduto, etc
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Relations
-  matches     Match[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  @@map("user_profile")
 }
 
-model Cliente {
-  id          String   @id @default(cuid())
-  nome        String
-  cognome     String
-  email       String?  @unique
-  telefono    String?
+// ============================================================================
+// 2. CONTACTS - Unified Contacts (Clients, Owners, Leads)
+// ============================================================================
+model Contact {
+  id   String @id @default(cuid())
+  code String @unique // "CNT-2025-0001"
 
-  // Search preferences
-  tipologiaRichiesta String?
-  budgetMin   Float?
-  budgetMax   Float?
-  superficieMin Float?
-  localiMin   Int?
-  zoneInteresse String  // Array serializzato come stringa per SQLite
+  // Entity Type
+  entityType String @default("person") // person, company
+
+  // Anagrafica
+  fullName    String
+  firstName   String?
+  lastName    String?
+  companyName String?
+
+  // Contatti
+  primaryPhone   String?
+  secondaryPhone String?
+  primaryEmail   String?
+  secondaryEmail String?
+
+  // Indirizzo
+  street    String?
+  civic     String?
+  city      String?
+  province  String?
+  zip       String?
+  country   String  @default("Italia")
+  latitude  Float?
+  longitude Float?
+
+  // Dati Fiscali
+  taxCode     String?
+  vatNumber   String?
+  birthDate   DateTime?
+  nationality String?
+
+  // Privacy (GDPR)
+  privacyFirstContact     Boolean   @default(false)
+  privacyFirstContactDate DateTime?
+  privacyExtended         Boolean   @default(false)
+  privacyExtendedDate     DateTime?
+  privacyMarketing        Boolean   @default(false)
+
+  // Profilazione
+  source     String? // website, referral, cold_call, census, portal
+  leadScore  Int?    // 0-100
+  importance String  @default("normal") // low, normal, high, vip
+
+  // Budget (se cerca casa)
+  budgetMin Float?
+  budgetMax Float?
 
   // Status
-  priorita    String   // alta, media, bassa
-  stato       String   // attivo, in_trattativa, etc
-  note        String?
+  status           String    @default("active") // active, inactive, archived, blacklist
+  lastContactDate  DateTime?
+
+  // Note
+  notes String?
 
   // Relations
-  matches     Match[]
-  azioni      Azione[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  ownedProperties Property[]  @relation("PropertyOwner")
+  requests        Request[]
+  activities      Activity[]
+  matches         Match[]     @relation("MatchContact")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@index([fullName])
+  @@index([primaryPhone])
+  @@index([primaryEmail])
+  @@index([city])
+  @@index([status])
+  @@index([source])
+  @@index([importance])
+  @@map("contacts")
 }
 
+// ============================================================================
+// 3. BUILDINGS - Building Census
+// ============================================================================
+model Building {
+  id   String @id @default(cuid())
+  code String @unique // "BLD-2025-0001"
+
+  // Indirizzo
+  street    String
+  civic     String
+  city      String
+  province  String
+  zip       String?
+  latitude  Float?
+  longitude Float?
+
+  // Catasto (edificio)
+  cadastralSheet    String?
+  cadastralParticle String?
+
+  // Info Edificio
+  yearBuilt    Int?
+  totalFloors  Int?
+  totalUnits   Int?
+  hasElevator  Boolean @default(false)
+  condition    String? // poor, fair, good, excellent
+
+  // Censimento
+  lastSurveyDate   DateTime?
+  nextSurveyDue    DateTime?
+  unitsSurveyed    Int       @default(0)
+  unitsInterested  Int       @default(0)
+
+  // Condominio
+  administratorName  String?
+  administratorPhone String?
+  monthlyFeesAvg     Float?
+
+  notes String?
+
+  // Relations
+  properties Property[]
+  activities Activity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@index([city, street, civic])
+  @@index([nextSurveyDue])
+  @@map("buildings")
+}
+
+// ============================================================================
+// 4. PROPERTIES - Comprehensive Property Data
+// ============================================================================
+model Property {
+  id   String @id @default(cuid())
+  code String @unique // "PROP-2025-0001"
+
+  // Relations
+  ownerContactId String?
+  buildingId     String?
+  owner          Contact?  @relation("PropertyOwner", fields: [ownerContactId], references: [id], onDelete: SetNull)
+  building       Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+
+  // Status
+  status     String @default("draft") // draft, available, option, sold, rented, suspended, archived
+  visibility String @default("public") // public, private
+
+  // Fonte
+  source     String    // direct_mandate, census, web_scraping, cadastre
+  sourceUrl  String?
+  importDate DateTime?
+  verified   Boolean   @default(false)
+
+  // Indirizzo
+  street    String
+  civic     String?
+  internal  String? // interno/scala
+  floor     String?
+  city      String
+  province  String
+  zone      String?
+  zip       String?
+  latitude  Float
+  longitude Float
+
+  // Catasto (unità immobiliare)
+  cadastralSheet   String?
+  cadastralParticle String?
+  cadastralSubunit  String?
+  cadastralCategory String? // A/2, C/1, etc.
+  cadastralClass    String?
+  cadastralRooms    String?
+  cadastralIncome   Float?
+  cadastralSurface  Int?
+
+  // Urbanistica
+  urbanZone        String? // B2, C1, from PRG
+  urbanConstraints String? // JSON array: ["centro_storico", "paesaggistico"]
+
+  // Tipo Immobile
+  contractType     String // sale, rent
+  propertyType     String // apartment, villa, commercial, garage, land
+  propertyCategory String? // residential, commercial, industrial
+
+  // Dimensioni
+  sqmCommercial Float?
+  sqmLivable    Float?
+  sqmGarden     Float?
+  sqmTerrace    Float?
+  sqmBalcony    Float?
+
+  rooms     Int?
+  bedrooms  Int?
+  bathrooms Int?
+
+  // Features Booleane
+  hasElevator Boolean @default(false)
+  hasParking  Boolean @default(false)
+  hasGarage   Boolean @default(false)
+  hasGarden   Boolean @default(false)
+  hasTerrace  Boolean @default(false)
+  hasBalcony  Boolean @default(false)
+  hasCellar   Boolean @default(false)
+  hasAlarm    Boolean @default(false)
+  furnished   Boolean @default(false)
+
+  // Caratteristiche
+  condition    String? // to_renovate, fair, good, excellent, new
+  heatingType  String? // autonomous, centralized, none
+  energyClass  String? // A+, A, B, C, D, E, F, G
+  orientation  String? // north, south, east, west
+  yearBuilt    Int?
+  yearRenovated Int?
+
+  // Prezzi
+  priceSale          Float?
+  priceRentMonthly   Float?
+  priceMinAcceptable Float? // prezzo minimo trattativa
+
+  // Valutazione Automatica
+  estimatedValue      Float?
+  estimatedValueMin   Float?
+  estimatedValueMax   Float?
+  estimatedValueDate  DateTime?
+  estimatedDaysToSell Int?
+
+  // Incarico
+  mandateType      String? // exclusive, non_exclusive, open
+  mandateStartDate DateTime?
+  mandateEndDate   DateTime?
+  commissionPercent Float?
+
+  // Statistiche
+  viewsCount     Int @default(0)
+  inquiriesCount Int @default(0)
+  visitsCount    Int @default(0)
+  daysOnMarket   Int @default(0)
+
+  // Visite Interne
+  lastInternalVisitDate DateTime?
+  needsInternalVisit    Boolean @default(false)
+  visitPriority         String? // low, medium, high, urgent
+
+  // Media
+  photosCount            Int     @default(0)
+  hasProfessionalPhotos  Boolean @default(false)
+  hasVirtualTour         Boolean @default(false)
+  hasVideo               Boolean @default(false)
+  hasFloorPlan           Boolean @default(false)
+
+  // Marketing
+  title       String?
+  description String?
+  highlights  String? // JSON array of strengths
+
+  // Portali Pubblicazione
+  publishedImmobiliare Boolean @default(false)
+  publishedCasa        Boolean @default(false)
+  publishedIdealista   Boolean @default(false)
+
+  // Note
+  notes         String?
+  internalNotes String?
+
+  // Relations
+  matches    Match[]
+  activities Activity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@index([ownerContactId])
+  @@index([buildingId])
+  @@index([status])
+  @@index([contractType])
+  @@index([propertyType])
+  @@index([city])
+  @@index([zone])
+  @@index([priceSale])
+  @@index([priceRentMonthly])
+  @@index([sqmCommercial])
+  @@index([rooms])
+  @@index([bedrooms])
+  @@index([status, contractType])
+  @@index([needsInternalVisit])
+  @@index([mandateEndDate])
+  @@map("properties")
+}
+
+// ============================================================================
+// 5. REQUESTS - Search Requests
+// ============================================================================
+model Request {
+  id   String @id @default(cuid())
+  code String @unique // "REQ-2025-0001"
+
+  // Relations
+  contactId String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  // Tipo & Stato
+  requestType String @default("search_buy") // search_buy, search_rent, valuation
+  status      String @default("active") // active, paused, satisfied, cancelled
+  urgency     String @default("medium") // low, medium, high
+
+  // Criteri Base
+  contractType String? // sale, rent
+
+  // Location (JSON arrays as strings)
+  searchCities String? // JSON: ["Corbetta", "Magenta"]
+  searchZones  String? // JSON: ["Centro", "Semicentro"]
+  searchRadiusKm Float?
+  centerLatitude  Float?
+  centerLongitude Float?
+
+  // Tipologie (JSON array)
+  propertyTypes String? // JSON: ["apartment", "villa"]
+
+  // Budget
+  priceMin Float?
+  priceMax Float?
+
+  // Dimensioni
+  sqmMin      Float?
+  sqmMax      Float?
+  roomsMin    Int?
+  roomsMax    Int?
+  bedroomsMin Int?
+  bathroomsMin Int?
+
+  // Features Richieste
+  requiresElevator Boolean @default(false)
+  requiresParking  Boolean @default(false)
+  requiresGarden   Boolean @default(false)
+  requiresTerrace  Boolean @default(false)
+
+  // Features Escluse
+  excludeGroundFloor          Boolean @default(false)
+  excludeTopFloorNoElevator   Boolean @default(false)
+
+  // Condizioni
+  minCondition   String? // fair, good, excellent
+  minEnergyClass String? // C, B, A
+  maxFloor       Int?
+  minYearBuilt   Int?
+
+  // Preferenze (JSON arrays)
+  preferredOrientation String? // JSON: ["south", "east"]
+  preferredFurnished   Boolean?
+
+  // Timing
+  moveDate DateTime?
+
+  // Valutazione (se requestType = valuation)
+  valuationAddress       String?
+  valuationPropertyType  String?
+  valuationSqm           Float?
+  valuationCompleted     Boolean @default(false)
+  valuationEstimatedValue Float?
+  valuationDate          DateTime?
+
+  // Matching
+  matchesSentCount Int       @default(0)
+  lastMatchDate    DateTime?
+
+  // Note
+  notes String?
+
+  // Relations
+  matches    Match[]
+  activities Activity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime?
+
+  @@index([code])
+  @@index([contactId])
+  @@index([status])
+  @@index([requestType])
+  @@index([contractType])
+  @@index([expiresAt])
+  @@map("requests")
+}
+
+// ============================================================================
+// 6. MATCHES - Property-Request Matching with Scoring
+// ============================================================================
 model Match {
-  id          String   @id @default(cuid())
-  immobileId  String
-  clienteId   String
-  score       Float    // 0-100
-  motivi      String   // JSON serializzato come stringa per SQLite
-  stato       String   // proposto, visto, interessato, etc
+  id String @id @default(cuid())
 
-  immobile    Immobile @relation(fields: [immobileId], references: [id], onDelete: Cascade)
-  cliente     Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  // Relations
+  requestId  String
+  propertyId String
+  request    Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  // Optional contact relation for direct display
+  contactId String?
+  contact   Contact? @relation("MatchContact", fields: [contactId], references: [id], onDelete: Cascade)
+
+  // Scoring Dettagliato
+  scoreTotal    Int // 0-100
+  scoreLocation Int? // 0-100
+  scorePrice    Int? // 0-100
+  scoreSize     Int? // 0-100
+  scoreFeatures Int? // 0-100
+
+  // Stato Match
+  status String @default("suggested") // suggested, selected, sent, viewed, interested, visited, rejected, offered
+
+  // Feedback
+  clientReaction  String? // positive, negative, neutral
+  rejectionReason String? // too_expensive, too_small, wrong_location
+  clientNotes     String?
+
+  // Azioni
+  sentDate    DateTime?
+  viewedDate  DateTime?
+  visitedDate DateTime?
+
+  // Note Agente
+  agentNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([requestId, propertyId])
+  @@index([requestId])
+  @@index([propertyId])
+  @@index([scoreTotal])
+  @@index([status])
+  @@index([requestId, scoreTotal])
+  @@index([requestId, status])
+  @@map("matches")
 }
 
-model Azione {
-  id          String   @id @default(cuid())
-  tipo        String   // chiamata, visita, email, etc
-  descrizione String
-  clienteId   String?
-  immobileId  String?
+// ============================================================================
+// 7. ACTIVITIES - Complete Timeline/CRM System
+// ============================================================================
+model Activity {
+  id String @id @default(cuid())
 
-  priorita    String
-  stato       String   // da_fare, completata, etc
-  dataScadenza DateTime?
+  // Polymorphic Relations (nullable FKs)
+  contactId  String?
+  propertyId String?
+  requestId  String?
+  buildingId String?
 
-  cliente     Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
+  contact  Contact?  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  request  Request?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  building Building? @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+
+  // Tipo & Stato
+  activityType String // call_in, call_out, email_in, email_out, sms, whatsapp, viewing, meeting, valuation, survey, photo_session, note, task, offer_made, offer_received, contract_signed, document_sent, document_received, payment_received
+  status       String @default("scheduled") // scheduled, completed, cancelled, no_show
+  priority     String @default("normal") // low, normal, high, urgent
+
+  // Temporizzazione
+  scheduledAt DateTime?
   completedAt DateTime?
+  dueDate     DateTime?
+
+  // Contenuto
+  title       String
+  description String?
+  outcome     String?
+
+  // Dettagli Specifici (JSONB as text in SQLite)
+  details String @default("{}")
+
+  // Reminder
+  reminderEnabled       Boolean @default(false)
+  reminderMinutesBefore Int?
+  reminderSent          Boolean @default(false)
+
+  // Note
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([requestId])
+  @@index([buildingId])
+  @@index([activityType])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([completedAt])
+  @@index([dueDate])
+  @@index([priority])
+  @@map("activities")
+}
+
+// ============================================================================
+// 8. TAGS - Universal Tag System
+// ============================================================================
+model Tag {
+  id Int @id @default(autoincrement())
+
+  name        String  @unique
+  slug        String  @unique
+  category    String? // property_feature, contact_type, source, status
+  color       String  @default("#3B82F6")
+  icon        String?
+  description String?
+  isSystem    Boolean @default(false)
+
+  // Relations
+  entityTags EntityTag[]
+
+  createdAt DateTime @default(now())
+
+  @@index([slug])
+  @@index([category])
+  @@map("tags")
+}
+
+// ============================================================================
+// 9. ENTITY_TAGS - Polymorphic Tag Relationships
+// ============================================================================
+model EntityTag {
+  id String @id @default(cuid())
+
+  tagId      Int
+  entityType String // contact, property, activity, request
+  entityId   String
+
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([tagId, entityType, entityId])
+  @@index([tagId])
+  @@index([entityType, entityId])
+  @@map("entity_tags")
+}
+
+// ============================================================================
+// 10. AUDIT_LOG - Change Tracking
+// ============================================================================
+model AuditLog {
+  id String @id @default(cuid())
+
+  entityType String
+  entityId   String
+  entityCode String?
+
+  actionType String // created, updated, deleted, status_changed
+
+  // Changed Fields (JSON array as string)
+  changedFields String? // JSON: ["price_sale", "status", "rooms"]
+
+  // Values (JSON objects as strings)
+  oldValues String? // JSON object
+  newValues String? // JSON object
+
+  changesSummary String?
+
+  changedAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([entityId])
+  @@index([changedAt])
+  @@index([actionType])
+  @@map("audit_log")
 }

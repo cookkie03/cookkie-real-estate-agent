@@ -71,6 +71,30 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        priority: {
+          urgent: "hsl(var(--priority-urgent))",
+          high: "hsl(var(--priority-high))",
+          medium: "hsl(var(--priority-medium))",
+          low: "hsl(var(--priority-low))",
+        },
+        client: {
+          hot: "hsl(var(--client-hot))",
+          warm: "hsl(var(--client-warm))",
+          cold: "hsl(var(--client-cold))",
+          inactive: "hsl(var(--client-inactive))",
+        },
+        property: {
+          available: "hsl(var(--property-available))",
+          reserved: "hsl(var(--property-reserved))",
+          sold: "hsl(var(--property-sold))",
+          draft: "hsl(var(--property-draft))",
+        },
+        match: {
+          excellent: "hsl(var(--match-excellent))",
+          good: "hsl(var(--match-good))",
+          medium: "hsl(var(--match-medium))",
+          low: "hsl(var(--match-low))",
+        },
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
@@ -119,6 +143,18 @@ export default {
           "0%, 100%": { boxShadow: "0 0 20px hsl(var(--primary-glow) / 0.3)" },
           "50%": { boxShadow: "0 0 30px hsl(var(--primary-glow) / 0.5)" },
         },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(20px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "circular-progress": {
+          "0%": { strokeDashoffset: "282.74" },
+          "100%": { strokeDashoffset: "var(--progress-offset)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-1000px 0" },
+          "100%": { backgroundPosition: "1000px 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -128,6 +164,9 @@ export default {
         "scale-in": "scale-in 0.2s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "slide-up": "slide-up 0.5s ease-out",
+        "circular-progress": "circular-progress 1s ease-out forwards",
+        shimmer: "shimmer 2s linear infinite",
       },
     },
   },

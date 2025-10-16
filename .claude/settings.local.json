@@ -26,7 +26,15 @@
       "Bash(npx prisma generate:*)",
       "Bash(npx prisma:*)",
       "Bash(npm run prisma:seed:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git rm:*)",
+      "Bash(if [ -f \"src/app/page-backup.tsx\" ])",
+      "Bash(then rm \"src/app/page-backup.tsx\")",
+      "Bash(git add:*)",
+      "Bash(if [ -f \"prisma/dev.db\" ])",
+      "Bash(else echo \"No database file found\")",
+      "Bash(git checkout:*)",
+      "Bash(npm run prisma:push:*)"
     ],
     "deny": [],
     "ask": []

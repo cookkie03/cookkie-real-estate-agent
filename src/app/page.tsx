@@ -2,18 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, Bell, HelpCircle, Command as CommandIcon, Phone, Calendar as CalendarIcon, Zap, MapPin, Settings } from "lucide-react";
+import { Menu, Bell, HelpCircle, Command as CommandIcon, Phone, Calendar as CalendarIcon, Zap, MapPin, Settings, Home, Users, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CommandPalette } from "@/components/CommandPalette";
-import { AISearchBar } from "@/components/AISearchBar";
-import { StatPill } from "@/components/StatPill";
-import { MiniAgenda } from "@/components/MiniAgenda";
-import { QuickDialer } from "@/components/QuickDialer";
-import { IntelToolkit } from "@/components/IntelToolkit";
-import { SuggestedActions } from "@/components/SuggestedActions";
-import { MapPreview } from "@/components/MapPreview";
-import { ConnectorsStatus } from "@/components/ConnectorsStatus";
-import { ActivityFeed } from "@/components/ActivityFeed";
+import { CommandPalette } from "@/components/layouts/CommandPalette";
+import { AISearchBar } from "@/components/layouts/AISearchBar";
+import { StatPill } from "@/components/features/dashboard/StatPill";
+import { MiniAgenda } from "@/components/features/dashboard/MiniAgenda";
+import { QuickDialer } from "@/components/features/dashboard/QuickDialer";
+import { IntelToolkit } from "@/components/features/dashboard/IntelToolkit";
+import { SuggestedActions } from "@/components/features/dashboard/SuggestedActions";
+import { MapPreview } from "@/components/features/dashboard/MapPreview";
+import { ConnectorsStatus } from "@/components/features/dashboard/ConnectorsStatus";
+import { ActivityFeed } from "@/components/features/dashboard/ActivityFeed";
 import { TrendingUp, Clock } from "lucide-react";
 import {
   mockAgendaItems,
@@ -93,22 +93,64 @@ export default function HomePage() {
             <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               RealEstate AI
             </h1>
+            
+            {/* Navigation Icons - Desktop (Left side) */}
+            <div className="hidden md:flex items-center gap-1 ml-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0"
+                onClick={() => router.push("/immobili")}
+                title="Immobili"
+              >
+                <Home className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0"
+                onClick={() => router.push("/clienti")}
+                title="Contatti"
+              >
+                <Users className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0"
+                onClick={() => router.push("/tool")}
+                title="Tool"
+              >
+                <Wrench className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
+          {/* Right side icons */}
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0"
+              onClick={() => router.push("/settings")}
+              title="Impostazioni"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCommandOpen(true)}
               className="hidden md:flex gap-2"
+              title="Shortcut tastiera"
             >
               <CommandIcon className="h-4 w-4" />
               <span className="text-xs">⌘K</span>
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" title="Notifiche">
               <Bell className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" title="Help">
               <HelpCircle className="h-5 w-5" />
             </Button>
           </div>
@@ -249,52 +291,7 @@ export default function HomePage() {
           </div>
         </nav>
 
-        {/* Desktop Side Rail - Hidden for now, can be activated later */}
-        <aside className="hidden xl:block fixed left-4 top-24 w-16">
-          <div className="space-y-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full flex-col h-auto py-3"
-              onClick={() => router.push("/search")}
-            >
-              <CommandIcon className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full flex-col h-auto py-3"
-              onClick={() => router.push("/agenda")}
-            >
-              <CalendarIcon className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full flex-col h-auto py-3"
-              onClick={() => router.push("/actions")}
-            >
-              <Zap className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full flex-col h-auto py-3"
-              onClick={() => router.push("/map")}
-            >
-              <MapPin className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full flex-col h-auto py-3"
-              onClick={() => router.push("/settings")}
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
-          </div>
-        </aside>
-      </div>
+              </div>
     </div>
   );
 }

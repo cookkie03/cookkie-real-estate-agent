@@ -12,6 +12,55 @@ CRM Immobiliare is a comprehensive, single-user real estate management system fo
 
 **Interface Language**: Italian
 
+## 🔒 CRITICAL SECURITY RULES
+
+**MANDATORY - ALWAYS ENFORCE THESE RULES**:
+
+### 1. Never Commit Sensitive Data
+- ❌ **NEVER** commit `.env`, `.env.local`, `.env.production`
+- ❌ **NEVER** commit database files (`*.db`, `*.db-journal`)
+- ❌ **NEVER** hardcode API keys, passwords, or secrets in code
+- ❌ **NEVER** commit populated databases with real user data
+- ✅ **ALWAYS** use `.env.example` as public template
+- ✅ **ALWAYS** verify `git status` before commits
+
+### 2. Data Privacy
+- 🔒 **Seed data MUST be fictional** (names, emails, phone numbers)
+- 🔒 Use generic placeholders: `user@email.com`, `+39 XXX XXX XXXX`
+- 🔒 No real addresses, personal information, or client data
+- 🔒 Images must be public URLs (Unsplash, placeholder services)
+
+### 3. Git Exclusions (via .gitignore)
+**These directories/files MUST ALWAYS be git-ignored**:
+- Environment: `.env*`, `.env.local`, `.env.production`
+- Database: `/prisma/*.db`, `/prisma/*.db-journal`, `/prisma/migrations`
+- Cache: `/src/lib/ai/.cache/*`, `/src/lib/scraping/.cache/*`
+- Build: `node_modules/`, `.next/`, `build/`, `dist/`
+- Logs: `*.log`, `logs/`
+- OS: `.DS_Store`, `Thumbs.db`, `Desktop.ini`
+- IDE: `.vscode/*` (except settings), `.idea`, `*.swp`
+- Temp: `tmp/`, `temp/`, `*.tmp`, `*.bak`, `*.backup`
+
+### 4. Cache Management
+- All AI tool cache → `/src/lib/ai/.cache/` (git-ignored)
+- All scraping cache → `/src/lib/scraping/.cache/` (git-ignored)
+- Never store sensitive data in cache
+- Cache directories must have `.gitkeep` files to preserve structure
+
+### 5. Component Organization Rules
+**MANDATORY structure** - DO NOT deviate:
+- `src/components/ui/` → shadcn/ui only (DO NOT EDIT MANUALLY)
+- `src/components/features/` → Feature-specific components (dashboard, immobili, clienti, matches)
+- `src/components/layouts/` → Layout components (CommandPalette, AISearchBar, etc.)
+
+### 6. Pre-Commit Checklist
+Before EVERY commit, verify:
+- [ ] Run `git status` - no `.env*` files (except `.env.example`)
+- [ ] No `*.db` or `*.db-journal` files tracked
+- [ ] No hardcoded API keys in code (`grep -r "sk-" src/`)
+- [ ] Seed data is fictional only
+- [ ] Build succeeds (`npm run build`)
+
 ## Development Commands
 
 ```bash
@@ -40,41 +89,73 @@ npm run prisma:seed        # Seed database with sample data
 ## Project Structure
 
 ```
-/
+cookkie-real-estate-agent/
 ├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── layout.tsx          # Root layout with metadata
-│   │   ├── page.tsx            # Homepage (dashboard)
-│   │   ├── providers.tsx       # React Query + UI providers
-│   │   ├── globals.css         # Global styles + CSS variables
-│   │   ├── search/page.tsx     # Search page
-│   │   ├── agenda/page.tsx     # Calendar page
-│   │   ├── actions/page.tsx    # Suggested actions
-│   │   ├── map/page.tsx        # Interactive map
-│   │   ├── connectors/page.tsx # Integrations
-│   │   ├── settings/page.tsx   # Settings
-│   │   └── not-found.tsx       # 404 page
-│   ├── components/
-│   │   ├── ui/                 # shadcn/ui components (DO NOT edit manually)
-│   │   ├── AISearchBar.tsx
-│   │   ├── CommandPalette.tsx
-│   │   ├── MapPreview.tsx
-│   │   └── ...                 # Feature components
-│   ├── lib/
-│   │   ├── db/
-│   │   │   └── index.ts        # Prisma client singleton
-│   │   ├── mockData.ts         # TEMPORARY: Mock data (to be replaced)
-│   │   └── utils.ts            # Utility functions (cn, etc.)
-│   └── hooks/                  # Custom React hooks
-├── prisma/
-│   ├── schema.prisma           # Database schema
-│   ├── seed.ts                 # Seed script
-│   └── dev.db                  # SQLite database (generated)
-├── public/                     # Static assets
-├── .env.local                  # Environment variables
-├── CLAUDE.md                   # This file
-├── README.md                   # Project documentation
-├── MIGRATION_NOTES.md          # Migration details
+│   ├── app/                        # 🎨 FRONTEND - Next.js App Router
+│   │   ├── layout.tsx              # Root layout with metadata
+│   │   ├── page.tsx                # Homepage (dashboard)
+│   │   ├── providers.tsx           # React Query + UI providers
+│   │   ├── globals.css             # Global styles + CSS variables
+│   │   ├── search/page.tsx         # Search page
+│   │   ├── agenda/page.tsx         # Calendar page
+│   │   ├── actions/page.tsx        # Suggested actions
+│   │   ├── map/page.tsx            # Interactive map
+│   │   ├── connectors/page.tsx     # Integrations
+│   │   ├── settings/page.tsx       # Settings
+│   │   ├── not-found.tsx           # 404 page
+│   │   └── api/                    # 🔌 API Routes (future)
+│   │       ├── immobili/route.ts
+│   │       ├── clienti/route.ts
+│   │       ├── matches/route.ts
+│   │       └── azioni/route.ts
+│   │
+│   ├── components/                 # 🎨 FRONTEND - React Components
+│   │   ├── ui/                     # shadcn/ui components (DO NOT EDIT MANUALLY)
+│   │   ├── features/               # Feature-specific components
+│   │   │   ├── dashboard/          # Dashboard components
+│   │   │   │   ├── StatPill.tsx
+│   │   │   │   ├── ActivityFeed.tsx
+│   │   │   │   ├── MiniAgenda.tsx
+│   │   │   │   ├── MapPreview.tsx
+│   │   │   │   └── ...
+│   │   │   ├── immobili/           # Property components (future)
+│   │   │   ├── clienti/            # Client components (future)
+│   │   │   └── matches/            # Match components (future)
+│   │   └── layouts/                # Layout components
+│   │       ├── CommandPalette.tsx
+│   │       └── AISearchBar.tsx
+│   │
+│   ├── lib/                        # 🛠️ UTILITIES & TOOLS
+│   │   ├── db/                     # 💾 DATABASE Layer
+│   │   │   ├── index.ts            # Prisma client singleton
+│   │   │   └── helpers.ts          # Query helpers
+│   │   ├── api/                    # API utilities & types
+│   │   │   ├── types.ts
+│   │   │   └── helpers.ts
+│   │   ├── validation/             # Zod schemas
+│   │   │   └── schemas.ts
+│   │   ├── ai/                     # AI tools (future)
+│   │   │   └── .cache/             # 🗂️ AI cache (GIT-IGNORED)
+│   │   ├── scraping/               # Web scraping (future)
+│   │   │   └── .cache/             # 🗂️ Scraping cache (GIT-IGNORED)
+│   │   ├── utils.ts                # Utility functions (cn, etc.)
+│   │   └── mockData.ts             # TEMPORARY: Mock data (to be replaced)
+│   │
+│   └── hooks/                      # Custom React hooks
+│
+├── prisma/                         # 💾 DATABASE
+│   ├── schema.prisma               # Database schema
+│   ├── seed.ts                     # Seed script (ONLY MOCK DATA)
+│   ├── migrations/                 # Schema migrations (GIT-IGNORED)
+│   └── dev.db                      # SQLite database (GIT-IGNORED)
+│
+├── public/                         # Static assets
+├── .env.example                    # ✅ Public environment template
+├── .env.local                      # 🔒 Local secrets (GIT-IGNORED)
+├── .gitignore                      # Git exclusions
+├── CLAUDE.md                       # This file (AI agent instructions)
+├── README.md                       # Project documentation
+├── SECURITY_AUDIT.md               # Security audit report
 ├── package.json
 ├── next.config.js
 ├── tailwind.config.ts
