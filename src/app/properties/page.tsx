@@ -117,9 +117,10 @@ const getStatusLabel = (status: string) => {
 };
 
 export default function PropertiesPage() {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
   const filteredProperties = mockProperties.filter((p) =>
     p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
