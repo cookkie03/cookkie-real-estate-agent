@@ -1,0 +1,71 @@
+# ==============================================
+# GitHub Actions CD Pipeline
+# Deploy on merge to main
+# ==============================================
+
+name: CD - Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # ====================
+  # Deploy to Production
+  # ====================
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    # Only run on main branch
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build Backend
+        run: |
+          cd backend
+          npm ci
+          npm run build
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      # ====================
+      # Deployment Steps
+      # ====================
+      # TODO: Add your deployment steps here
+      # Examples:
+      # - Deploy to Vercel
+      # - Deploy to AWS
+      # - Deploy to Docker Swarm
+      # - Deploy to Kubernetes
+      # - Deploy to VPS via SSH
+
+      - name: Placeholder - Deploy
+        run: |
+          echo "Deployment step placeholder"
+          echo "Add your deployment commands here"
+          echo "Examples:"
+          echo "  - vercel deploy --prod"
+          echo "  - aws deploy"
+          echo "  - docker deploy"
+          echo "  - ssh deploy"
+
+      - name: Notify success
+        if: success()
+        run: echo "✅ Deployment successful!"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "❌ Deployment failed!"

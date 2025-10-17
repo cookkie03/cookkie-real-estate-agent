@@ -1,0 +1,109 @@
+# ==============================================
+# GitHub Actions - Docker Build
+# Build and push Docker images
+# ==============================================
+
+name: Docker Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ====================
+  # Build Docker Images
+  # ====================
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [backend, frontend, ai-tools]
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service == 'ai-tools' && 'ai_tools' || matrix.service }}
+          file: ./${{ matrix.service == 'ai-tools' && 'ai_tools' || matrix.service }}/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ====================
+  # Test Docker Compose
+  # ====================
+  docker-compose-test:
+    name: Test Docker Compose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env files
+        run: |
+          cp config/backend.env.example config/.env.backend || true
+          cp config/frontend.env.example config/.env.frontend || true
+          cp config/ai_tools.env.example config/.env.ai || true
+
+      - name: Build images
+        run: docker-compose -f config/docker-compose.yml build
+
+      - name: Start services
+        run: docker-compose -f config/docker-compose.yml up -d
+
+      - name: Wait for services
+        run: sleep 30
+
+      - name: Check services health
+        run: |
+          docker-compose -f config/docker-compose.yml ps
+          curl --fail http://localhost:3001/api/health || exit 1
+          curl --fail http://localhost:3000 || exit 1
+
+      - name: Show logs
+        if: failure()
+        run: docker-compose -f config/docker-compose.yml logs
+
+      - name: Stop services
+        run: docker-compose -f config/docker-compose.yml down

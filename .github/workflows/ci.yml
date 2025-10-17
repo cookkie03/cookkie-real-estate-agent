@@ -1,0 +1,188 @@
+# ==============================================
+# GitHub Actions CI Pipeline
+# Run tests on every push and pull request
+# ==============================================
+
+name: CI - Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ====================
+  # Backend Tests
+  # ====================
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup database
+        run: |
+          npx prisma generate --schema=../database/prisma/schema.prisma
+          npx prisma db push --schema=../database/prisma/schema.prisma --skip-generate
+
+      - name: Run tests
+        run: npm test -- --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage/coverage-final.json
+          flags: backend
+          name: backend-coverage
+
+  # ====================
+  # Frontend Tests
+  # ====================
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+
+  # ====================
+  # AI Tools Tests (Python)
+  # ====================
+  ai-tools-tests:
+    name: AI Tools Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ai_tools
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: ai_tools/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: pytest --cov=. --cov-report=xml --cov-report=term
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./ai_tools/coverage.xml
+          flags: ai-tools
+          name: ai-tools-coverage
+
+  # ====================
+  # Scraping Tests (Python)
+  # ====================
+  scraping-tests:
+    name: Scraping Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./scraping
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scraping/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: pytest --cov=. --cov-report=xml --cov-report=term
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./scraping/coverage.xml
+          flags: scraping
+          name: scraping-coverage
+
+  # ====================
+  # Lint Check
+  # ====================
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Backend dependencies
+        run: cd backend && npm ci
+
+      - name: Lint Backend
+        run: cd backend && npm run lint
+
+      - name: Install Frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Lint Frontend
+        run: cd frontend && npm run lint

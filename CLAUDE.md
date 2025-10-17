@@ -12,6 +12,24 @@ CRM Immobiliare is a comprehensive, single-user real estate management system fo
 
 **Interface Language**: Italian
 
+## ⚡ AI INTERVENTION MANDATE: SURGICAL & MODULAR
+
+**YOUR PRIMARY DIRECTIVE: You must act with surgical precision and leverage the project's modularity.** This is a non-negotiable rule to maximize efficiency and minimize side effects.
+
+1.  **IDENTIFY THE TARGET**: Before writing any code, precisely identify the target file(s) and function(s) within the relevant module (e.g., `src/app/api/immobili`, `src/components/features/clients`, `python_ai/agents`).
+
+2.  **ISOLATE THE CHANGE**: Your changes **must** be confined *only* to the identified target. Do not refactor, format, or alter any code outside the direct scope of the request.
+
+3.  **RESPECT BOUNDARIES**: Acknowledge and respect the modular structure. All interactions must go through the established API layers or formal interfaces.
+
+4.  **PROTECT CRITICAL INFRASTRUCTURE**: Core foundational files are considered **off-limits** for modification unless the task is *specifically* about changing them. Your primary responsibility is to preserve the stability of the application. Accidental modifications to these files are a critical failure. Protected files include, but are not limited to:
+    -   **Database Schema (`prisma/schema.prisma`)**
+    -   **Global Configuration (`next.config.js`, `tsconfig.json`, `tailwind.config.ts`)**
+    -   **Root Application Files (`src/app/layout.tsx`, `src/app/providers.tsx`)**
+    -   **Package Definitions (`package.json`)**
+
+**EXAMPLE**: If a bug is in the `useImmobili` hook, your changes should be *only* in `src/hooks/useImmobili.ts` and its related test file. You will not touch the database schema or the Next.js configuration.
+
 ## 🔒 CRITICAL SECURITY RULES
 
 **MANDATORY - ALWAYS ENFORCE THESE RULES**:
@@ -383,6 +401,34 @@ await prisma.immobile.delete({
   where: { id: "..." }
 });
 ```
+
+## 🧬 Advanced Implementation Guidelines
+
+### 1. Frontend-Accessible Tools
+All key backend processes must be accessible and controllable via the frontend UI. This includes:
+- **AI Tools**: Triggering matching, briefing generation, and RAG processes.
+- **Scraping**: Initiating web scraping tasks.
+- **Database**: Seeding or refreshing data.
+
+The UI must provide a clear dashboard to monitor the status of these tasks (e.g., `RUNNING`, `COMPLETED`, `FAILED`), view their output logs in real-time, and access the results.
+
+### 2. Performance and Optimization
+To maintain a fluid user experience, the following strategies are mandatory:
+- **Lazy Loading**: Use `React.lazy` or Next.js dynamic imports for components and pages that are not critical for the initial paint.
+- **Background Tasks**: Heavy, long-running tasks (AI processing, scraping, large-scale data manipulation) **must** be executed in the background. Use asynchronous workers or a simple queue system to avoid blocking the main server thread and keep the UI responsive.
+
+### 3. Centralized Logging
+Implement a unified logging strategy across all modules:
+- **Output Directory**: All logs should be written to a central, git-ignored `/logs` directory.
+- **Structured Logs**: Logs should be in a structured format (preferably JSON) and include a timestamp, the source module (e.g., `[Frontend]`, `[AIAgent]`), a severity level (`INFO`, `WARN`, `ERROR`), and a clear message.
+- **Frontend Viewer**: The application's admin or settings panel should include a log viewer to display and filter logs from the `/logs` directory, enabling easy debugging without direct server access.
+
+### 4. Modular Documentation (README.md)
+Every top-level module (`/python_ai`, `/scraping`, etc.) must contain its own `README.md` file. This file must provide:
+- A clear description of the module's purpose and responsibilities.
+- The specific language, framework, and key dependencies.
+- Standalone setup and execution instructions, including environment variables.
+- Instructions for running tests specific to that module.
 
 ## Immediate Next Steps
 

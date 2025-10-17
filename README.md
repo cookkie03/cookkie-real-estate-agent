@@ -1,374 +1,480 @@
-# 🚀 CRM Immobiliare AI - Sistema Completo
+# 🏡 CRM Immobiliare - AI-Powered Real Estate CRM
 
-## ⚡ **AVVIO IMMEDIATO - 1 COMANDO**
+**Sistema CRM completo per agenti immobiliari con intelligenza artificiale integrata**
 
-### Windows
-```bash
-run.bat
-```
-
-### Linux/Mac
-```bash
-chmod +x run.sh
-./run.sh
-```
-
-**✅ FATTO! Il sistema:**
-- Compila automaticamente tutto (build completa)
-- Avvia Backend Python AI (porta 8000)
-- Avvia Frontend Next.js (porta 3000)
-- Configura database e dipendenze
-- **ZERO configurazione manuale richiesta!**
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
+[![Python](https://img.shields.io/badge/Python-3.13-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
-## 🎯 Accesso Rapido
+## 📋 Overview
 
-Una volta avviato con `run.bat`:
+CRM Immobiliare è un sistema completo di gestione per agenti immobiliari singoli, con funzionalità AI avanzate:
 
-- **Frontend:** http://localhost:3000
-- **Backend API:** http://localhost:8000
-- **API Docs Interactive:** http://localhost:8000/docs
+### ✨ Features Principali
+
+- 🏠 **Gestione Immobili** - CRUD completo con dettagli, foto, caratteristiche
+- 👥 **Gestione Clienti** - Profili completi, richieste, priorità
+- 🤖 **AI Matching** - Matching automatico property-cliente con scoring
+- 💬 **RAG Assistant** - Chat AI con accesso diretto al database
+- 📊 **Dashboard** - Statistiche real-time, attività, calendario
+- 🗺️ **Mappa Interattiva** - Visualizzazione geografica immobili
+- ⌨️ **Command Palette** - Navigazione rapida (Cmd/Ctrl+K)
+- 🌐 **Web Scraping** - Import automatico da portali immobiliari
+- 📧 **Daily Briefing** - Report giornaliero AI-generated
 
 ---
 
-## 📋 Modalità di Avvio
+## 🚀 Quick Start
 
-### 1. Automatica (RACCOMANDATO)
+### Prerequisites
+
+- **Node.js** 20+
+- **Python** 3.11+
+- **npm** o **yarn**
+
+### Installazione Rapida
 
 ```bash
-run.bat  # Windows
-./run.sh # Linux/Mac
+# 1. Clone repository
+git clone https://github.com/yourusername/crm-immobiliare.git
+cd crm-immobiliare
+
+# 2. Install dependencies
+npm install
+
+# 3. Setup configurazione
+cp config/backend.env.example backend/.env
+cp config/frontend.env.example frontend/.env.local
+cp config/ai_tools.env.example ai_tools/.env
+
+# 4. Configure database
+cd database/prisma
+npx prisma generate
+npx prisma db push
+npx tsx seed.ts  # Dati di esempio
+
+# 5. Start development
+cd ../..
+npm run dev:frontend  # Frontend su porta 3000
+npm run dev:backend   # Backend su porta 3001
+
+# AI Tools (opzionale)
+cd ai_tools
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate      # Windows
+pip install -r requirements.txt
+python main.py  # Porta 8000
 ```
 
-Lo script rileva automaticamente:
-- ✅ Se hai Docker → Usa Docker (containerizzato)
-- ✅ Se non hai Docker → Installa e avvia manualmente
+### Accesso
 
-### 2. Docker Manuale
-
-```bash
-docker-compose up
-```
-
-### 3. Tradizionale Manuale
-
-```bash
-# Windows
-start-ai-system.bat
-
-# Linux/Mac
-./start-ai-system.sh
-```
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **AI Tools**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
 
 ---
 
-## 🤖 Sistema AI Integrato
+## 📦 Architettura Modulare
 
-### DataPizza AI Framework
+Il progetto è organizzato in moduli indipendenti:
 
-**3 Agenti AI Pronti:**
-1. **RAG Assistant** - Chat intelligente con database access
-2. **AI Matching** - Matching semantico property-request
-3. **Daily Briefing** - Briefing automatico giornaliero
+```
+/
+├── frontend/          # Next.js UI (porta 3000)
+├── backend/           # Next.js API (porta 3001)
+├── ai_tools/          # Python AI (porta 8000)
+├── database/          # Prisma + SQLite (centralizzato)
+├── scraping/          # Web scraping modules
+├── config/            # Configurazione centralizzata
+├── scripts/           # Automation scripts
+├── tests/             # Test suite
+├── logs/              # Log centralizzati
+└── docs/              # Documentazione
+```
 
-**7 Custom Tools:**
-- Query properties/contacts/requests/matches
-- Ricerca semantica immobili e contatti
-- Dettagli completi e statistiche
+### Moduli Principali
 
-**Powered by Google Gemini** (API key già configurata)
+| Modulo | Linguaggio | Descrizione | Docs |
+|--------|------------|-------------|------|
+| **frontend** | TypeScript | UI Next.js 14 | [README](frontend/README.md) |
+| **backend** | TypeScript | API Next.js 14 | [README](backend/README.md) |
+| **ai_tools** | Python | AI agents + tools | [README](ai_tools/README.md) |
+| **database** | SQL/TS/Py | Prisma + SQLAlchemy | [README](database/README.md) |
+| **scraping** | Python | Web scraping | [README](scraping/README.md) |
+| **config** | - | Configurazione | [README](config/README.md) |
 
 ---
 
-## 🧪 Test Immediato
-
-1. Avvia: `run.bat`
-2. Vai su: http://localhost:3000
-3. Clicca la **search bar** (grande, al centro homepage)
-4. Scrivi: `Mostrami tutti gli appartamenti a Corbetta sotto 200k`
-5. **L'AI interrogherà il database SQLite e risponderà!**
-
----
-
-## 📚 Stack Tecnologico
+## 🛠️ Tech Stack
 
 ### Frontend
-- **Next.js 14** (App Router)
-- **TypeScript**
-- **shadcn/ui** (Radix UI)
-- **Tailwind CSS**
-- **React Query**
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **UI**: shadcn/ui (Radix UI)
+- **Styling**: Tailwind CSS
+- **State**: React Query
+- **Forms**: react-hook-form + Zod
 
-### Backend AI
-- **FastAPI** + **DataPizza AI**
-- **Google Gemini** (LLM)
-- **SQLAlchemy** (Database ORM)
-- **Qdrant** (Vector Store - opzionale)
+### Backend
+- **Framework**: Next.js 14 (API Routes)
+- **Language**: TypeScript
+- **Database**: Prisma ORM
+- **Validation**: Zod
+
+### AI Tools
+- **Framework**: FastAPI
+- **Language**: Python 3.13
+- **AI**: DataPizza AI + Google Gemini
+- **Vector Store**: Qdrant
+- **Database**: SQLAlchemy
 
 ### Database
-- **Prisma** + **SQLite**
-- Database condiviso tra Next.js e Python
-- Seed automatico con dati di esempio
+- **Development**: SQLite (condiviso)
+- **ORM**: Prisma (Node.js) + SQLAlchemy (Python)
+- **Production**: PostgreSQL (recommended)
 
 ---
 
-## 🔑 Prerequisiti
+## 📚 Documentazione
 
-### Con Docker (Automatico)
-- ✅ Docker Desktop
-- ✅ Nient'altro!
+### Guide Principali
 
-### Senza Docker (Automatico)
-- ✅ Node.js 20+
-- ✅ Python 3.11+
-- ✅ Lo script installerà tutto automaticamente
+- 📖 [Getting Started](docs/GETTING_STARTED.md) - Guida setup completa
+- 🏗️ [Architettura](docs/ARCHITECTURE.md) - Architettura sistema
+- 🔄 [Migration Guide](docs/MIGRATION.md) - Migrazione da versioni precedenti
+- 🐳 [Docker Guide](config/README.md#docker-setup) - Deploy con Docker
+
+### Documentazione Moduli
+
+- [Frontend README](frontend/README.md) - UI components, pages, styling
+- [Backend README](backend/README.md) - API endpoints, routes
+- [AI Tools README](ai_tools/README.md) - AI agents, tools, config
+- [Database README](database/README.md) - Schema, migrations, seed
+- [Scraping README](scraping/README.md) - Web scraping modules
+- [Config README](config/README.md) - Environment variables
+
+### Report Riorganizzazione
+
+- [FASE 1](docs/reorganization/FASE1_COMPLETATA.md) - Cleanup e consolidamento
+- [FASE 2](docs/reorganization/FASE2_COMPLETATA.md) - Centralizzazione configurazione
 
 ---
 
-## 📖 Documentazione
+## ⚙️ Configuration
 
-| Documento | Descrizione |
-|-----------|-------------|
-| **`README_DOCKER.md`** | Guida Docker completa |
-| **`QUICK_START.md`** | Quick start con esempi |
-| **`DOCKER_GUIDE.md`** | Docker avanzato |
-| **`DATAPIZZA_SETUP.md`** | Setup AI dettagliato |
-| **`AI_SYSTEM_READY.md`** | Funzionalità AI |
-
----
-
-## 🛠️ Comandi Sviluppo
-
-### Docker
+Tutte le configurazioni sono centralizzate in `/config`:
 
 ```bash
-# Avvia
-docker-compose up
+# Backend
+cp config/backend.env.example backend/.env
 
-# Background
-docker-compose up -d
-
-# Logs
-docker-compose logs -f
-
-# Ferma
-docker-compose down
-
-# Rebuild
-docker-compose build --no-cache
-```
-
-### Tradizionale
-
-```bash
 # Frontend
-npm run dev
+cp config/frontend.env.example frontend/.env.local
 
-# Backend Python
-cd python_ai
-uvicorn main:app --reload
+# AI Tools
+cp config/ai_tools.env.example ai_tools/.env
 
-# Database
-npm run prisma:studio
+# Scraping (optional)
+cp config/scraping.env.example scraping/.env
+```
+
+### Variabili Essenziali
+
+```bash
+# Database (shared)
+DATABASE_URL="file:../database/prisma/dev.db"
+
+# Google AI (required for AI features)
+GOOGLE_API_KEY="your-api-key-here"
+
+# Ports
+FRONTEND: 3000
+BACKEND:  3001
+AI_TOOLS: 8000
+```
+
+Vedi [Config README](config/README.md) per dettagli completi.
+
+---
+
+## 🐳 Docker
+
+### Quick Start con Docker
+
+```bash
+# From project root
+docker-compose -f config/docker-compose.yml up
+```
+
+Avvia automaticamente:
+- Frontend (porta 3000)
+- Backend (porta 3001)
+- AI Tools (porta 8000)
+- Database condiviso
+
+### Docker Compose
+
+```bash
+# Start all services
+docker-compose -f config/docker-compose.yml up -d
+
+# View logs
+docker-compose -f config/docker-compose.yml logs -f
+
+# Stop all
+docker-compose -f config/docker-compose.yml down
 ```
 
 ---
 
-## 🌟 Funzionalità AI
+## 🧪 Testing
+
+```bash
+# Run all tests
+npm test
+
+# Unit tests
+npm run test:unit
+
+# Integration tests
+npm run test:integration
+
+# E2E tests
+npm run test:e2e
+```
+
+---
+
+## 📊 Database Schema
+
+### Modelli Principali
+
+- **UserProfile** - Profilo agente immobiliare
+- **Contact** - Contatti (clienti, proprietari, lead)
+- **Property** - Immobili completi
+- **Request** - Richieste di ricerca clienti
+- **Match** - Matching property-request AI
+- **Activity** - Timeline CRM
+- **Tag** - Sistema tagging universale
+
+Vedi [Database README](database/README.md) per schema completo.
+
+---
+
+## 🤖 AI Features
 
 ### RAG Assistant
-Dalla **search bar** puoi chiedere:
+Chat AI con accesso diretto al database via custom tools.
 
-**Immobili:**
-- "Mostrami appartamenti a Corbetta sotto 200k"
-- "Trova immobili con giardino e parcheggio"
-- "Quanti trilocali in vendita abbiamo?"
-
-**Clienti:**
+**Esempi query**:
+- "Mostrami appartamenti a Milano sotto 200k"
 - "Chi sono i clienti VIP?"
-- "Mostrami clienti con budget 150k-250k"
-- "Quali clienti cercano casa a Milano?"
+- "Dammi statistiche vendite mese corrente"
 
-**Statistiche:**
-- "Dammi statistiche immobili in vendita"
-- "Quanti clienti attivi abbiamo?"
-- "Quali sono le richieste urgenti?"
+### AI Matching
+Matching automatico property-cliente con scoring intelligente.
 
-**L'AI ha accesso a 7 custom tools per interrogare il database!**
+### Daily Briefing
+Report giornaliero AI-generated con attività suggerite.
+
+Vedi [AI Tools README](ai_tools/README.md) per dettagli.
 
 ---
 
-## 🏗️ Struttura Progetto
+## 🌐 Web Scraping
+
+Import automatico da portali immobiliari:
+- Immobiliare.it
+- Casa.it
+- Idealista.it
+
+```bash
+cd scraping
+python cli.py scrape --portal all --city Milano
+```
+
+Vedi [Scraping README](scraping/README.md) per dettagli.
+
+---
+
+## 🔐 Security
+
+### Environment Variables
+- ❌ **MAI** committare `.env`, `.env.local`
+- ✅ Solo `.env.example` files committati
+- ✅ Usa placeholder per secrets
+
+### Data Privacy
+- 🔒 Seed data **SOLO fittizio**
+- 🔒 No real addresses, emails, phones
+- 🔒 Database files git-ignored
+
+### Best Practices
+- Validation con Zod (input/output)
+- Sanitization query SQL
+- Rate limiting API (future)
+- Authentication (future)
+
+---
+
+## 🛠️ Development Commands
+
+### Root Level
+
+```bash
+# Start frontend (recommended)
+npm run dev
+
+# Start backend separately
+npm run dev:backend
+
+# Start frontend separately
+npm run dev:frontend
+
+# Build all
+npm run build
+
+# Prisma commands
+npm run prisma:generate
+npm run prisma:push
+npm run prisma:studio
+npm run prisma:seed
+```
+
+### Module Level
+
+```bash
+# Backend
+cd backend && npm run dev
+
+# Frontend
+cd frontend && npm run dev
+
+# AI Tools
+cd ai_tools && python main.py
+```
+
+---
+
+## 📁 Project Structure
 
 ```
-cookkie-real-estate-agent/
-├── run.bat / run.sh              # 🚀 AVVIO UNICO
-├── docker-compose.yml            # 🐳 Docker orchestration
-├── Dockerfile.python             # Python backend image
-├── Dockerfile.nextjs             # Next.js frontend image
+crm-immobiliare/
+├── frontend/              # Next.js UI (porta 3000)
+│   ├── src/app/           # Pages & routes
+│   ├── src/components/    # React components
+│   ├── src/hooks/         # Custom hooks
+│   └── src/lib/           # Utilities
 │
-├── src/                          # Next.js Frontend
-│   ├── app/                      # Pages (App Router)
-│   │   ├── page.tsx              # Homepage con search bar
-│   │   ├── search/page.tsx       # Chat AI (RAG)
-│   │   └── api/ai/               # API proxy to Python
-│   ├── components/               # React components
-│   ├── hooks/                    # React Query hooks
-│   └── lib/                      # Utilities
+├── backend/               # Next.js API (porta 3001)
+│   ├── src/app/api/       # API routes
+│   └── src/lib/           # DB & utilities
 │
-├── python_ai/                    # Python AI Backend
-│   ├── main.py                   # FastAPI server
-│   ├── app/
-│   │   ├── agents/               # 3 AI agents
-│   │   ├── tools/                # 7 custom tools
-│   │   ├── routers/              # API endpoints
-│   │   └── models.py             # Database models
-│   └── requirements.txt          # Python dependencies
+├── ai_tools/              # Python AI (porta 8000)
+│   ├── app/agents/        # AI agents
+│   ├── app/tools/         # Custom tools
+│   └── app/routers/       # FastAPI routes
 │
-└── prisma/                       # Database
-    ├── schema.prisma             # Schema definition
-    ├── seed.ts                   # Seed data
-    └── dev.db                    # SQLite database
+├── database/              # Database centralizzato
+│   ├── prisma/            # Prisma schema & migrations
+│   └── python/            # SQLAlchemy models
+│
+├── scraping/              # Web scraping
+│   ├── portals/           # Portal scrapers
+│   └── common/            # Shared utilities
+│
+├── config/                # Configurazione centralizzata
+│   ├── *.env.example      # Environment templates
+│   ├── docker-compose.yml # Docker orchestration
+│   └── README.md          # Config docs
+│
+├── scripts/               # Automation scripts
+├── tests/                 # Test suite
+├── logs/                  # Centralized logs
+└── docs/                  # Documentation
 ```
 
 ---
 
-## 🔐 Sicurezza
+## 🤝 Contributing
 
-✅ **Google API Key** già configurata in:
-- `.env.local` (Next.js)
-- `python_ai/.env` (Python)
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
-✅ **File sensibili git-ignored:**
-- `.env`, `.env.local`
-- `*.db` files
-- `python_ai/.cache/`
-- `node_modules/`
+### Development Workflow
 
----
-
-## 🐛 Troubleshooting
-
-### Porta già in uso
-
-```bash
-# Windows
-netstat -ano | findstr :8000
-taskkill /PID <PID> /F
-
-# Linux/Mac
-lsof -ti:8000 | xargs kill -9
-```
-
-### Docker non si avvia
-
-```bash
-docker-compose down -v
-docker-compose build --no-cache
-docker-compose up
-```
-
-### Dipendenze mancanti
-
-```bash
-# Python
-cd python_ai
-pip install -r requirements.txt
-
-# Node.js
-npm install
-```
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
 ---
 
-## 🎯 Cosa Include
+## 📝 License
 
-✅ **Frontend Next.js 14**
-- Homepage con dashboard
-- Search bar AI-powered
-- Gestione immobili e clienti
-- Agenda e azioni suggerite
-- Mappa interattiva
-
-✅ **Backend Python AI**
-- 3 agenti AI (RAG, Matching, Briefing)
-- 7 custom tools per database
-- FastAPI con Swagger docs
-- Google Gemini integration
-
-✅ **Database SQLite**
-- Schema Prisma completo
-- Seed con dati di esempio
-- Condiviso Next.js/Python
-
-✅ **Docker Setup**
-- Build multi-stage ottimizzato
-- Health checks automatici
-- Auto-restart on failure
-- Volume persistence
-
-✅ **Documentazione Completa**
-- Guide quick start
-- Setup AI dettagliato
-- Docker guide avanzata
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
-## 🚀 Deploy Production
+## 🙏 Acknowledgments
 
-```bash
-# Docker production build
-docker-compose -f docker-compose.yml up -d
-
-# Oppure deploy su cloud:
-# - Google Cloud Run
-# - AWS ECS/Fargate
-# - Azure Container Instances
-# - DigitalOcean App Platform
-# - Railway / Render
-```
+- **Next.js** - The React Framework
+- **Prisma** - Next-generation ORM
+- **shadcn/ui** - Re-usable components
+- **Google Gemini** - AI capabilities
+- **DataPizza AI** - AI agent framework
 
 ---
 
-## 📊 Performance
+## 📞 Support
 
-**Risorse richieste:**
-- RAM: ~2GB totale
-- CPU: 2+ cores raccomandati
-- Disk: ~500MB (immagini Docker)
-
-**Tempi:**
-- First build: ~5-10 minuti
-- Avvio: ~30 secondi
-- Rebuild: ~2-3 minuti (cache)
+- 📖 [Documentation](docs/)
+- 🐛 [Issue Tracker](https://github.com/yourusername/crm-immobiliare/issues)
+- 💬 [Discussions](https://github.com/yourusername/crm-immobiliare/discussions)
 
 ---
 
-## ✨ Features in Arrivo
+## 🗺️ Roadmap
 
-- [ ] Qdrant vector store per ricerca semantica
-- [ ] Document processing (PDF upload/analysis)
-- [ ] Web scraping portali immobiliari
-- [ ] Voice assistant integration
-- [ ] Mobile app (React Native)
-
----
-
-## 🤝 Supporto
-
-**Guide:**
-- Quick start → `QUICK_START.md`
-- Docker → `DOCKER_GUIDE.md`
-- AI Setup → `DATAPIZZA_SETUP.md`
-
-**Resources:**
-- [Next.js Docs](https://nextjs.org/docs)
-- [DataPizza AI](https://docs.datapizza.ai)
-- [FastAPI Docs](https://fastapi.tiangolo.com)
+- [x] **Phase 1**: Next.js migration ✅
+- [x] **Phase 2**: API implementation ✅
+- [x] **Phase 3**: AI integration ✅
+- [ ] **Phase 4**: Authentication system
+- [ ] **Phase 5**: Advanced scraping
+- [ ] **Phase 6**: Mobile app
+- [ ] **Phase 7**: Production deployment
 
 ---
 
-**🎉 Esegui `run.bat` e il sistema parte! Zero configurazione! 🚀**
+---
 
-**Un comando. Tutto funziona. 🐳**
+## 📦 Reorganization Complete
+
+This project has been fully reorganized into a modular, scalable architecture:
+
+✅ **9 Phases Completed**:
+1. ✅ Cleanup and Code Consolidation
+2. ✅ Configuration Centralization
+3. ✅ Structured Documentation
+4. ✅ Automation Scripts
+5. ✅ Docker & Containerization
+6. ✅ Testing & CI/CD
+7. ✅ Logging & Monitoring
+8. ✅ Database Standardization
+9. ✅ Finalization & Cleanup
+
+**Result**: Clean, modular, production-ready architecture.
+
+See [docs/](docs/) for complete reorganization reports.
+
+---
+
+**Made with ❤️ for real estate agents**
+
+**Version**: 3.0.0 (Reorganization Complete)
+**Last Updated**: 2025-10-17
