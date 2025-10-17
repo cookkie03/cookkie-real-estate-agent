@@ -2,25 +2,50 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Last Updated**: 2025-10-17
+**Version**: 3.0.0 (Reorganization Complete)
+
+---
+
 ## Project Overview
 
 CRM Immobiliare is a comprehensive, single-user real estate management system for Italian real estate agents. The application provides complete property and client lifecycle management with AI-powered features including intelligent matching, RAG-based assistant, web scraping, interactive maps, and daily briefings.
 
-**Tech Stack**: Next.js 14 (App Router) + TypeScript + Prisma + SQLite
+**Tech Stack**: Next.js 14 (App Router) + TypeScript + Python (FastAPI) + Prisma + SQLite
 
-**Current Phase**: Foundation - Next.js migration completed, ready for API implementation and database integration.
+**Current Phase**: Production-Ready - Complete modular architecture with 7 independent modules
 
 **Interface Language**: Italian
+
+**Architecture**: Modular monorepo with clear separation of concerns
+
+---
 
 ## ⚡ AI INTERVENTION MANDATE: SURGICAL & MODULAR
 
 **YOUR PRIMARY DIRECTIVE: You must act with surgical precision and leverage the project's modularity.** This is a non-negotiable rule to maximize efficiency and minimize side effects.
 
-1.  **IDENTIFY THE TARGET**: Before writing any code, precisely identify the target file(s) and function(s) within the relevant module (e.g., `src/app/api/immobili`, `src/components/features/clients`, `python_ai/agents`).
+### 1. IDENTIFY THE TARGET MODULE
 
-2.  **ISOLATE THE CHANGE**: Your changes **must** be confined *only* to the identified target. Do not refactor, format, or alter any code outside the direct scope of the request.
+Before writing any code, precisely identify the target module and file(s):
+- **Frontend**: `frontend/src/app/`, `frontend/src/components/`
+- **Backend**: `backend/src/app/api/`
+- **AI Tools**: `ai_tools/app/agents/`, `ai_tools/app/tools/`
+- **Database**: `database/prisma/schema.prisma`, `database/python/models.py`
+- **Scraping**: `scraping/portals/`
 
-3.  **RESPECT BOUNDARIES**: Acknowledge and respect the modular structure. All interactions must go through the established API layers or formal interfaces.
+### 2. ISOLATE THE CHANGE
+
+Your changes **must** be confined *only* to the identified target. Do not refactor, format, or alter any code outside the direct scope of the request.
+
+### 3. RESPECT MODULE BOUNDARIES
+
+All interactions between modules must go through established APIs:
+- **Frontend ↔ Backend**: REST API (`/api/*`)
+- **Backend ↔ AI Tools**: HTTP requests to FastAPI (port 8000)
+- **Backend ↔ Database**: Prisma Client
+- **AI Tools ↔ Database**: SQLAlchemy
+- **Scraping → Database**: SQLAlchemy
 
 4.  **PROTECT CRITICAL INFRASTRUCTURE**: Core foundational files are considered **off-limits** for modification unless the task is *specifically* about changing them. Your primary responsibility is to preserve the stability of the application. Accidental modifications to these files are a critical failure. Protected files include, but are not limited to:
     -   **Database Schema (`prisma/schema.prisma`)**
@@ -28,7 +53,55 @@ CRM Immobiliare is a comprehensive, single-user real estate management system fo
     -   **Root Application Files (`src/app/layout.tsx`, `src/app/providers.tsx`)**
     -   **Package Definitions (`package.json`)**
 
-**EXAMPLE**: If a bug is in the `useImmobili` hook, your changes should be *only* in `src/hooks/useImmobili.ts` and its related test file. You will not touch the database schema or the Next.js configuration.
+5.  **MAINTAIN ROOT FILES**: The instruction files `CLAUDE.md` and `GEMINI.md` **must** always remain in the project root directory. Do not move, rename, or delete them.
+
+---
+
+## 🏗️ MODULAR ARCHITECTURE
+
+### Repository Structure (v3.0.0)
+
+```
+crm-immobiliare/
+├── frontend/              # Next.js 14 UI (port 3000)
+│   ├── src/app/           # Pages & routes (18 routes)
+│   ├── src/components/    # React components
+│   ├── src/hooks/         # Custom hooks
+│   └── src/lib/           # Utilities
+│
+├── backend/               # Next.js 14 API (port 3001)
+│   ├── src/app/api/       # API routes (9 endpoints)
+│   └── src/lib/           # DB & utilities
+│
+├── ai_tools/              # Python AI (port 8000)
+│   ├── app/agents/        # AI agents (3)
+│   ├── app/tools/         # Custom tools (7)
+│   └── app/routers/       # FastAPI routes
+│
+├── database/              # Database centralizzato
+│   ├── prisma/            # Prisma schema + migrations
+│   └── python/            # SQLAlchemy models
+│
+├── scraping/              # Web scraping
+│   ├── portals/           # Portal scrapers (3)
+│   └── common/            # Shared utilities
+│
+├── config/                # Configurazioni centralizzate
+├── scripts/               # Automation (22 scripts)
+├── tests/                 # Test suite (unit, integration, e2e)
+├── logs/                  # Centralized logging
+└── docs/                  # Documentation
+```
+
+### Module Independence
+
+Each module can be developed, tested, and deployed independently:
+- **Frontend**: `cd frontend && npm run dev`
+- **Backend**: `cd backend && npm run dev`
+- **AI Tools**: `cd ai_tools && python main.py`
+- **Database**: Self-contained with Prisma + SQLAlchemy
+
+---
 
 ## 🔒 CRITICAL SECURITY RULES
 
@@ -37,391 +110,637 @@ CRM Immobiliare is a comprehensive, single-user real estate management system fo
 ### 1. Never Commit Sensitive Data
 - ❌ **NEVER** commit `.env`, `.env.local`, `.env.production`
 - ❌ **NEVER** commit database files (`*.db`, `*.db-journal`)
-- ❌ **NEVER** hardcode API keys, passwords, or secrets in code
-- ❌ **NEVER** commit populated databases with real user data
-- ✅ **ALWAYS** use `.env.example` as public template
+- ❌ **NEVER** hardcode API keys, passwords, or secrets
+- ❌ **NEVER** commit populated databases with real data
+- ✅ **ALWAYS** use `.env.example` templates in `/config`
 - ✅ **ALWAYS** verify `git status` before commits
 
 ### 2. Data Privacy
-- 🔒 **Seed data MUST be fictional** (names, emails, phone numbers)
-- 🔒 Use generic placeholders: `user@email.com`, `+39 XXX XXX XXXX`
+- 🔒 **Seed data MUST be fictional** (names, emails, phones)
+- 🔒 Use placeholders: `user@example.com`, `+39 XXX XXX XXXX`
 - 🔒 No real addresses, personal information, or client data
 - 🔒 Images must be public URLs (Unsplash, placeholder services)
 
 ### 3. Git Exclusions (via .gitignore)
-**These directories/files MUST ALWAYS be git-ignored**:
+**These MUST ALWAYS be git-ignored**:
 - Environment: `.env*`, `.env.local`, `.env.production`
-- Database: `/prisma/*.db`, `/prisma/*.db-journal`, `/prisma/migrations`
-- Cache: `/src/lib/ai/.cache/*`, `/src/lib/scraping/.cache/*`
-- Build: `node_modules/`, `.next/`, `build/`, `dist/`
-- Logs: `*.log`, `logs/`
+- Database: `*.db`, `*.db-journal`, `migrations/`
+- Cache: `.cache/`, `__pycache__/`, `.venv/`
+- Build: `.next/`, `node_modules/`, `build/`, `dist/`
+- Logs: `logs/`, `*.log`
 - OS: `.DS_Store`, `Thumbs.db`, `Desktop.ini`
-- IDE: `.vscode/*` (except settings), `.idea`, `*.swp`
-- Temp: `tmp/`, `temp/`, `*.tmp`, `*.bak`, `*.backup`
+- Backup: `backup-*`, `.backup_*/`
 
 ### 4. Cache Management
-- All AI tool cache → `/src/lib/ai/.cache/` (git-ignored)
-- All scraping cache → `/src/lib/scraping/.cache/` (git-ignored)
+- AI tools cache → `ai_tools/.cache/` (git-ignored)
+- Scraping cache → `scraping/.cache/` (git-ignored)
 - Never store sensitive data in cache
-- Cache directories must have `.gitkeep` files to preserve structure
 
-### 5. Component Organization Rules
-**MANDATORY structure** - DO NOT deviate:
-- `src/components/ui/` → shadcn/ui only (DO NOT EDIT MANUALLY)
-- `src/components/features/` → Feature-specific components (dashboard, immobili, clienti, matches)
-- `src/components/layouts/` → Layout components (CommandPalette, AISearchBar, etc.)
+### 5. Component Organization (Frontend)
+**MANDATORY structure**:
+- `frontend/src/components/ui/` → shadcn/ui only (DO NOT EDIT MANUALLY)
+- `frontend/src/components/features/` → Feature components
+- `frontend/src/components/layouts/` → Layout components
 
-### 6. Pre-Commit Checklist
-Before EVERY commit, verify:
-- [ ] Run `git status` - no `.env*` files (except `.env.example`)
-- [ ] No `*.db` or `*.db-journal` files tracked
-- [ ] No hardcoded API keys in code (`grep -r "sk-" src/`)
-- [ ] Seed data is fictional only
-- [ ] Build succeeds (`npm run build`)
+### 6. Report e File Temporanei
 
-## Development Commands
+**MANDATORY - Gestione Report e File di Lavoro**:
+
+Quando generi report, analisi, o file di documentazione temporanei:
+
+❌ **MAI nella root del progetto**
+✅ **SEMPRE categorizzati in `/docs` nelle subdirectory appropriate**
+
+**Categorizzazione Report**:
+
+1. **Report di Riorganizzazione/Refactoring**:
+   - Directory: `docs/reorganization/`
+   - Esempio: `PHASE_X_COMPLETE.md`, `REFACTOR_REPORT.md`
+   - **Archivia se non più necessario**: Sposta in `docs/reorganization/archive/`
+
+2. **Report di Analisi/Debug**:
+   - Directory: `docs/analysis/`
+   - Esempio: `PERFORMANCE_ANALYSIS.md`, `BUG_REPORT.md`
+   - **Archivia dopo risoluzione**: `docs/analysis/archive/`
+
+3. **Guide Setup/Migration**:
+   - Directory: `docs/setup/`
+   - Esempio: `MIGRATION_GUIDE.md`, `SETUP_NOTES.md`
+   - **Mantieni se ancora rilevanti**, archivia versioni obsolete
+
+4. **Report AI Integration**:
+   - Directory: `docs/ai-integration/`
+   - Esempio: `AI_INTEGRATION_SUMMARY.md`
+   - **Archivia versioni superate**
+
+5. **Report Temporanei** (specifici di task/feature):
+   - Directory: `docs/temp/` (git-ignored)
+   - **Elimina dopo completamento task**
+   - Oppure sposta in archive se potrebbe servire
+
+**Esempio Workflow**:
 
 ```bash
-# Install dependencies
+# ❌ WRONG - Report nella root
+CRITICITA_REPORT.md              # NO!
+ANALYSIS_DATABASE.md             # NO!
+
+# ✅ CORRECT - Report categorizzati
+docs/analysis/CRITICITA_REPORT.md
+docs/analysis/DATABASE_ANALYSIS.md
+
+# ✅ CORRECT - Archiviati dopo uso
+docs/analysis/archive/CRITICITA_REPORT_20251017.md
+```
+
+**Regola d'Oro**:
+- Se il report è **permanente** (es: ARCHITECTURE.md) → `docs/` directory principale
+- Se il report è **temporaneo/specifico** → `docs/[categoria]/`
+- Se il report è **obsoleto** → `docs/[categoria]/archive/`
+- **Mai** lasciare report nella root oltre il tempo strettamente necessario
+
+### 7. Pre-Commit Checklist
+
+Before EVERY commit:
+- [ ] Run `git status` - no `.env*` files
+- [ ] No `*.db` or `*.db-journal` tracked
+- [ ] No hardcoded secrets (`grep -r "API_KEY" .`)
+- [ ] Seed data is fictional only
+- [ ] Build succeeds: `npm run build`
+- [ ] **No report files in root** - all in `docs/[category]/`
+
+---
+
+## 🚀 Development Commands
+
+### Root Level (Orchestration)
+
+```bash
+# Install all dependencies
+npm run install:all
+
+# Development
+npm run dev              # Start frontend
+npm run dev:all          # Start all services (frontend + backend)
+npm run dev:backend      # Backend only
+npm run dev:frontend     # Frontend only
+
+# Build
+npm run build            # Build all modules
+npm run build:backend    # Backend only
+npm run build:frontend   # Frontend only
+
+# Docker
+npm run docker:up        # Start all containers
+npm run docker:down      # Stop all containers
+npm run docker:logs      # View logs
+
+# Database
+npm run prisma:generate  # Generate Prisma Client
+npm run prisma:push      # Push schema to DB
+npm run prisma:studio    # Open Prisma Studio GUI
+npm run prisma:seed      # Seed database
+npm run prisma:migrate   # Run migrations
+
+# AI & Scraping
+npm run ai:start         # Start AI tools
+npm run scraping:start   # Start scraping
+
+# Testing
+npm test                 # Run all tests
+npm run test:backend     # Backend tests
+npm run test:frontend    # Frontend tests
+
+# Cleanup
+npm run clean            # Remove node_modules and builds
+```
+
+### Module Level
+
+```bash
+# Frontend
+cd frontend
 npm install
-
-# Start development server
-npm run dev
-
-# Build for production
+npm run dev              # Port 3000
 npm run build
+npm test
 
-# Start production server
-npm start
+# Backend
+cd backend
+npm install
+npm run dev              # Port 3001
+npm run build
+npm test
 
-# Run linter
-npm run lint
+# AI Tools (Python)
+cd ai_tools
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate      # Windows
+pip install -r requirements.txt
+python main.py             # Port 8000
 
-# Prisma commands
-npm run prisma:generate    # Generate Prisma Client
-npm run prisma:push        # Push schema to database
-npm run prisma:studio      # Open Prisma Studio (DB GUI)
-npm run prisma:seed        # Seed database with sample data
+# Database
+cd database/prisma
+npx prisma generate
+npx prisma db push
+npx tsx seed.ts
 ```
 
-## Project Structure
+---
+
+## 💾 Database Architecture
+
+### Unified Database Access
+
+**Single Source of Truth**: `database/prisma/schema.prisma` (610 lines, 10 models)
+
+**Multi-Language Access**:
+- **TypeScript** (Frontend/Backend): Prisma Client
+- **Python** (AI Tools/Scraping): SQLAlchemy (mirror models)
+
+**Location**: `database/prisma/dev.db` (centralized SQLite)
+
+### Database Models (10 models)
+
+1. **UserProfile** - Agent profile (single-user)
+2. **Contact** - Unified contacts (clients, owners, leads)
+3. **Building** - Building census
+4. **Property** - Complete properties
+5. **Request** - Client search requests
+6. **Match** - AI-powered property-request matching
+7. **Activity** - CRM timeline
+8. **Tag** - Universal tagging system
+9. **EntityTag** - Polymorphic tag relations
+10. **AuditLog** - Change tracking
+
+### Database Commands
+
+```bash
+# From root
+npm run prisma:generate  # Regenerate client after schema changes
+npm run prisma:push      # Push schema to database
+npm run prisma:studio    # Open GUI
+npm run prisma:seed      # Seed with mock data
+
+# From database/prisma
+npx prisma generate
+npx prisma db push
+npx tsx seed.ts
+```
+
+### Accessing Database
+
+**TypeScript (Frontend/Backend)**:
+```typescript
+import { prisma } from '@/lib/db';
+
+const properties = await prisma.property.findMany({
+  where: { status: 'available' },
+  include: { owner: true }
+});
+```
+
+**Python (AI Tools/Scraping)**:
+```python
+from database.python import Property, get_db_context
+
+with get_db_context() as db:
+    properties = db.query(Property).filter(
+        Property.status == "available"
+    ).all()
+```
+
+**Documentation**: See [database/README.md](database/README.md) (932 lines)
+
+---
+
+## 🎨 Frontend Architecture
+
+**Location**: `frontend/`
+**Framework**: Next.js 14 (App Router)
+**Port**: 3000
+
+### Structure
 
 ```
-cookkie-real-estate-agent/
+frontend/
 ├── src/
-│   ├── app/                        # 🎨 FRONTEND - Next.js App Router
-│   │   ├── layout.tsx              # Root layout with metadata
-│   │   ├── page.tsx                # Homepage (dashboard)
-│   │   ├── providers.tsx           # React Query + UI providers
-│   │   ├── globals.css             # Global styles + CSS variables
-│   │   ├── search/page.tsx         # Search page
-│   │   ├── agenda/page.tsx         # Calendar page
-│   │   ├── actions/page.tsx        # Suggested actions
-│   │   ├── map/page.tsx            # Interactive map
-│   │   ├── connectors/page.tsx     # Integrations
-│   │   ├── settings/page.tsx       # Settings
-│   │   ├── not-found.tsx           # 404 page
-│   │   └── api/                    # 🔌 API Routes (future)
-│   │       ├── immobili/route.ts
-│   │       ├── clienti/route.ts
-│   │       ├── matches/route.ts
-│   │       └── azioni/route.ts
+│   ├── app/                    # Pages & routes (18 routes)
+│   │   ├── layout.tsx          # Root layout
+│   │   ├── page.tsx            # Homepage (dashboard)
+│   │   ├── providers.tsx       # React Query + UI providers
+│   │   ├── immobili/           # Properties pages
+│   │   ├── clienti/            # Clients pages
+│   │   ├── search/             # Search page
+│   │   ├── agenda/             # Calendar
+│   │   ├── actions/            # Suggested actions
+│   │   ├── map/                # Interactive map
+│   │   ├── settings/           # Settings
+│   │   └── tool/               # Tool dashboard
 │   │
-│   ├── components/                 # 🎨 FRONTEND - React Components
-│   │   ├── ui/                     # shadcn/ui components (DO NOT EDIT MANUALLY)
-│   │   ├── features/               # Feature-specific components
-│   │   │   ├── dashboard/          # Dashboard components
-│   │   │   │   ├── StatPill.tsx
-│   │   │   │   ├── ActivityFeed.tsx
-│   │   │   │   ├── MiniAgenda.tsx
-│   │   │   │   ├── MapPreview.tsx
-│   │   │   │   └── ...
-│   │   │   ├── immobili/           # Property components (future)
-│   │   │   ├── clienti/            # Client components (future)
-│   │   │   └── matches/            # Match components (future)
-│   │   └── layouts/                # Layout components
-│   │       ├── CommandPalette.tsx
-│   │       └── AISearchBar.tsx
+│   ├── components/
+│   │   ├── ui/                 # shadcn/ui (DO NOT EDIT)
+│   │   ├── features/           # Feature components
+│   │   └── layouts/            # Layouts
 │   │
-│   ├── lib/                        # 🛠️ UTILITIES & TOOLS
-│   │   ├── db/                     # 💾 DATABASE Layer
-│   │   │   ├── index.ts            # Prisma client singleton
-│   │   │   └── helpers.ts          # Query helpers
-│   │   ├── api/                    # API utilities & types
-│   │   │   ├── types.ts
-│   │   │   └── helpers.ts
-│   │   ├── validation/             # Zod schemas
-│   │   │   └── schemas.ts
-│   │   ├── ai/                     # AI tools (future)
-│   │   │   └── .cache/             # 🗂️ AI cache (GIT-IGNORED)
-│   │   ├── scraping/               # Web scraping (future)
-│   │   │   └── .cache/             # 🗂️ Scraping cache (GIT-IGNORED)
-│   │   ├── utils.ts                # Utility functions (cn, etc.)
-│   │   └── mockData.ts             # TEMPORARY: Mock data (to be replaced)
-│   │
-│   └── hooks/                      # Custom React hooks
+│   ├── hooks/                  # Custom hooks
+│   └── lib/                    # Utilities
 │
-├── prisma/                         # 💾 DATABASE
-│   ├── schema.prisma               # Database schema
-│   ├── seed.ts                     # Seed script (ONLY MOCK DATA)
-│   ├── migrations/                 # Schema migrations (GIT-IGNORED)
-│   └── dev.db                      # SQLite database (GIT-IGNORED)
-│
-├── public/                         # Static assets
-├── .env.example                    # ✅ Public environment template
-├── .env.local                      # 🔒 Local secrets (GIT-IGNORED)
-├── .gitignore                      # Git exclusions
-├── CLAUDE.md                       # This file (AI agent instructions)
-├── README.md                       # Project documentation
-├── SECURITY_AUDIT.md               # Security audit report
-├── package.json
+├── public/                     # Static assets
 ├── next.config.js
 ├── tailwind.config.ts
-└── tsconfig.json
+└── package.json
 ```
 
-## Core Technologies
+### Key Patterns
 
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript
-- **Database**: Prisma ORM + SQLite
-- **State Management**: @tanstack/react-query (for async state/API calls)
-- **UI Library**: shadcn/ui (Radix UI primitives)
-- **Styling**: Tailwind CSS with custom theme
-- **Forms**: react-hook-form + zod validation
-- **Icons**: lucide-react
+**Server Components** (default):
+```typescript
+// No "use client" directive
+export default async function Page() {
+  const data = await prisma.property.findMany();
+  return <div>{/* render */}</div>;
+}
+```
 
-## Database Schema (Prisma)
-
-### Models
-
-**Immobile** (Property)
-- Basic info: titolo, tipologia, prezzo, superficie, locali, bagni
-- Location: indirizzo, città, cap, provincia, coordinates, zona
-- Details: descrizione, caratteristiche (JSON), foto (array)
-- Metadata: fonte, urlOriginale, stato
-- Relations: matches
-
-**Cliente** (Client)
-- Personal: nome, cognome, email, telefono
-- Preferences: tipologiaRichiesta, budgetMin/Max, superficieMin, localiMin, zoneInteresse
-- Status: priorità, stato, note
-- Relations: matches, azioni
-
-**Match** (Property-Client Match)
-- immobileId, clienteId
-- score (0-100), motivi (JSON), stato
-- Tracks AI-powered property-client matching
-
-**Azione** (Action/Task)
-- tipo, descrizione
-- clienteId (optional link to client)
-- priorità, stato, dataScadenza, completedAt
-- Task management for follow-ups
-
-### Database Notes
-- SQLite stores JSON as strings (use `JSON.parse()/stringify()`)
-- Arrays stored as stringified JSON
-- All fields with `?` are optional
-- Timestamps: `createdAt`, `updatedAt` auto-managed
-
-## Key Architectural Patterns
-
-### 1. Next.js App Router Structure
-
-- **File-based routing**: Each folder in `src/app/` is a route
-- **Server vs Client Components**:
-  - Default: Server Components (no "use client")
-  - Add `"use client"` for hooks, event handlers, browser APIs
-- **Layout**: `layout.tsx` wraps all pages with providers
-- **Metadata**: Set in `layout.tsx` or per-page
-
-### 2. Navigation
-
-**Router Hook**:
+**Client Components** (for hooks/events):
 ```typescript
 "use client";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-const router = useRouter();
-router.push("/path");
+export default function Page() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
 ```
 
-**Links**:
+**Data Fetching with React Query**:
 ```typescript
-import Link from "next/link";
-<Link href="/path">Text</Link>
-```
+"use client";
+import { useQuery } from '@tanstack/react-query';
 
-**Search Params** (client components):
-```typescript
-import { useSearchParams } from "next/navigation";
-const searchParams = useSearchParams();
-const query = searchParams.get("q");
-```
-
-### 3. Data Fetching Pattern
-
-**Current**: Mock data from `lib/mockData.ts`
-
-**Target**: React Query + API Routes
-```typescript
-// Hook (src/hooks/useImmobili.ts)
-export function useImmobili() {
+export function useProperties() {
   return useQuery({
-    queryKey: ['immobili'],
-    queryFn: () => fetch('/api/immobili').then(r => r.json())
+    queryKey: ['properties'],
+    queryFn: () => fetch('/api/properties').then(r => r.json())
   });
 }
-
-// Component
-function ImmobiliList() {
-  const { data, isLoading, error } = useImmobili();
-  // render...
-}
 ```
 
-### 4. API Routes (To Be Created)
+### Adding shadcn/ui Component
 
-Create in `src/app/api/[resource]/route.ts`:
+```bash
+cd frontend
+npx shadcn@latest add <component-name>
+```
+
+Component will be added to `src/components/ui/` automatically.
+
+**Documentation**: See [frontend/README.md](frontend/README.md)
+
+---
+
+## 🔌 Backend Architecture
+
+**Location**: `backend/`
+**Framework**: Next.js 14 (API Routes)
+**Port**: 3001
+
+### Structure
+
+```
+backend/
+├── src/
+│   ├── app/
+│   │   └── api/               # API Routes (9 endpoints)
+│   │       ├── health/        # Health check
+│   │       ├── ai/
+│   │       │   ├── briefing/  # Daily briefing
+│   │       │   ├── chat/      # RAG chat
+│   │       │   └── matching/  # AI matching
+│   │       └── chat/          # Legacy chat
+│   │
+│   └── lib/                   # DB & utilities
+│       ├── db/                # Prisma client
+│       └── utils/
+│
+├── next.config.js
+└── package.json
+```
+
+### Creating API Endpoint
+
 ```typescript
+// backend/src/app/api/properties/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
 export async function GET() {
-  const items = await prisma.immobile.findMany();
-  return NextResponse.json(items);
+  const properties = await prisma.property.findMany({
+    where: { status: 'available' }
+  });
+  return NextResponse.json(properties);
 }
 
 export async function POST(request: Request) {
   const body = await request.json();
   // Validate with Zod
-  const item = await prisma.immobile.create({ data: body });
-  return NextResponse.json(item);
+  const property = await prisma.property.create({ data: body });
+  return NextResponse.json(property, { status: 201 });
 }
 ```
 
-### 5. Component Organization
+**Documentation**: See [backend/README.md](backend/README.md)
 
-- **shadcn/ui components** (`src/components/ui/`): DO NOT edit manually
-  - Added via: `npx shadcn@latest add <component>`
-- **Feature components** (`src/components/`): Custom application components
-  - Use `"use client"` when needed (hooks, events, etc.)
+---
 
-### 6. Styling System
+## 🤖 AI Tools Architecture
 
-**Tailwind Config**: Custom theme in `tailwind.config.ts`
-- Custom colors (primary, accent, success, warning, etc.)
-- Custom gradients (gradient-primary, gradient-accent, gradient-subtle)
-- Custom shadows and animations
-- Responsive breakpoints: mobile-first, lg, xl
+**Location**: `ai_tools/`
+**Framework**: FastAPI (Python 3.13)
+**Port**: 8000
 
-**CSS Variables**: Defined in `src/app/globals.css`
-- Light and dark theme support (`.dark` class)
-- HSL color system for easy theming
+### Structure
 
-**Animations**:
-- fade-in, fade-in-up, scale-in, slide-in-right, pulse-glow
-- Use: `className="animate-fade-in"`
+```
+ai_tools/
+├── app/
+│   ├── agents/                # 3 AI Agents
+│   │   ├── briefing_agent.py  # Daily briefing
+│   │   ├── matching_agent.py  # Property matching
+│   │   └── rag_agent.py       # RAG chat assistant
+│   │
+│   ├── tools/                 # 7 Custom Tools
+│   │   ├── database_tool.py
+│   │   ├── property_tool.py
+│   │   ├── contact_tool.py
+│   │   ├── match_tool.py
+│   │   ├── request_tool.py
+│   │   ├── activity_tool.py
+│   │   └── briefing_tool.py
+│   │
+│   └── routers/               # FastAPI routes
+│
+├── main.py                    # FastAPI app
+├── requirements.txt
+└── README.md
+```
 
-### 7. Keyboard Shortcuts (Preserved)
+### Running AI Tools
 
-- `Cmd/Ctrl + K`: Open Command Palette
-- `s`: Focus search (when not in input)
-- `g`: Navigate to Agenda
-- `a`: Navigate to Actions
-- `m`: Navigate to Map
+```bash
+cd ai_tools
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python main.py
+```
 
-Implemented in `src/app/page.tsx` with `useEffect` + event listeners.
+**API Docs**: http://localhost:8000/docs (auto-generated by FastAPI)
 
-## Development Guidelines
+**Documentation**: See [ai_tools/README.md](ai_tools/README.md)
 
-### Adding a New Page
+---
 
-1. Create folder in `src/app/[route-name]/`
-2. Add `page.tsx`:
-```typescript
-"use client"; // if using hooks/events
+## 🌐 Scraping Architecture
 
-export default function PageName() {
-  return <div>Content</div>;
+**Location**: `scraping/`
+**Language**: Python 3.13
+
+### Structure
+
+```
+scraping/
+├── portals/                   # Portal scrapers
+│   ├── immobiliare_it/        # Immobiliare.it
+│   ├── casa_it/               # Casa.it
+│   └── idealista/             # Idealista.it
+│
+├── common/                    # Shared utilities
+├── cli.py                     # CLI interface
+└── README.md
+```
+
+### Running Scraping
+
+```bash
+cd scraping
+python cli.py scrape --portal immobiliare_it --city Milano
+```
+
+**Documentation**: See [scraping/README.md](scraping/README.md)
+
+---
+
+## ⚙️ Configuration Management
+
+**Location**: `config/`
+
+All configurations are centralized in `/config`:
+
+```
+config/
+├── .env.example               # Global template
+├── backend.env.example        # Backend template
+├── frontend.env.example       # Frontend template
+├── ai_tools.env.example       # AI tools template
+├── database.env.example       # Database template
+├── docker-compose.yml         # Docker orchestration
+└── README.md
+```
+
+### Environment Variables
+
+Each module has its `.env` file pointing to shared database:
+
+**Frontend** (`.env.local`):
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+**Backend** (`.env`):
+```bash
+DATABASE_URL="file:../database/prisma/dev.db"
+GOOGLE_API_KEY="your-api-key"
+```
+
+**AI Tools** (`.env`):
+```bash
+DATABASE_URL="file:../database/prisma/dev.db"
+GOOGLE_API_KEY="your-api-key"
+```
+
+**Setup**:
+```bash
+cp config/backend.env.example backend/.env
+cp config/frontend.env.example frontend/.env.local
+cp config/ai_tools.env.example ai_tools/.env
+```
+
+**Documentation**: See [config/README.md](config/README.md)
+
+---
+
+## 🧪 Testing Architecture
+
+**Location**: `tests/`
+
+### Structure
+
+```
+tests/
+├── unit/                      # Unit tests
+│   ├── backend/               # Backend tests (Jest)
+│   ├── frontend/              # Frontend tests (Jest + RTL)
+│   ├── ai_tools/              # AI tests (pytest)
+│   └── scraping/              # Scraping tests (pytest)
+│
+├── integration/               # Integration tests
+│   ├── api/                   # API integration
+│   └── database/              # DB integration
+│
+├── e2e/                       # End-to-end tests
+│   └── scenarios/             # User scenarios
+│
+├── conftest.py                # pytest config
+└── jest.config.js             # Jest config
+```
+
+### Running Tests
+
+```bash
+# All tests
+npm test
+
+# Module-specific
+npm run test:backend
+npm run test:frontend
+
+# Python tests
+cd ai_tools && pytest
+cd scraping && pytest
+```
+
+**Documentation**: See [tests/README.md](tests/README.md)
+
+---
+
+## 📊 Logging & Monitoring
+
+**Location**: `logs/` (git-ignored)
+
+### Structure
+
+```
+logs/
+├── backend/
+│   ├── app.log                # Application logs
+│   ├── error.log              # Error logs
+│   └── access.log             # Access logs
+│
+├── frontend/
+│   └── build.log              # Build logs
+│
+├── ai_tools/
+│   ├── agents.log             # Agent execution
+│   └── tools.log              # Tool execution
+│
+└── scraping/
+    └── scraper.log            # Scraping logs
+```
+
+### Log Format (JSON structured)
+
+```json
+{
+  "timestamp": "2025-10-17T12:00:00Z",
+  "level": "INFO",
+  "module": "[Backend]",
+  "message": "Property created",
+  "data": { "propertyId": "prop_123" }
 }
 ```
-3. Navigation automatically works via file structure
 
-### Adding a shadcn/ui Component
+**Log Viewer**: Available at `/tool` in frontend
 
-```bash
-npx shadcn@latest add <component-name>
-```
-Component will be added to `src/components/ui/` automatically.
+---
 
-### Creating an API Endpoint
+## 🐳 Docker Architecture
 
-1. Create `src/app/api/[resource]/route.ts`
-2. Export GET, POST, PUT, DELETE functions
-3. Use Prisma for database operations
-4. Validate input with Zod
-5. Return `NextResponse.json(data)`
+### Docker Compose
 
-### Using Prisma
+**Location**: `config/docker-compose.yml`
 
 ```bash
-# After schema changes
-npx prisma generate      # Regenerate client
-npx prisma db push       # Apply to database
-npx prisma studio        # View data in GUI
+# Start all services
+docker-compose -f config/docker-compose.yml up -d
+
+# View logs
+docker-compose -f config/docker-compose.yml logs -f
+
+# Stop all
+docker-compose -f config/docker-compose.yml down
 ```
 
-**Query Examples**:
-```typescript
-import { prisma } from '@/lib/db';
+### Individual Dockerfiles
 
-// Find all
-const immobili = await prisma.immobile.findMany();
+- `frontend/Dockerfile`
+- `backend/Dockerfile`
+- `ai_tools/Dockerfile`
 
-// Find one
-const immobile = await prisma.immobile.findUnique({
-  where: { id: "..." }
-});
+---
 
-// Create
-const newImmobile = await prisma.immobile.create({
-  data: { /* ... */ }
-});
+## 📚 Documentation
 
-// Update
-const updated = await prisma.immobile.update({
-  where: { id: "..." },
-  data: { /* ... */ }
-});
+### Main Guides
 
-// Delete
-await prisma.immobile.delete({
-  where: { id: "..." }
-});
-```
+- **[README.md](README.md)** - Project overview
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history (v1.0.0 → v3.0.0)
+- **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)** - Quick start guide
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture
 
-## 🧬 Advanced Implementation Guidelines
-
-### 1. Frontend-Accessible Tools
-All key backend processes must be accessible and controllable via the frontend UI. This includes:
-- **AI Tools**: Triggering matching, briefing generation, and RAG processes.
-- **Scraping**: Initiating web scraping tasks.
-- **Database**: Seeding or refreshing data.
-
-The UI must provide a clear dashboard to monitor the status of these tasks (e.g., `RUNNING`, `COMPLETED`, `FAILED`), view their output logs in real-time, and access the results.
-
-### 2. Performance and Optimization
-To maintain a fluid user experience, the following strategies are mandatory:
-- **Lazy Loading**: Use `React.lazy` or Next.js dynamic imports for components and pages that are not critical for the initial paint.
-- **Background Tasks**: Heavy, long-running tasks (AI processing, scraping, large-scale data manipulation) **must** be executed in the background. Use asynchronous workers or a simple queue system to avoid blocking the main server thread and keep the UI responsive.
-
-### 3. Centralized Logging
-Implement a unified logging strategy across all modules:
-- **Output Directory**: All logs should be written to a central, git-ignored `/logs` directory.
-- **Structured Logs**: Logs should be in a structured format (preferably JSON) and include a timestamp, the source module (e.g., `[Frontend]`, `[AIAgent]`), a severity level (`INFO`, `WARN`, `ERROR`), and a clear message.
-- **Frontend Viewer**: The application's admin or settings panel should include a log viewer to display and filter logs from the `/logs` directory, enabling easy debugging without direct server access.
+### Module Documentation
 
 ### 4. Modular Documentation (README.md)
 Every top-level module (`/python_ai`, `/scraping`, etc.) must contain its own `README.md` file. This file must provide:
@@ -430,157 +749,135 @@ Every top-level module (`/python_ai`, `/scraping`, etc.) must contain its own `R
 - Standalone setup and execution instructions, including environment variables.
 - Instructions for running tests specific to that module.
 
-## Immediate Next Steps
+**General Documentation Rule**: All general project documentation and reports must be stored within the `/docs` directory. Before creating a new file, always check if an existing document can be updated. This keeps the documentation centralized and organized.
 
-**Phase 1**: API Implementation (Week 1-2)
-1. Create `/api/immobili` route (CRUD)
-2. Create `/api/clienti` route (CRUD)
-3. Create `/api/matches` route
-4. Create `/api/azioni` route
-5. Add Zod validation schemas
+- [frontend/README.md](frontend/README.md) - Frontend guide
+- [backend/README.md](backend/README.md) - Backend API guide
+- [ai_tools/README.md](ai_tools/README.md) - AI tools guide (6129 chars)
+- [database/README.md](database/README.md) - Database guide (932 lines)
+- [scraping/README.md](scraping/README.md) - Scraping guide
+- [config/README.md](config/README.md) - Configuration guide
+- [tests/README.md](tests/README.md) - Testing guide
 
-**Phase 2**: Replace Mock Data (Week 2-3)
-1. Create React Query hooks for all resources
-2. Replace `mockData.ts` imports with API calls
-3. Add loading states and error handling
+### Reorganization Reports
 
-**Phase 3**: CRUD UIs (Week 3-4)
-1. Create `/immobili` page with list and details
-2. Create `/clienti` page with list and details
-3. Add forms for create/edit operations
-4. Implement file upload for property images
+- [docs/reorganization/](docs/reorganization/) - All 9 phase reports
+- [docs/reorganization/REORGANIZATION_FINAL_REPORT.md](docs/reorganization/REORGANIZATION_FINAL_REPORT.md) - Complete report
 
-**Phase 4**: Authentication (Week 4)
-1. Implement simple single-user auth
-2. Add login page
-3. Protect all routes with middleware
+---
 
-**Phase 5**: Advanced Features (Week 5-8)
-- Matching algorithm implementation
-- Interactive map with Leaflet
-- Daily briefing generator
-- RAG system with LlamaIndex + OpenRouter
-- Web scraping modules
+## 🎯 Development Workflow
 
-## Important Notes
+### 1. Starting Development
 
-### Path Aliases
-
-The project uses `@/` for `src/`:
-- `@/components/ui/button` → `src/components/ui/button`
-- `@/lib/utils` → `src/lib/utils`
-
-### Environment Variables
-
-Required in `.env.local`:
 ```bash
-DATABASE_URL="file:./dev.db"
-# Add others as needed (OpenRouter API key, etc.)
+# First time setup
+npm run install:all
+npm run prisma:generate
+npm run prisma:push
+npm run prisma:seed
+
+# Start development
+npm run dev:all  # Frontend + Backend
 ```
 
-### Responsive Design
+### 2. Making Changes
 
-Mobile-first approach:
-- Mobile: Single column, bottom nav
-- Tablet (lg): Two-column grid
-- Desktop (xl): Sidebar navigation
+1. Identify target module
+2. Create feature branch: `git checkout -b feature/name`
+3. Make changes in isolated module
+4. Test locally: `npm test`
+5. Build: `npm run build`
+6. Commit: `git commit -m "feat: description"`
 
-Always test on different viewports.
+### 3. Adding New Feature
 
-### Italian Language
+**Example**: Add property search filter
 
-All UI text must be in Italian:
-- Labels, buttons, placeholders
-- Error messages, notifications
-- Page titles, descriptions
+1. **Frontend**: Create UI component in `frontend/src/components/features/immobili/SearchFilter.tsx`
+2. **Backend**: Add API endpoint in `backend/src/app/api/properties/search/route.ts`
+3. **Database**: Ensure indexes exist in `database/prisma/schema.prisma`
+4. **Test**: Add tests in `tests/integration/api/properties.test.ts`
+5. **Document**: Update [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-### Mock Data
+---
 
-`src/lib/mockData.ts` is TEMPORARY. Replace with real API calls progressively.
+## ⚠️ Common Pitfalls
 
-## Common Patterns
+### 1. Path Aliases
 
-### Client Component with Data Fetching
+**Frontend**: `@/` → `frontend/src/`
 ```typescript
-"use client";
-
-import { useImmobili } from "@/hooks/useImmobili";
-
-export default function Page() {
-  const { data, isLoading, error } = useImmobili();
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error!</div>;
-
-  return <div>{/* render data */}</div>;
-}
+import { Button } from '@/components/ui/button';
 ```
 
-### Server Component (Future)
+**Backend**: `@/` → `backend/src/`
 ```typescript
-import { prisma } from "@/lib/db";
-
-export default async function Page() {
-  const immobili = await prisma.immobile.findMany();
-
-  return <div>{/* render immobili */}</div>;
-}
+import { prisma } from '@/lib/db';
 ```
 
-### Form with Validation
+### 2. Module Boundaries
+
+❌ **WRONG**: Direct import across modules
 ```typescript
-"use client";
-
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
-const schema = z.object({
-  titolo: z.string().min(1),
-  prezzo: z.number().positive(),
-});
-
-export default function FormPage() {
-  const form = useForm({
-    resolver: zodResolver(schema),
-  });
-
-  const onSubmit = async (data) => {
-    // API call
-  };
-
-  return <form onSubmit={form.handleSubmit(onSubmit)}>
-    {/* form fields */}
-  </form>;
-}
+// In frontend
+import { prisma } from '../../backend/src/lib/db'; // ❌ BAD
 ```
 
-## Resources
+✅ **CORRECT**: Use API
+```typescript
+// In frontend
+const properties = await fetch('http://localhost:3001/api/properties');
+```
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [shadcn/ui Documentation](https://ui.shadcn.com)
-- [TanStack Query Documentation](https://tanstack.com/query/latest)
+### 3. Database Access
 
-## Project Status
+❌ **WRONG**: Multiple database paths
+```typescript
+DATABASE_URL="file:./dev.db"  // ❌ Wrong path
+```
+
+✅ **CORRECT**: Centralized path
+```typescript
+DATABASE_URL="file:../database/prisma/dev.db"  // ✅ Correct
+```
+
+---
+
+## 🚀 Project Status
+
+**Version**: 3.0.0 (Reorganization Complete)
 
 ✅ **Completed**:
-- Next.js 14 migration with App Router
-- Database schema and Prisma setup
-- All UI components and pages migrated
-- Styling system preserved
-- Keyboard shortcuts working
+- 9-phase repository reorganization
+- Modular architecture (7 modules)
+- Complete documentation
+- Docker support
+- Testing infrastructure
+- CI/CD pipeline
+- Centralized logging
 
 🔄 **In Progress**:
-- API routes implementation
-- Mock data replacement
 - Authentication system
+- Advanced AI features
+- Enhanced scraping
 
 📋 **Planned**:
-- Advanced features (matching, RAG, scraping)
-- Performance optimization
+- Mobile app (React Native)
+- Multi-tenant support
 - Production deployment
 
 ---
 
-Remember: This is a single-user, local-first application. Keep it simple, modular, and maintainable. Focus on one feature at a time, test thoroughly, commit often.
+## 📞 Support
+
+- **Documentation**: [docs/](docs/)
+- **Issues**: Create GitHub issue
+- **Architecture Questions**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Setup Problems**: See [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
+
+---
+
+**Remember**: This is a modular, production-ready system. Always work within module boundaries, use established APIs, and maintain the separation of concerns. When in doubt, consult module-specific README files.
+
+**Made with ❤️ by Luca M. & Claude Code**

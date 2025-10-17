@@ -183,9 +183,65 @@ Modules **must** communicate through well-defined, formal interfaces, such as RE
 All configuration—including environment settings, credentials, and feature flags—is externalized into `.env` files. A central `/config` directory may be used for modular settings files. No configuration should be hardcoded within the application logic.
 
 ### 4. Comprehensive Documentation
-A dedicated `/docs` directory serves as the single source of truth for all project documentation, including:
+A dedicated `/docs` directory serves as the single source of truth for all project documentation.
+
+**MANDATORY Rule - Report e File Temporanei**:
+
+Quando generi report, analisi, o file di documentazione temporanei:
+
+❌ **MAI nella root del progetto**
+✅ **SEMPRE categorizzati in `/docs` nelle subdirectory appropriate**
+
+**Categorizzazione Report**:
+
+1. **Report di Riorganizzazione/Refactoring**:
+   - Directory: `docs/reorganization/`
+   - Esempio: `PHASE_X_COMPLETE.md`, `REFACTOR_REPORT.md`
+   - **Archivia se non più necessario**: Sposta in `docs/reorganization/archive/`
+
+2. **Report di Analisi/Debug**:
+   - Directory: `docs/analysis/`
+   - Esempio: `PERFORMANCE_ANALYSIS.md`, `BUG_REPORT.md`
+   - **Archivia dopo risoluzione**: `docs/analysis/archive/`
+
+3. **Guide Setup/Migration**:
+   - Directory: `docs/setup/`
+   - Esempio: `MIGRATION_GUIDE.md`, `SETUP_NOTES.md`
+   - **Mantieni se ancora rilevanti**, archivia versioni obsolete
+
+4. **Report AI Integration**:
+   - Directory: `docs/ai-integration/`
+   - Esempio: `AI_INTEGRATION_SUMMARY.md`
+   - **Archivia versioni superate**
+
+5. **Report Temporanei** (specifici di task/feature):
+   - Directory: `docs/temp/` (git-ignored)
+   - **Elimina dopo completamento task**
+   - Oppure sposta in archive se potrebbe servire
+
+**Regola d'Oro**:
+- Se il report è **permanente** (es: ARCHITECTURE.md) → `docs/` directory principale
+- Se il report è **temporaneo/specifico** → `docs/[categoria]/`
+- Se il report è **obsoleto** → `docs/[categoria]/archive/`
+- **Mai** lasciare report nella root oltre il tempo strettamente necessario
+
+**Esempio Workflow Corretto**:
+```bash
+# ❌ WRONG - Report nella root
+CRITICITA_REPORT.md              # NO!
+ANALYSIS_DATABASE.md             # NO!
+
+# ✅ CORRECT - Report categorizzati
+docs/analysis/CRITICITA_REPORT.md
+docs/analysis/DATABASE_ANALYSIS.md
+
+# ✅ CORRECT - Archiviati dopo uso
+docs/analysis/archive/CRITICITA_REPORT_20251017.md
+```
+
+**Key documents** (permanenti in `docs/`):
 - `GETTING_STARTED.md`: Onboarding guide for new developers.
-- `INSTALL.md`: Detailed installation instructions.
+- `ARCHITECTURE.md`: System architecture and diagrams.
 - `API_REFERENCE.md`: API endpoint documentation.
 - Architectural diagrams and data flow charts.
 
@@ -379,6 +435,13 @@ export function useCreateResource() {
 ❌ DON'T: Use JavaScript instead of TypeScript
 ❌ DON'T: Use other ORMs (TypeORM, Sequelize, etc.)
 ❌ DON'T: Change to other UI libraries
+
+### 5. File Position
+```
+✅ DO: Keep GEMINI.md and CLAUDE.md in the root directory
+
+❌ DON'T: Move GEMINI.md or CLAUDE.md to any subdirectory
+```
 ```
 
 ---
@@ -678,13 +741,14 @@ import { Button } from '../../../components/ui/button';
 - [ ] Prisma queries use try/catch
 - [ ] API routes return proper status codes
 - [ ] shadcn/ui components not modified
+- [ ] **No report files in root** - all in `docs/[category]/`
 - [ ] Git commit message follows convention
 
 ---
 
-**Version**: Foundation (v0.1)  
-**Last Updated**: Project Creation  
-**Valid For**: All project phases and future versions  
+**Version**: 3.0.0 (Reorganization Complete)
+**Last Updated**: 2025-10-17
+**Valid For**: All project phases and future versions
 **Maintained By**: Project architect
 
 **This file contains PERMANENT principles. Update only for fundamental architectural changes.**
