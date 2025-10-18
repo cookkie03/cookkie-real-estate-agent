@@ -65,102 +65,87 @@
 
 ---
 
+## 📁 Project Structure
+
+The project follows a modular monorepo structure. Each top-level directory is an independent module with its own responsibilities.
+
+```
+cookkie-real-estate-agent/
+├── frontend/              # Next.js 14 UI
+├── backend/               # Next.js 14 API
+├── ai_tools/              # Python AI Tools (FastAPI)
+├── database/              # Prisma Schema & DB files
+├── scraping/              # Python Scrapers
+├── config/                # Centralized configuration
+├── scripts/               # Automation scripts
+├── tests/                 # Unit, Integration, E2E tests
+├── logs/                  # Log files
+├── docs/                  # Documentation
+├── CLAUDE.md              # Volatile implementation details
+└── GEMINI.md              # This file (permanent principles)
+```
+*For a more detailed breakdown, see the `CLAUDE.md` file.*
+
+---
+
 ## 🚀 Quick Start Commands
 
-### Installation
-```bash
-# Install all dependencies
-npm install
+These commands are run from the project root. They orchestrate actions across the different modules.
 
-# Generate Prisma Client
+### First-Time Setup
+```bash
+# Install all dependencies across all modules
+npm run install:all
+
+# Generate Prisma Client for all modules
 npm run prisma:generate
+
+# Apply schema changes to the database
+npm run prisma:push
+
+# Seed the database with initial test data
+npm run prisma:seed
 ```
 
-### Development
+### Main Development Commands
 ```bash
-# Start development server (http://localhost:3000)
-npm run dev
+# Start all services (frontend + backend) concurrently
+npm run dev:all
 
-# Run in another terminal for live DB access
-npm run prisma:studio
+# Start only the frontend (http://localhost:3000)
+npm run dev:frontend
+
+# Start only the backend API (http://localhost:3001)
+npm run dev:backend
+
+# Start the AI services (http://localhost:8000)
+npm run ai:start
 ```
 
 ### Database Management
 ```bash
-# Push schema changes to database (dev only)
-npm run prisma:push
-
-# Seed database with test data
-npm run prisma:seed
-
-# Open Prisma Studio GUI
+# Open Prisma Studio GUI for live DB access
 npm run prisma:studio
 
-# Reset database (caution: deletes all data)
-npx prisma migrate reset
+# Push schema changes to the database
+npm run prisma:push
+
+# Create a new migration from schema changes
+npm run prisma:migrate
+
+# Reset the database (CAUTION: deletes all data)
+npm run prisma:reset
 ```
 
-### Code Quality
+### Code Quality & Testing
 ```bash
-# Run linter
+# Run linter for all modules
 npm run lint
 
-# Type check
-npx tsc --noEmit
-
-# Format code (if prettier configured)
-npm run format
+# Run all tests
+npm test
 ```
-
-### Production
-```bash
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Preview production build locally
-npm run build && npm start
-```
-
----
-
-## 📁 Project Structure
-
-```
-cookkie-real-estate-agent/
-├── src/
-│   ├── app/                    # Next.js App Router (pages & API routes)
-│   │   ├── (routes)/          # Page routes
-│   │   ├── api/               # API endpoints
-│   │   ├── layout.tsx         # Root layout
-│   │   ├── page.tsx           # Homepage
-│   │   ├── providers.tsx      # React Query & UI providers
-│   │   └── globals.css        # Global styles + Tailwind
-│   ├── components/
-│   │   ├── ui/               # shadcn/ui base (DO NOT EDIT)
-│   │   ├── shared/           # Reusable components
-│   │   ├── layout/           # Navigation, headers
-│   │   └── forms/            # Form components
-│   ├── lib/
-│   │   ├── db/              # Prisma client + helpers
-│   │   ├── api/             # API utilities
-│   │   ├── validation/      # Zod schemas
-│   │   ├── hooks/           # Custom React hooks
-│   │   └── utils.ts         # Utility functions
-│   └── types/               # TypeScript types
-├── prisma/
-│   ├── schema.prisma        # Database schema (source of truth)
-│   ├── seed.ts              # Database seeding script
-│   └── dev.db               # SQLite database file (gitignored)
-├── public/                   # Static assets
-├── CLAUDE.md                 # Implementation details (high volatility)
-├── GEMINI.md                 # This file (permanent principles)
-├── CODEX.md                  # Code generation patterns
-├── QODO.md                   # Testing guidelines
-└── package.json              # Dependencies & scripts
-```
+*For a complete list of commands and module-specific instructions, see `CLAUDE.md`.*
 
 ---
 
