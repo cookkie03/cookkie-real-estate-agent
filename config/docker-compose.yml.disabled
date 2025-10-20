@@ -111,6 +111,27 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ====================
+  # PostgreSQL Service
+  # ====================
+  postgres:
+    image: postgres:15-alpine
+    container_name: crm_postgres_db
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env.docker
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - crm-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 # ====================
 # Networks
 # ====================
@@ -144,4 +165,8 @@ volumes:
 
   ai-logs:
     name: crm-ai-logs
+    driver: local
+
+  pgdata:
+    name: crm-postgres-data
     driver: local

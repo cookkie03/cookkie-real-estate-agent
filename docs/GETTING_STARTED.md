@@ -138,6 +138,32 @@ cookkie-real-estate-agent/
 - Idealista.it
 - Scheduling automatico
 
+## Configurazione del Database
+
+Il sistema è configurato per funzionare immediatamente con **SQLite**, ma supporta anche **PostgreSQL** per ambienti di produzione o sviluppo avanzato.
+
+### Opzione 1: Default (SQLite)
+
+- **Nessuna configurazione richiesta.**
+- Al primo avvio, verrà utilizzato un database SQLite locale (`database/prisma/dev.db`).
+- Ideale per una valutazione rapida e per lo sviluppo di funzionalità non legate al database.
+
+### Opzione 2: Avanzato (PostgreSQL con Docker)
+
+Per utilizzare un database PostgreSQL gestito tramite Docker:
+
+1.  **Prerequisiti**: Assicurati che **Docker Desktop** sia installato e in esecuzione.
+2.  **Crea il file di configurazione**: Nella cartella `config/`, crea una copia di `database.env.example` e rinominala in `database.env`.
+3.  **Compila le credenziali**: Apri `config/database.env` e decommenta le variabili, inserendo i dati per il tuo database. Le credenziali di default per il container Docker sono:
+    ```ini
+    DB_HOST=localhost
+    DB_PORT=5432
+    DB_USER=postgres
+    DB_PASSWORD=mysecretpassword
+    DB_NAME=real_estate_crm
+    ```
+4.  **Avvia il progetto**: Esegui `scripts/start.bat` o `./scripts/start.sh`. Lo script rileverà automaticamente la configurazione, avvierà il container Docker di PostgreSQL e connetterà l'applicazione.
+
 ## Primi Passi
 
 ### 1. Popola Database
@@ -249,23 +275,19 @@ npx prisma studio
 
 ### Environment Variables
 
-Modifica `config/.env`:
+Modifica `config/.env` per le API keys e le porte:
 
 ```bash
 # Google AI (REQUIRED)
 GOOGLE_API_KEY=your_key_here
 
-# Database
-DATABASE_URL=file:../database/prisma/dev.db
-
 # Ports
 FRONTEND_PORT=3000
 BACKEND_PORT=3001
 AI_TOOLS_PORT=8000
-
-# Qdrant (opzionale)
-QDRANT_MODE=memory  # o 'server'
 ```
+
+La configurazione del database è gestita separatamente, vedi la sezione "Configurazione del Database" sopra.
 
 ### Settings YAML
 
