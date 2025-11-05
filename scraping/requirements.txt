@@ -21,6 +21,7 @@ pydantic-settings>=2.6.1
 
 # Database
 sqlalchemy>=2.0.36
+psycopg2-binary>=2.9.9  # PostgreSQL adapter for production
 
 # AI Framework (Datapizza AI for semantic extraction)
 datapizza-ai>=0.0.2
