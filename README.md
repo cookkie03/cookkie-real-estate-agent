@@ -29,18 +29,28 @@ CRM Immobiliare è un sistema completo di gestione per agenti immobiliari singol
 
 ## 🚀 Quick Start
 
-### 🐳 Deploy su Railway (Consigliato)
+### 🐳 Deploy con Docker Compose (Consigliato)
 
-**Il modo più semplice per deployare il CRM in production:**
+**Il modo più semplice per deployare il CRM:**
 
-👉 **Segui la [GUIDA RAILWAY COMPLETA](RAILWAY_DEPLOY.md)** (3 passi, ~10 minuti)
+```bash
+# Clone repository
+git clone https://github.com/your-org/crm-immobiliare.git
+cd crm-immobiliare
 
-Railway gestisce tutto automaticamente:
+# Configure environment
+cp config/root.env.example .env
+# Edit .env with your values
+
+# Start all services
+docker-compose up -d
+```
+
+Questo avvia automaticamente:
 - ✅ PostgreSQL database
-- ✅ Docker builds
-- ✅ SSL/HTTPS automatico
-- ✅ Auto-deploy da GitHub
-- ✅ Scalabilità
+- ✅ Next.js App (Frontend + API)
+- ✅ AI Tools (FastAPI)
+- ✅ Network e volumi configurati
 
 ### 💻 Sviluppo Locale
 
@@ -125,8 +135,7 @@ Il progetto è organizzato in moduli indipendenti con deployment unificato:
 ├── scripts/           # Automation scripts
 ├── tests/             # Test suite
 ├── logs/              # Log centralizzati
-├── docs/              # Documentazione
-└── backend/           # [ARCHIVED] - Codice migrato in frontend/
+└── docs/              # Documentazione
 ```
 
 ### Moduli Principali
@@ -139,7 +148,7 @@ Il progetto è organizzato in moduli indipendenti con deployment unificato:
 | **scraping** | Python | Web scraping | [README](scraping/README.md) |
 | **config** | - | Configurazione | [README](config/README.md) |
 
-**Nota**: L'architettura è stata semplificata unificando Frontend e Backend in un'unica applicazione Next.js, riducendo da 4 a 3 servizi per compatibilità con Railway Free Tier.
+**Nota**: L'architettura è stata semplificata unificando Frontend e Backend in un'unica applicazione Next.js, riducendo da 4 a 3 servizi per deployment semplificato.
 
 ---
 
@@ -168,7 +177,7 @@ Il progetto è organizzato in moduli indipendenti con deployment unificato:
 
 ### Database
 - **Development**: PostgreSQL (locale) o SQLite
-- **Production**: PostgreSQL (Railway managed)
+- **Production**: PostgreSQL (Docker Compose)
 - **ORM**: Prisma (Node.js) + SQLAlchemy (Python)
 - **Migrations**: Prisma Migrate
 
@@ -178,15 +187,13 @@ Il progetto è organizzato in moduli indipendenti con deployment unificato:
 
 ### Guide Principali
 
-- 🚂 **[Railway Deploy](RAILWAY_DEPLOY.md)** ⭐ - Deployment production (PRINCIPALE)
+- 🐳 **[Docker Quickstart](docs/setup/DOCKER_QUICKSTART.md)** ⭐ - Deployment con Docker Compose (PRINCIPALE)
 - 📖 [Getting Started](docs/GETTING_STARTED.md) - Setup locale
 - 🏗️ [Architettura](docs/ARCHITECTURE.md) - Architettura sistema
-- 🐳 [Docker Locale](docker-compose.yml) - Sviluppo con Docker
 
 ### Documentazione Moduli
 
-- [Frontend README](frontend/README.md) - UI components, pages, styling
-- [Backend README](backend/README.md) - API endpoints, routes
+- [Frontend README](frontend/README.md) - UI components, pages, styling, API routes
 - [AI Tools README](ai_tools/README.md) - AI agents, tools, config
 - [Database README](database/README.md) - Schema, migrations, seed
 - [Scraping README](scraping/README.md) - Web scraping modules
@@ -266,15 +273,7 @@ docker-compose down
 docker-compose up -d --build
 ```
 
-### Railway Deployment (3 Servizi)
-
-Per production deployment su Railway (compatibile con Free Tier):
-👉 **Vedi [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)**
-
-Railway usa i Dockerfile individuali:
-- `frontend/Dockerfile` - App unificata (UI + API)
-- `ai_tools/Dockerfile` - AI Tools
-- PostgreSQL managed by Railway
+**Deployment Production**: Per deployment in produzione, utilizza lo stesso `docker-compose.yml` con configurazioni appropriate (vedi `docs/setup/DOCKER_QUICKSTART.md`)
 
 ---
 
@@ -499,7 +498,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 - [x] **Settings page** - Gestione API keys dalla UI
 - [x] **Database schema** - Prisma + PostgreSQL
 - [x] **Docker setup** - Multi-stage builds ottimizzati (3 servizi)
-- [x] **Railway ready** - Deployment in 3 passi (compatibile Free Tier)
+- [x] **Production ready** - Deployment con Docker Compose
 
 ### 🔄 In Sviluppo
 
@@ -543,5 +542,5 @@ See [docs/](docs/) for complete reorganization reports.
 
 **Version**: 3.0.0 (Production Ready - Unified Architecture)
 **Last Updated**: 2025-11-06
-**Architecture**: 3-Service Deployment (Railway Free Tier Compatible)
+**Architecture**: 3-Service Deployment (Docker Compose)
 **Status**: ✅ App Unificata (UI + API) | ✅ AI Tools | ✅ PostgreSQL Database

@@ -1,6 +1,6 @@
 # ============================================================================
 # AI Tools Dockerfile - Python FastAPI
-# Optimized for Railway deployment and local Docker Desktop
+# Optimized for Docker Compose deployment
 # ============================================================================
 
 FROM python:3.11-slim

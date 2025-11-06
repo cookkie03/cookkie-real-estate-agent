@@ -1,6 +1,6 @@
 # ============================================================================
 # Unified App Dockerfile - Frontend + Backend in one Next.js app
-# Optimized for Railway deployment and Docker Desktop
+# Optimized for Docker Compose deployment
 # ============================================================================
 
 # Stage 1: Dependencies
@@ -13,7 +13,6 @@ COPY frontend/package*.json ./
 COPY package*.json ../
 
 # Install dependencies
-# Using npm install instead of npm ci for Railway compatibility (no package-lock.json in repo)
 RUN npm install --production=false && \
     npm cache clean --force
 
@@ -35,10 +34,10 @@ COPY frontend/src ./src
 COPY frontend/public ./public
 
 # Copy Prisma schema (needed for Prisma Client generation)
-COPY database/prisma ../database/prisma
+COPY database/prisma ./database/prisma
 
 # Generate Prisma Client
-RUN cd ../database/prisma && npx prisma generate
+RUN npx prisma generate --schema=./database/prisma/schema.prisma
 
 # Build application
 ENV NODE_ENV=production
@@ -68,7 +67,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy Prisma Client and schema
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/../database/prisma ../database/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/database/prisma ./database/prisma
 
 # Set environment
 ENV NODE_ENV=production
@@ -77,6 +76,8 @@ ENV HOSTNAME="0.0.0.0"
 
 # Switch to non-root user
 USER nextjs
+
+RUN npx prisma migrate deploy
 
 # Expose port
 EXPOSE 3000

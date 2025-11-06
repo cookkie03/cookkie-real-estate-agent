@@ -1,7 +1,12 @@
 # ============================================================================
-# Docker Compose - Local Development (3 Services)
+# Docker Compose - CRM Immobiliare (3 Services)
 # Frontend + Backend unified in one Next.js app
 # Use with: docker-compose up -d
+#
+# Services:
+# - database: PostgreSQL 16
+# - app: Next.js (Frontend + API)
+# - ai-tools: Python FastAPI (AI agents)
 # ============================================================================
 
 version: '3.9'

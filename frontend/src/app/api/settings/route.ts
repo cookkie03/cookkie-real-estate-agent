@@ -34,10 +34,10 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const data = updateSettingsSchema.parse(body);
 
-    // In production on Railway, settings are managed via Railway dashboard
-    // This endpoint is for development/testing only
+    // Settings update is for development/testing only
+    // In production, manage environment variables via Docker Compose
     if (process.env.NODE_ENV === 'production') {
-      return apiError('Settings cannot be updated in production. Use Railway dashboard.', 403);
+      return apiError('Settings cannot be updated in production. Use Docker Compose environment variables.', 403);
     }
 
     // Update .env file (development only)
