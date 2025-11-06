@@ -22,9 +22,9 @@
 4. Scegli questo repository: `cookkie-real-estate-agent`
 5. Railway rileverà automaticamente i Dockerfile
 
-### PASSO 2: Crea i 4 Servizi
+### PASSO 2: Crea i 3 Servizi
 
-Railway richiede 4 servizi separati:
+Railway Free Tier supporta 3 servizi - perfetto per la nostra architettura unificata:
 
 #### 1️⃣ **Database (PostgreSQL)**
 
@@ -37,14 +37,14 @@ Railway richiede 4 servizi separati:
 
 ✅ **Il database è pronto!** Railway gestisce tutto automaticamente.
 
-#### 2️⃣ **Backend API**
+#### 2️⃣ **App (Frontend + Backend Unificato)**
 
 ```
 1. Clicca "+ New" → "GitHub Repo"
 2. Seleziona il repo
 3. Root Directory: lascia vuoto (.)
-4. Dockerfile Path: backend/Dockerfile
-5. Nome servizio: "crm-backend"
+4. Dockerfile Path: frontend/Dockerfile
+5. Nome servizio: "crm-app"
 ```
 
 **Environment Variables** (Settings → Variables):
@@ -52,38 +52,18 @@ Railway richiede 4 servizi separati:
 DATABASE_URL=${{crm-database.DATABASE_URL}}  # Auto-reference al database
 GOOGLE_API_KEY=<your-key-here>
 NODE_ENV=production
-PORT=3001
+PORT=3000
 SESSION_SECRET=<genera-una-stringa-casuale-sicura>
 ```
 
 **Settings**:
 - ✅ Health Check Path: `/api/health`
-- ✅ Port: `3001`
-
-#### 3️⃣ **Frontend UI**
-
-```
-1. Clicca "+ New" → "GitHub Repo"
-2. Seleziona il repo
-3. Root Directory: lascia vuoto (.)
-4. Dockerfile Path: frontend/Dockerfile
-5. Nome servizio: "crm-frontend"
-```
-
-**Environment Variables**:
-```bash
-NEXT_PUBLIC_API_URL=https://<backend-url>.railway.app
-NODE_ENV=production
-PORT=3000
-```
-
-**Nota**: Sostituisci `<backend-url>` con l'URL pubblico del backend (lo trovi in Settings → Networking)
-
-**Settings**:
 - ✅ Port: `3000`
 - ✅ Generate Domain (per avere URL pubblico)
 
-#### 4️⃣ **AI Tools (Opzionale)**
+**Nota**: Questa app Next.js unificata serve sia l'UI (pagine) che le API (route handlers), semplificando il deployment.
+
+#### 3️⃣ **AI Tools (Python FastAPI)**
 
 ```
 1. Clicca "+ New" → "GitHub Repo"
@@ -98,6 +78,7 @@ PORT=3000
 DATABASE_URL=${{crm-database.DATABASE_URL}}
 GOOGLE_API_KEY=<your-key-here>
 PORT=8000
+AI_TOOLS_URL=https://<questo-servizio-url>.railway.app
 ```
 
 **Settings**:
@@ -108,14 +89,14 @@ PORT=8000
 
 ### PASSO 3: Deploy!
 
-1. Tutti i servizi si deployeranno automaticamente
+1. Tutti i 3 servizi si deployeranno automaticamente
 2. Aspetta che tutti diventino **"Active" (verde)**
-3. Vai al servizio **Frontend**
+3. Vai al servizio **crm-app** (l'app unificata)
 4. Clicca su **"View Deployment"** o apri l'URL pubblico
 5. **Accedi alle Impostazioni** (icona Settings nell'app)
 6. **Inserisci la tua Google API Key** nella UI
 
-✅ **FATTO!** L'app è live!
+✅ **FATTO!** L'app è live con tutti i suoi 3 servizi!
 
 ---
 
@@ -123,7 +104,7 @@ PORT=8000
 
 ### Configura API Keys dalla UI
 
-1. Apri l'app frontend: `https://<frontend-url>.railway.app`
+1. Apri l'app: `https://<crm-app-url>.railway.app`
 2. Vai su **Impostazioni** (icona ingranaggio nella sidebar)
 3. Tab **"API Keys"**:
    - Inserisci **Google API Key**
@@ -143,7 +124,7 @@ railway link  # Seleziona il tuo progetto
 railway run npx prisma migrate deploy --schema=database/prisma/schema.prisma
 ```
 
-Oppure aggiungi un comando di deploy nel backend che esegue le migrations all'avvio.
+**Nota**: Il database viene inizializzato automaticamente durante il primo deploy dell'app grazie al comando `npx prisma db push` incluso nel Dockerfile.
 
 ---
 
@@ -151,10 +132,10 @@ Oppure aggiungi un comando di deploy nel backend che esegue le migrations all'av
 
 ### Health Checks
 
-Tutti i servizi hanno health check automatici:
-- **Backend**: `GET /api/health`
-- **Frontend**: `GET /` (homepage)
+Tutti i 3 servizi hanno health check automatici:
+- **App (Frontend + Backend)**: `GET /api/health`
 - **AI Tools**: `GET /health`
+- **Database**: Health check automatico di Railway
 
 Railway monitora automaticamente e riavvia i servizi se non rispondono.
 
@@ -221,20 +202,21 @@ railway run npx prisma studio --schema=database/prisma/schema.prisma
 
 ## 🐛 Troubleshooting
 
-### Backend non si avvia
+### App non si avvia
 
 **Problema**: Errore database connection
 **Soluzione**:
-1. Verifica che `DATABASE_URL` sia configurato
+1. Verifica che `DATABASE_URL` sia configurato in crm-app
 2. Usa la variabile di riferimento: `${{crm-database.DATABASE_URL}}`
-3. Aspetta che il database sia "Active" prima di deployare il backend
+3. Aspetta che il database sia "Active" prima di deployare l'app
 
-### Frontend non raggiunge il Backend
+### API Routes non funzionano
 
-**Problema**: 404 o CORS errors
+**Problema**: 404 o errori sulle chiamate API
 **Soluzione**:
-1. Verifica che `NEXT_PUBLIC_API_URL` punti all'URL pubblico del backend
-2. Aggiungi CORS origin nel backend: `CORS_ORIGINS=https://frontend-url.railway.app`
+1. L'app unificata serve sia UI che API - non servono URL separati
+2. Le API sono accessibili su `https://<crm-app-url>.railway.app/api/*`
+3. Verifica nei logs che l'app sia avviata correttamente
 
 ### AI Features non funzionano
 
@@ -242,7 +224,8 @@ railway run npx prisma studio --schema=database/prisma/schema.prisma
 **Soluzione**:
 1. Vai su Impostazioni nell'app
 2. Inserisci Google API Key valida
-3. Testa la connessione con il pulsante "Testa Connessione"
+3. Verifica che il servizio AI Tools sia "Active"
+4. Testa la connessione con il pulsante "Testa Connessione"
 
 ### Build failed
 
@@ -250,21 +233,22 @@ railway run npx prisma studio --schema=database/prisma/schema.prisma
 **Soluzione**:
 1. Verifica che tutti i file necessari siano committati
 2. Controlla i logs del build
-3. Testa il build localmente: `docker build -f backend/Dockerfile .`
+3. Testa il build localmente: `docker build -f frontend/Dockerfile .`
+4. Verifica che il database schema sia presente in `database/prisma/schema.prisma`
 
 ---
 
 ## 💰 Costi Railway
 
 Railway offre:
-- **Free Tier**: $5 di credito gratis al mese
+- **Free Tier**: $5 di credito gratis al mese (max 3 servizi)
 - **Hobby Plan**: $5/mese per uso personale
 - **Pro Plan**: $20/mese per uso professionale
 
 **Stima per questo progetto**:
-- 4 servizi (Frontend + Backend + AI + Database)
-- ~$5-10/mese nel piano Hobby
-- ~$0 con Free Tier per testing
+- 3 servizi (App Unificata + AI Tools + Database PostgreSQL)
+- ~$3-7/mese nel piano Hobby
+- ✅ **Compatibile con Free Tier** (esattamente 3 servizi!)
 
 ---
 
@@ -291,37 +275,50 @@ Prima di deployare su Railway:
 
 ---
 
-## 🎯 Architettura Railway
+## 🎯 Architettura Railway (3 Servizi)
 
 ```
-┌─────────────────────────────────────────────────┐
-│            Railway Project                       │
-│                                                  │
-│  ┌─────────────┐    ┌─────────────┐            │
-│  │  Frontend   │◄───┤  Cloudflare │ (CDN)      │
-│  │  (Next.js)  │    │   Domain    │            │
-│  │  Port 3000  │    └─────────────┘            │
-│  └──────┬──────┘                                │
-│         │                                        │
-│         │ NEXT_PUBLIC_API_URL                   │
-│         │                                        │
-│         ▼                                        │
-│  ┌─────────────┐                                │
-│  │   Backend   │                                │
-│  │  (Next.js)  │                                │
-│  │  Port 3001  │                                │
-│  └──────┬──────┘                                │
-│         │                                        │
-│         │ DATABASE_URL                          │
-│         │                                        │
-│         ▼                                        │
-│  ┌─────────────┐    ┌─────────────┐            │
-│  │ PostgreSQL  │    │  AI Tools   │            │
-│  │  (Managed)  │◄───┤  (FastAPI)  │            │
-│  │             │    │  Port 8000  │            │
-│  └─────────────┘    └─────────────┘            │
-│                                                  │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Railway Project (Free Tier)               │
+│                                                              │
+│  ┌──────────────────────────┐    ┌─────────────┐           │
+│  │      crm-app             │◄───┤  Cloudflare │ (CDN)     │
+│  │  (Frontend + Backend)    │    │   Domain    │           │
+│  │                          │    └─────────────┘           │
+│  │  ┌────────────────────┐  │                              │
+│  │  │  UI (Pages)        │  │                              │
+│  │  │  /immobili         │  │                              │
+│  │  │  /clienti          │  │                              │
+│  │  │  /dashboard        │  │                              │
+│  │  └────────────────────┘  │                              │
+│  │                          │                              │
+│  │  ┌────────────────────┐  │                              │
+│  │  │  API Routes        │  │                              │
+│  │  │  /api/properties   │  │                              │
+│  │  │  /api/contacts     │  │                              │
+│  │  │  /api/health       │  │                              │
+│  │  └────────────────────┘  │                              │
+│  │                          │                              │
+│  │     Next.js 14           │                              │
+│  │     Port 3000            │                              │
+│  └──────────┬───────────────┘                              │
+│             │                                               │
+│             │ DATABASE_URL                                  │
+│             │                                               │
+│             ▼                                               │
+│  ┌─────────────────┐    ┌──────────────────┐              │
+│  │   PostgreSQL    │◄───┤   crm-ai-tools   │              │
+│  │   (Managed)     │    │   (FastAPI)      │              │
+│  │                 │    │   Port 8000      │              │
+│  │  - properties   │    │                  │              │
+│  │  - contacts     │    │  - RAG Agent     │              │
+│  │  - requests     │    │  - Matching AI   │              │
+│  │  - matches      │    │  - Briefing      │              │
+│  └─────────────────┘    └──────────────────┘              │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+
+✅ 3 Servizi Totali = Compatibile con Railway Free Tier!
 ```
 
 ---
@@ -340,6 +337,12 @@ Hai deployato con successo il CRM Immobiliare su Railway!
 
 ---
 
-**Versione**: 1.0.0
+**Versione**: 2.0.0 (Architettura Unificata - 3 Servizi)
 **Ultimo aggiornamento**: 2025-11-06
 **Autore**: CRM Immobiliare Team
+
+**Novità v2.0**:
+- ✅ Ridotto da 4 a 3 servizi (compatibile con Railway Free Tier)
+- ✅ App unificata Next.js (Frontend + Backend in un solo servizio)
+- ✅ Deployment più semplice e più economico
+- ✅ Stesso set di funzionalità completo

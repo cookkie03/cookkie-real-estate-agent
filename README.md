@@ -58,13 +58,13 @@ Railway gestisce tutto automaticamente:
 git clone https://github.com/yourusername/crm-immobiliare.git
 cd crm-immobiliare
 
-# Start con Docker Compose
+# Start con Docker Compose (3 servizi)
 docker-compose up -d
 
 # Accedi
-# Frontend: http://localhost:3000
-# Backend:  http://localhost:3001
-# AI Tools: http://localhost:8000
+# App (UI + API): http://localhost:3000
+# AI Tools:       http://localhost:8000
+# Database:       PostgreSQL su porta 5432
 ```
 
 #### Opzione 2: Sviluppo Nativo
@@ -90,13 +90,11 @@ npx tsx seed.ts  # Dati di esempio
 
 # 5. Start development
 cd ../..
-npm run dev  # Frontend su porta 3000
+cd frontend
+npm run dev  # App unificata (UI + API) su porta 3000
 
-# In another terminal
-npm run dev:backend  # Backend su porta 3001
-
-# AI Tools (opzionale)
-cd ai_tools
+# AI Tools (opzionale, in another terminal)
+cd ../ai_tools
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 .venv\Scripts\activate      # Windows
@@ -106,41 +104,42 @@ python main.py  # Porta 8000
 
 ### Accesso
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001/api/health
+- **App (UI + API)**: http://localhost:3000
+- **Health Check**: http://localhost:3000/api/health
 - **AI Tools**: http://localhost:8000/health
-- **API Docs**: http://localhost:8000/docs
+- **AI API Docs**: http://localhost:8000/docs
 
 ---
 
 ## 📦 Architettura Modulare
 
-Il progetto è organizzato in moduli indipendenti:
+Il progetto è organizzato in moduli indipendenti con deployment unificato:
 
 ```
 /
-├── frontend/          # Next.js UI (porta 3000)
-├── backend/           # Next.js API (porta 3001)
+├── frontend/          # Next.js App Unificata (UI + API, porta 3000)
 ├── ai_tools/          # Python AI (porta 8000)
-├── database/          # Prisma + SQLite (centralizzato)
+├── database/          # Prisma + PostgreSQL (centralizzato)
 ├── scraping/          # Web scraping modules
 ├── config/            # Configurazione centralizzata
 ├── scripts/           # Automation scripts
 ├── tests/             # Test suite
 ├── logs/              # Log centralizzati
-└── docs/              # Documentazione
+├── docs/              # Documentazione
+└── backend/           # [ARCHIVED] - Codice migrato in frontend/
 ```
 
 ### Moduli Principali
 
 | Modulo | Linguaggio | Descrizione | Docs |
 |--------|------------|-------------|------|
-| **frontend** | TypeScript | UI Next.js 14 | [README](frontend/README.md) |
-| **backend** | TypeScript | API Next.js 14 | [README](backend/README.md) |
+| **frontend** | TypeScript | App Next.js 14 (UI + API) | [README](frontend/README.md) |
 | **ai_tools** | Python | AI agents + tools | [README](ai_tools/README.md) |
 | **database** | SQL/TS/Py | Prisma + SQLAlchemy | [README](database/README.md) |
 | **scraping** | Python | Web scraping | [README](scraping/README.md) |
 | **config** | - | Configurazione | [README](config/README.md) |
+
+**Nota**: L'architettura è stata semplificata unificando Frontend e Backend in un'unica applicazione Next.js, riducendo da 4 a 3 servizi per compatibilità con Railway Free Tier.
 
 ---
 
@@ -246,10 +245,9 @@ Vedi [Config README](config/README.md) per dettagli completi.
 docker-compose up -d
 ```
 
-Avvia automaticamente:
+Avvia automaticamente 3 servizi:
 - PostgreSQL database (porta 5432)
-- Frontend (porta 3000)
-- Backend (porta 3001)
+- App unificata - UI + API (porta 3000)
 - AI Tools (porta 8000)
 
 ### Docker Commands
@@ -268,15 +266,15 @@ docker-compose down
 docker-compose up -d --build
 ```
 
-### Railway Deployment
+### Railway Deployment (3 Servizi)
 
-Per production deployment su Railway:
+Per production deployment su Railway (compatibile con Free Tier):
 👉 **Vedi [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)**
 
 Railway usa i Dockerfile individuali:
-- `backend/Dockerfile`
-- `frontend/Dockerfile`
-- `ai_tools/Dockerfile`
+- `frontend/Dockerfile` - App unificata (UI + API)
+- `ai_tools/Dockerfile` - AI Tools
+- PostgreSQL managed by Railway
 
 ---
 
@@ -372,39 +370,44 @@ Vedi [Scraping README](scraping/README.md) per dettagli.
 
 ## 🛠️ Development Commands
 
-### Root Level
+### Unified App (Frontend)
 
 ```bash
-# Start frontend (recommended)
-npm run dev
+# Development
+cd frontend
+npm run dev              # Start app (UI + API) su porta 3000
+npm run build            # Build production
+npm run start            # Start production server
 
-# Start backend separately
-npm run dev:backend
-
-# Start frontend separately
-npm run dev:frontend
-
-# Build all
-npm run build
-
-# Prisma commands
-npm run prisma:generate
-npm run prisma:push
-npm run prisma:studio
-npm run prisma:seed
+# Prisma commands (from frontend)
+npm run prisma:generate  # Generate Prisma Client
+npm run prisma:push      # Push schema to DB
+npm run prisma:studio    # Open Prisma Studio GUI
+npm run prisma:seed      # Seed database
 ```
 
-### Module Level
+### AI Tools
 
 ```bash
-# Backend
-cd backend && npm run dev
+# AI Tools (Python)
+cd ai_tools
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+pip install -r requirements.txt
+python main.py             # Port 8000
+```
 
-# Frontend
-cd frontend && npm run dev
+### Docker
 
-# AI Tools
-cd ai_tools && python main.py
+```bash
+# Start all services (3)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all
+docker-compose down
 ```
 
 ---
@@ -413,15 +416,13 @@ cd ai_tools && python main.py
 
 ```
 crm-immobiliare/
-├── frontend/              # Next.js UI (porta 3000)
-│   ├── src/app/           # Pages & routes
+├── frontend/              # Next.js App Unificata (porta 3000)
+│   ├── src/app/           # Pages, routes & API routes
+│   │   ├── (pages)/       # UI Pages
+│   │   └── api/           # API Routes (Backend)
 │   ├── src/components/    # React components
 │   ├── src/hooks/         # Custom hooks
-│   └── src/lib/           # Utilities
-│
-├── backend/               # Next.js API (porta 3001)
-│   ├── src/app/api/       # API routes
-│   └── src/lib/           # DB & utilities
+│   └── src/lib/           # Utilities + DB client
 │
 ├── ai_tools/              # Python AI (porta 8000)
 │   ├── app/agents/        # AI agents
@@ -438,9 +439,10 @@ crm-immobiliare/
 │
 ├── config/                # Configurazione centralizzata
 │   ├── *.env.example      # Environment templates
-│   ├── docker-compose.yml # Docker orchestration
+│   ├── docker-compose.yml # Docker orchestration (3 servizi)
 │   └── README.md          # Config docs
 │
+├── backend/               # [ARCHIVED] Migrato in frontend/src/app/api
 ├── scripts/               # Automation scripts
 ├── tests/                 # Test suite
 ├── logs/                  # Centralized logs
@@ -491,12 +493,13 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 ### ✅ Completato (v3.0.0)
 
-- [x] **Backend API completo** - 11 endpoints REST ful
+- [x] **App unificata** - Frontend + Backend in singola applicazione Next.js
+- [x] **Backend API completo** - 11 endpoints RESTful
 - [x] **Frontend completo** - 18 pagine con ChatGPT-style UI
 - [x] **Settings page** - Gestione API keys dalla UI
 - [x] **Database schema** - Prisma + PostgreSQL
-- [x] **Docker setup** - Multi-stage builds ottimizzati
-- [x] **Railway ready** - Deployment in 3 passi
+- [x] **Docker setup** - Multi-stage builds ottimizzati (3 servizi)
+- [x] **Railway ready** - Deployment in 3 passi (compatibile Free Tier)
 
 ### 🔄 In Sviluppo
 
@@ -538,6 +541,7 @@ See [docs/](docs/) for complete reorganization reports.
 
 **Made with ❤️ for real estate agents**
 
-**Version**: 3.0.0 (Production Ready)
+**Version**: 3.0.0 (Production Ready - Unified Architecture)
 **Last Updated**: 2025-11-06
-**Status**: ✅ Backend Complete | ✅ Frontend Complete | 🟡 AI Tools (Config Required)
+**Architecture**: 3-Service Deployment (Railway Free Tier Compatible)
+**Status**: ✅ App Unificata (UI + API) | ✅ AI Tools | ✅ PostgreSQL Database
