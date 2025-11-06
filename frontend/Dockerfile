@@ -13,7 +13,8 @@ COPY frontend/package*.json ./
 COPY package*.json ../
 
 # Install dependencies
-RUN npm ci && \
+# Using npm install instead of npm ci for Railway compatibility (no package-lock.json in repo)
+RUN npm install --production=false && \
     npm cache clean --force
 
 # Stage 2: Builder
