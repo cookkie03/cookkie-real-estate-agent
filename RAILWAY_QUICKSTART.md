@@ -2,6 +2,8 @@
 
 **Deploy completo in 3 step**
 
+**⚠️ IMPORTANTE**: Usa il branch `claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC`
+
 ---
 
 ## ⚡ STEP 1: Setup Railway (2 min)
@@ -16,17 +18,18 @@
 ### 1.2 Crea Nuovo Progetto
 
 1. Dashboard Railway → **"New Project"**
-2. Seleziona **"Deploy from GitHub repo"**
-3. Scegli: `cookkie-real-estate-agent`
-4. Railway inizierà automaticamente l'analisi
+2. Seleziona **"Empty Project"** (NON "Deploy from GitHub" ancora)
+3. Dai un nome al progetto (es: "crm-immobiliare")
+
+**IMPORTANTE**: Prima crea il progetto vuoto, poi aggiungi i servizi!
 
 ---
 
 ## 📦 STEP 2: Configura 3 Servizi (2 min)
 
-Railway rileverà automaticamente i Dockerfile. Crea i 3 servizi:
+Crea i servizi **in questo ordine** (importante!):
 
-### 2.1 Database (PostgreSQL)
+### 2.1 Database (PostgreSQL) - Servizio 1/3
 
 ```
 1. Nel progetto → "+ New"
@@ -38,24 +41,36 @@ Railway rileverà automaticamente i Dockerfile. Crea i 3 servizi:
 
 **Nessuna configurazione richiesta!** Railway genera automaticamente `DATABASE_URL`.
 
-### 2.2 App (Frontend + Backend Unificato)
+⏳ **Aspetta che il database sia "Active"** (pallino verde) prima di procedere!
+
+---
+
+### 2.2 App (Frontend Unificato) - Servizio 2/3
+
+**⚠️ NOTA IMPORTANTE**: Questo servizio contiene **TUTTO** (UI + API). NON serve un backend separato!
 
 ```
 1. "+ New" → "GitHub Repo"
-2. Seleziona il repo
-3. Service Name: "crm-app"
-4. Root Directory: lascia vuoto (.)
-5. Clicca "Deploy"
+2. Seleziona il repo: cookkie-real-estate-agent
+3. Branch: claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
+4. Service Name: "crm-app"
+5. Root Directory: . (lascia vuoto)
+6. Railway rileverà automaticamente railway.json
+7. Clicca "Deploy"
 ```
+
+**Configurazione Automatica**:
+- Railway userà `railway.json` che specifica `frontend/Dockerfile`
+- Questo Dockerfile contiene l'app unificata (UI + API)
 
 **Environment Variables** (Settings → Variables → Raw Editor):
 
 ```env
 DATABASE_URL=${{crm-database.DATABASE_URL}}
-GOOGLE_API_KEY=la-tua-google-api-key-qui
+GOOGLE_API_KEY=your-google-api-key-here
 NODE_ENV=production
 PORT=3000
-SESSION_SECRET=genera-stringa-casuale-qui
+SESSION_SECRET=generate-with-openssl-rand-base64-32
 ```
 
 **Genera SESSION_SECRET**:
@@ -63,34 +78,72 @@ SESSION_SECRET=genera-stringa-casuale-qui
 openssl rand -base64 32
 ```
 
-**Settings Importanti**:
+**Settings → Deploy** (verifica/configura):
+- ✅ Builder: DOCKERFILE
+- ✅ Dockerfile Path: frontend/Dockerfile
+- ✅ Watch Paths: frontend/** database/**
+
+**Settings → Networking**:
 - ✅ Health Check Path: `/api/health`
 - ✅ Health Check Timeout: 100 seconds
-- ✅ Port: `3000`
+- ✅ Port: 3000
 - ✅ **Generate Domain** (per URL pubblico)
 
-### 2.3 AI Tools (Python FastAPI)
+---
+
+### 2.3 AI Tools (Python FastAPI) - Servizio 3/3
 
 ```
 1. "+ New" → "GitHub Repo"
-2. Seleziona il repo
-3. Service Name: "crm-ai-tools"
-4. Root Directory: lascia vuoto (.)
-5. Dockerfile Path: "ai_tools/Dockerfile"
-6. Clicca "Deploy"
+2. Seleziona il repo: cookkie-real-estate-agent
+3. Branch: claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
+4. Service Name: "crm-ai-tools"
+5. Root Directory: . (lascia vuoto)
+6. Dockerfile Path: ai_tools/Dockerfile
+7. Clicca "Deploy"
 ```
 
 **Environment Variables** (Settings → Variables → Raw Editor):
 
 ```env
 DATABASE_URL=${{crm-database.DATABASE_URL}}
-GOOGLE_API_KEY=la-tua-google-api-key-qui
+GOOGLE_API_KEY=your-google-api-key-here
 PORT=8000
 ```
 
-**Settings**:
+**Settings → Deploy**:
+- ✅ Dockerfile Path: ai_tools/Dockerfile
+- ✅ Watch Paths: ai_tools/** database/**
+
+**Settings → Networking**:
 - ✅ Health Check Path: `/health`
-- ✅ Port: `8000`
+- ✅ Port: 8000
+
+---
+
+## 📊 Riepilogo Architettura (3 Servizi)
+
+```
+Railway Project
+│
+├── 1️⃣ crm-database (PostgreSQL)
+│   └─ Database managed da Railway
+│
+├── 2️⃣ crm-app (Next.js Unified - Frontend + API)
+│   └─ Usa: frontend/Dockerfile
+│      • Contiene: UI + API Routes
+│      • NON serve backend/ separato!
+│
+└── 3️⃣ crm-ai-tools (Python FastAPI)
+    └─ Usa: ai_tools/Dockerfile
+       • AI Features (RAG, Matching, Briefing)
+```
+
+**✅ Totale: 3 servizi = Railway Free Tier compatible!**
+
+**❌ NON CREARE**:
+- Un servizio `backend` separato (è già incluso in `crm-app`)
+- Più di 3 servizi totali
 
 ---
 
@@ -113,7 +166,7 @@ Se vedi errori, clicca sul servizio → "Deployments" → "View Logs".
 1. Clicca su **"crm-app"**
 2. Tab **"Settings"**
 3. Sezione **"Networking"**
-4. Clicca **"Generate Domain"**
+4. Se non c'è ancora, clicca **"Generate Domain"**
 5. Salva l'URL: `https://crm-app-xxxx.up.railway.app`
 
 ### 3.3 Test Deploy
@@ -143,7 +196,7 @@ Se vedi errori, clicca sul servizio → "Deployments" → "View Logs".
 Il tuo CRM è ora live su Railway con:
 
 - ✅ Frontend Next.js (UI completa)
-- ✅ Backend API (route handlers)
+- ✅ Backend API (route handlers integrati nel frontend)
 - ✅ Database PostgreSQL
 - ✅ AI Tools (Gemini + RAG + Matching)
 - ✅ SSL/HTTPS automatico
@@ -187,7 +240,7 @@ Railway fa auto-deploy ad ogni push su GitHub:
 # Fai modifiche in locale
 git add .
 git commit -m "feat: nuova funzionalità"
-git push origin main
+git push origin claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
 
 # Railway deployer automaticamente! ✨
 ```
@@ -210,6 +263,16 @@ git push origin main
 
 ## 🐛 Problemi Comuni
 
+### Build Error: npm ci
+
+**Sintomo**:
+```
+npm error code EUSAGE
+npm error npm ci can only install with an existing package-lock.json
+```
+
+**Soluzione**: ✅ **RISOLTO** - I Dockerfile ora usano `npm install` invece di `npm ci`
+
 ### App non si avvia
 
 **Sintomo**: Service rimane "Building" o va in "Crashed"
@@ -218,9 +281,19 @@ git push origin main
 1. Clicca sul servizio → "Deployments" → "View Logs"
 2. Cerca errori nei logs
 3. Errori comuni:
-   - `DATABASE_URL` mancante → Aggiungi la variabile
-   - `GOOGLE_API_KEY` mancante → Aggiungi la variabile
+   - `DATABASE_URL` mancante → Aggiungi la variabile con `${{crm-database.DATABASE_URL}}`
+   - `GOOGLE_API_KEY` mancante → Aggiungi la tua API key
    - Database non pronto → Aspetta che il database sia "Active"
+   - Branch sbagliato → Verifica di usare il branch lungo (claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC)
+
+### Creato servizio backend per errore
+
+**Sintomo**: Hai creato 4 servizi invece di 3
+
+**Soluzione**:
+1. Il backend/ è INTERNO al frontend
+2. Elimina il servizio "backend" o "crm-immobiliare-backend"
+3. Settings → Danger Zone → Delete Service
 
 ### Health check fallisce
 
@@ -248,6 +321,7 @@ git push origin main
 
 Per guide dettagliate:
 
+- **[RAILWAY_FIX_IMMEDIATO.md](./RAILWAY_FIX_IMMEDIATO.md)** - Fix problemi deployment ⚠️
 - **[RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md)** - Guida completa deployment
 - **[RAILWAY_PRE_FLIGHT_CHECKLIST.md](./RAILWAY_PRE_FLIGHT_CHECKLIST.md)** - Checklist pre-deploy
 - **[DOCKER_QUICKSTART.md](./DOCKER_QUICKSTART.md)** - Test locale con Docker
@@ -258,6 +332,7 @@ Per guide dettagliate:
 
 Dopo il deploy, verifica:
 
+- [ ] Esattamente 3 servizi creati (database + app + ai-tools)
 - [ ] Tutti i 3 servizi sono "Active" ●verde
 - [ ] App accessibile da browser
 - [ ] `/api/health` restituisce 200 OK
@@ -274,14 +349,32 @@ Dopo il deploy, verifica:
 
 Se hai problemi:
 
-1. **Controlla i logs** su Railway (servizio → Deployments → View Logs)
-2. **Leggi la guida completa**: [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md)
-3. **Verifica pre-flight**: [RAILWAY_PRE_FLIGHT_CHECKLIST.md](./RAILWAY_PRE_FLIGHT_CHECKLIST.md)
+1. **⚠️ Leggi prima**: [RAILWAY_FIX_IMMEDIATO.md](./RAILWAY_FIX_IMMEDIATO.md)
+2. **Controlla i logs** su Railway (servizio → Deployments → View Logs)
+3. **Leggi la guida completa**: [RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md)
+4. **Verifica pre-flight**: [RAILWAY_PRE_FLIGHT_CHECKLIST.md](./RAILWAY_PRE_FLIGHT_CHECKLIST.md)
 
 ---
 
-**Versione**: 1.0.0
-**Tempo medio deploy**: 5 minuti
+## 🔑 Info Importanti
+
+**Branch da usare**:
+```
+claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
+```
+
+**Servizi da creare** (in ordine):
+1. crm-database (PostgreSQL)
+2. crm-app (GitHub Repo → frontend/Dockerfile)
+3. crm-ai-tools (GitHub Repo → ai_tools/Dockerfile)
+
+**Servizi da NON creare**:
+- ❌ backend (è già incluso in crm-app!)
+
+---
+
+**Versione**: 2.0.0 (Fix npm ci + Branch specification)
+**Tempo medio deploy**: 5-10 minuti
 **Ultimo aggiornamento**: 2025-11-06
 
 🎉 **Buon deploy!**

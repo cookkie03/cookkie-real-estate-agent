@@ -12,7 +12,8 @@ WORKDIR /app
 COPY backend/package*.json ./
 COPY package*.json ../
 
-RUN npm ci --only=production && \
+# Using npm install instead of npm ci for Railway compatibility (no package-lock.json in repo)
+RUN npm install --production=false && \
     npm cache clean --force
 
 # Stage 2: Builder
