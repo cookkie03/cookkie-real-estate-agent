@@ -1,272 +1,112 @@
-# ==============================================================================
-# CRM Immobiliare - Complete Docker Compose Configuration
-# ==============================================================================
-# Usage:
-#   docker-compose up -d           # Start all services
-#   docker-compose down            # Stop all services
-#   docker-compose logs -f         # View logs
-#   docker-compose ps              # Check status
-# ==============================================================================
+# ============================================================================
+# Docker Compose - Local Development
+# Use with: docker-compose up -d
+# ============================================================================
 
-version: '3.8'
+version: '3.9'
 
 services:
-  # ===========================================================================
-  # DATABASE - PostgreSQL
-  # ===========================================================================
+  # PostgreSQL Database
   database:
     image: postgres:16-alpine
     container_name: crm-database
-    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-crm_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm_password_change_me}
-      POSTGRES_DB: ${POSTGRES_DB:-crm_immobiliare}
-      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: crm_user
+      POSTGRES_PASSWORD: crm_password
+      POSTGRES_DB: crm_immobiliare
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/prisma/schema.prisma:/app/schema.prisma:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crm_user} -d ${POSTGRES_DB:-crm_immobiliare}"]
+      test: ["CMD-SHELL", "pg_isready -U crm_user"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - crm-network
+      - crm_network
 
-  # ===========================================================================
-  # REDIS - Caching & Task Queue
-  # ===========================================================================
-  redis:
-    image: redis:7-alpine
-    container_name: crm-redis
-    restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_password_change_me}
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - crm-network
-
-  # ===========================================================================
-  # BACKEND API - Next.js 14
-  # ===========================================================================
+  # Backend API
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-      args:
-        NODE_ENV: production
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: crm-backend
-    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://crm_user:crm_password@database:5432/crm_immobiliare
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-your_google_api_key_here}
+      NODE_ENV: production
+      PORT: 3001
+      SESSION_SECRET: ${SESSION_SECRET:-development_secret_change_in_production}
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+    ports:
+      - "3001:3001"
     depends_on:
       database:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-crm_user}:${POSTGRES_PASSWORD:-crm_password_change_me}@database:5432/${POSTGRES_DB:-crm_immobiliare}?schema=public
-
-      # Server
-      NODE_ENV: production
-      PORT: 3001
-
-      # AI Tools
-      PYTHON_AI_URL: http://ai_tools:8000
-
-      # API Keys
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-
-      # Redis
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379
-
-      # CORS
-      CORS_ORIGINS: http://localhost:3000,http://frontend:3000
-    ports:
-      - "${BACKEND_PORT:-3001}:3001"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-      - ./database:/app/database:ro
-    networks:
-      - crm-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001/api/health || exit 1"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    networks:
+      - crm_network
+    restart: unless-stopped
 
-  # ===========================================================================
-  # FRONTEND UI - Next.js 14
-  # ===========================================================================
+  # Frontend UI
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NODE_ENV: production
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: crm-frontend
-    restart: unless-stopped
-    depends_on:
-      - backend
     environment:
-      # API
-      NEXT_PUBLIC_API_URL: http://backend:3001
-      NEXT_PUBLIC_FRONTEND_URL: http://localhost:3000
-
-      # Server
+      NEXT_PUBLIC_API_URL: http://localhost:3001
       NODE_ENV: production
       PORT: 3000
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    networks:
-      - crm-network
+      - "3000:3000"
+    depends_on:
+      - backend
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    networks:
+      - crm_network
+    restart: unless-stopped
 
-  # ===========================================================================
-  # AI TOOLS - Python FastAPI
-  # ===========================================================================
-  ai_tools:
+  # AI Tools (FastAPI)
+  ai-tools:
     build:
-      context: ./ai_tools
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ai_tools/Dockerfile
     container_name: crm-ai-tools
-    restart: unless-stopped
-    depends_on:
-      database:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
-      # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-crm_user}:${POSTGRES_PASSWORD:-crm_password_change_me}@database:5432/${POSTGRES_DB:-crm_immobiliare}
-
-      # Server
+      DATABASE_URL: postgresql://crm_user:crm_password@database:5432/crm_immobiliare
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-your_google_api_key_here}
       PORT: 8000
-      HOST: 0.0.0.0
-      LOG_LEVEL: info
-
-      # AI
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-      GOOGLE_MODEL: ${GOOGLE_MODEL:-gemini-1.5-pro}
-      AI_TEMPERATURE: ${AI_TEMPERATURE:-0.7}
-
-      # Qdrant
-      QDRANT_MODE: ${QDRANT_MODE:-memory}
-      QDRANT_HOST: ${QDRANT_HOST:-qdrant}
-      QDRANT_PORT: ${QDRANT_PORT:-6333}
-
-      # Redis
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379
     ports:
-      - "${AI_TOOLS_PORT:-8000}:8000"
-    volumes:
-      - ./ai_tools:/app
-      - ./database:/app/database:ro
-      - ai_cache:/app/.cache
-    networks:
-      - crm-network
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # ===========================================================================
-  # SCRAPING SERVICE - Python
-  # ===========================================================================
-  scraping:
-    build:
-      context: ./scraping
-      dockerfile: Dockerfile
-    container_name: crm-scraping
-    restart: unless-stopped
+      - "8000:8000"
     depends_on:
       database:
         condition: service_healthy
-    environment:
-      # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-crm_user}:${POSTGRES_PASSWORD:-crm_password_change_me}@database:5432/${POSTGRES_DB:-crm_immobiliare}
-
-      # Google AI
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-
-      # Playwright
-      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
-
-      # Proxy (optional)
-      PROXY_SERVER: ${PROXY_SERVER:-}
-      PROXY_USERNAME: ${PROXY_USERNAME:-}
-      PROXY_PASSWORD: ${PROXY_PASSWORD:-}
-    volumes:
-      - ./scraping:/app
-      - ./database:/app/database:ro
-      - scraping_cache:/app/.cache
-      - playwright_browsers:/ms-playwright
-    networks:
-      - crm-network
-    command: ["python", "-m", "http.server", "8001"]  # Placeholder - replace with actual scraping service
-
-  # ===========================================================================
-  # QDRANT - Vector Database (Optional)
-  # ===========================================================================
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: crm-qdrant
-    restart: unless-stopped
-    ports:
-      - "${QDRANT_PORT:-6333}:6333"
-      - "${QDRANT_GRPC_PORT:-6334}:6334"
-    volumes:
-      - qdrant_data:/qdrant/storage
-    environment:
-      QDRANT_ALLOW_RECOVERY_MODE: "true"
-    networks:
-      - crm-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6333/health || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
+    networks:
+      - crm_network
+    restart: unless-stopped
 
-# ==============================================================================
-# NETWORKS
-# ==============================================================================
-networks:
-  crm-network:
-    driver: bridge
-    name: crm-network
-
-# ==============================================================================
-# VOLUMES
-# ==============================================================================
 volumes:
   postgres_data:
-    name: crm-postgres-data
-  redis_data:
-    name: crm-redis-data
-  qdrant_data:
-    name: crm-qdrant-data
-  ai_cache:
-    name: crm-ai-cache
-  scraping_cache:
-    name: crm-scraping-cache
-  playwright_browsers:
-    name: crm-playwright-browsers
+    driver: local
+
+networks:
+  crm_network:
+    driver: bridge

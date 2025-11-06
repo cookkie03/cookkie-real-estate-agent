@@ -1,72 +1,69 @@
-# ==============================================
-# CRM Immobiliare - Frontend Dockerfile
-# Next.js UI Application
-# ==============================================
+# ============================================================================
+# Frontend Dockerfile - Multi-stage build
+# Optimized for Railway deployment and local Docker Desktop
+# ============================================================================
 
 # Stage 1: Dependencies
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
+
 WORKDIR /app
 
-# Install libc6-compat for compatibility
-RUN apk add --no-cache libc6-compat
-
-# Copy package files
-COPY package*.json ./
-
 # Install dependencies
-RUN npm ci --only=production && \
+COPY frontend/package*.json ./
+COPY package*.json ../
+
+RUN npm ci && \
     npm cache clean --force
 
 # Stage 2: Builder
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
+
 WORKDIR /app
 
-# Copy dependencies from deps stage
+# Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
+COPY frontend/package*.json ./
+COPY frontend/tsconfig.json ./
+COPY frontend/next.config.js ./
+COPY frontend/tailwind.config.ts ./
+COPY frontend/postcss.config.js ./
 
-# Copy source files
-COPY . .
+# Copy source code (when it exists)
+COPY frontend/src ./src
+COPY frontend/public ./public
 
-# Set environment variables for build
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
-
-# Build Next.js application
+# Build application
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# Stage 3: Runner (Production)
-FROM node:18-alpine AS runner
+# Stage 3: Runner
+FROM node:20-alpine AS runner
+
 WORKDIR /app
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy necessary files from builder
+# Copy built files
+COPY --from=builder /app/next.config.js ./
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy built application
-# Next.js standalone output includes everything needed
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Environment
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-# Set ownership
-RUN chown -R nextjs:nodejs /app
-
-# Switch to non-root user
 USER nextjs
 
-# Expose port
 EXPOSE 3000
-
-# Set environment variables
-ENV NODE_ENV production
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
 CMD ["node", "server.js"]
