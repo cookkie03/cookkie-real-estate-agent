@@ -13,9 +13,6 @@
 .env.production
 .env.test
 *.env.local
-*.env.docker
-.env.docker
-docker/.env.docker
 
 # ============================================================================
 # DEPENDENCIES
@@ -63,21 +60,11 @@ next-env.d.ts
 # ============================================================================
 # DATABASE (CRITICAL - NEVER COMMIT!)
 # ============================================================================
-# SQLite databases (legacy - no longer used)
+# SQLite databases
 *.db
 *.db-journal
 *.sqlite
 *.sqlite3
-
-# PostgreSQL dumps and backups
-*.sql
-*.sql.gz
-*.dump
-*.pgdump
-/database/*.sql
-/database/*.sql.gz
-/backups/
-backups/
 
 # Database files in all locations
 /prisma/*.db
@@ -87,9 +74,9 @@ backups/
 database/**/*.db
 database/**/*.db-journal
 
-# Migrations (generated - can be versioned but be careful)
-# /prisma/migrations
-# /database/prisma/migrations
+# Migrations (generated)
+/prisma/migrations
+/database/prisma/migrations
 
 # ============================================================================
 # CACHE & TEMPORARY FILES
@@ -226,8 +213,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# lib/ # COMMENTED - was blocking frontend/src/lib and backend/src/lib
+# lib64/ # COMMENTED - Python venv libs, now handled by .venv/ pattern
 parts/
 sdist/
 var/
@@ -285,9 +272,9 @@ backup-*.zip
 .backup_fase9/
 
 # Old modules (removed during reorganization)
-src/
+# src/ # COMMENTED - was blocking frontend/src and backend/src
 python_ai/
-# prisma/ - NOW NEEDED FOR DATABASE SCHEMA!
+# prisma/ # REMOVED - was blocking database/prisma/schema.prisma
 
 # NUL file (Windows artifact)
 NUL
@@ -299,3 +286,11 @@ NUL
 # Module-specific node_modules (if any)
 /backend/node_modules/
 /frontend/node_modules/
+
+# AI Assistant instruction files (keep in root but don't track changes)
+CLAUDE.md
+GEMINI.md
+
+# Claude Code directories and files
+.qodo/
+.claude/

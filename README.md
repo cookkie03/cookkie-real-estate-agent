@@ -29,13 +29,45 @@ CRM Immobiliare è un sistema completo di gestione per agenti immobiliari singol
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 🐳 Deploy su Railway (Consigliato)
+
+**Il modo più semplice per deployare il CRM in production:**
+
+👉 **Segui la [GUIDA RAILWAY COMPLETA](RAILWAY_DEPLOY.md)** (3 passi, ~10 minuti)
+
+Railway gestisce tutto automaticamente:
+- ✅ PostgreSQL database
+- ✅ Docker builds
+- ✅ SSL/HTTPS automatico
+- ✅ Auto-deploy da GitHub
+- ✅ Scalabilità
+
+### 💻 Sviluppo Locale
+
+#### Prerequisites
 
 - **Node.js** 20+
-- **Python** 3.11+
 - **npm** o **yarn**
+- **Python** 3.11+ (per AI tools)
+- **Docker** (opzionale)
 
-### Installazione Rapida
+#### Opzione 1: Docker (Più Semplice)
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/crm-immobiliare.git
+cd crm-immobiliare
+
+# Start con Docker Compose (3 servizi)
+docker-compose up -d
+
+# Accedi
+# App (UI + API): http://localhost:3000
+# AI Tools:       http://localhost:8000
+# Database:       PostgreSQL su porta 5432
+```
+
+#### Opzione 2: Sviluppo Nativo
 
 ```bash
 # 1. Clone repository
@@ -50,7 +82,7 @@ cp config/backend.env.example backend/.env
 cp config/frontend.env.example frontend/.env.local
 cp config/ai_tools.env.example ai_tools/.env
 
-# 4. Configure database
+# 4. Configure database (PostgreSQL recommended)
 cd database/prisma
 npx prisma generate
 npx prisma db push
@@ -58,11 +90,11 @@ npx tsx seed.ts  # Dati di esempio
 
 # 5. Start development
 cd ../..
-npm run dev:frontend  # Frontend su porta 3000
-npm run dev:backend   # Backend su porta 3001
+cd frontend
+npm run dev  # App unificata (UI + API) su porta 3000
 
-# AI Tools (opzionale)
-cd ai_tools
+# AI Tools (opzionale, in another terminal)
+cd ../ai_tools
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 .venv\Scripts\activate      # Windows
@@ -72,41 +104,42 @@ python main.py  # Porta 8000
 
 ### Accesso
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
-- **AI Tools**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
+- **App (UI + API)**: http://localhost:3000
+- **Health Check**: http://localhost:3000/api/health
+- **AI Tools**: http://localhost:8000/health
+- **AI API Docs**: http://localhost:8000/docs
 
 ---
 
 ## 📦 Architettura Modulare
 
-Il progetto è organizzato in moduli indipendenti:
+Il progetto è organizzato in moduli indipendenti con deployment unificato:
 
 ```
 /
-├── frontend/          # Next.js UI (porta 3000)
-├── backend/           # Next.js API (porta 3001)
+├── frontend/          # Next.js App Unificata (UI + API, porta 3000)
 ├── ai_tools/          # Python AI (porta 8000)
-├── database/          # Prisma + SQLite (centralizzato)
+├── database/          # Prisma + PostgreSQL (centralizzato)
 ├── scraping/          # Web scraping modules
 ├── config/            # Configurazione centralizzata
 ├── scripts/           # Automation scripts
 ├── tests/             # Test suite
 ├── logs/              # Log centralizzati
-└── docs/              # Documentazione
+├── docs/              # Documentazione
+└── backend/           # [ARCHIVED] - Codice migrato in frontend/
 ```
 
 ### Moduli Principali
 
 | Modulo | Linguaggio | Descrizione | Docs |
 |--------|------------|-------------|------|
-| **frontend** | TypeScript | UI Next.js 14 | [README](frontend/README.md) |
-| **backend** | TypeScript | API Next.js 14 | [README](backend/README.md) |
+| **frontend** | TypeScript | App Next.js 14 (UI + API) | [README](frontend/README.md) |
 | **ai_tools** | Python | AI agents + tools | [README](ai_tools/README.md) |
 | **database** | SQL/TS/Py | Prisma + SQLAlchemy | [README](database/README.md) |
 | **scraping** | Python | Web scraping | [README](scraping/README.md) |
 | **config** | - | Configurazione | [README](config/README.md) |
+
+**Nota**: L'architettura è stata semplificata unificando Frontend e Backend in un'unica applicazione Next.js, riducendo da 4 a 3 servizi per compatibilità con Railway Free Tier.
 
 ---
 
@@ -134,9 +167,10 @@ Il progetto è organizzato in moduli indipendenti:
 - **Database**: SQLAlchemy
 
 ### Database
-- **Development**: SQLite (condiviso)
+- **Development**: PostgreSQL (locale) o SQLite
+- **Production**: PostgreSQL (Railway managed)
 - **ORM**: Prisma (Node.js) + SQLAlchemy (Python)
-- **Production**: PostgreSQL (recommended)
+- **Migrations**: Prisma Migrate
 
 ---
 
@@ -144,10 +178,10 @@ Il progetto è organizzato in moduli indipendenti:
 
 ### Guide Principali
 
-- 📖 [Getting Started](docs/GETTING_STARTED.md) - Guida setup completa
+- 🚂 **[Railway Deploy](RAILWAY_DEPLOY.md)** ⭐ - Deployment production (PRINCIPALE)
+- 📖 [Getting Started](docs/GETTING_STARTED.md) - Setup locale
 - 🏗️ [Architettura](docs/ARCHITECTURE.md) - Architettura sistema
-- 🔄 [Migration Guide](docs/MIGRATION.md) - Migrazione da versioni precedenti
-- 🐳 [Docker Guide](config/README.md#docker-setup) - Deploy con Docker
+- 🐳 [Docker Locale](docker-compose.yml) - Sviluppo con Docker
 
 ### Documentazione Moduli
 
@@ -204,31 +238,43 @@ Vedi [Config README](config/README.md) per dettagli completi.
 
 ## 🐳 Docker
 
-### Quick Start con Docker
+### Sviluppo Locale con Docker
 
 ```bash
 # From project root
-docker-compose -f config/docker-compose.yml up
+docker-compose up -d
 ```
 
-Avvia automaticamente:
-- Frontend (porta 3000)
-- Backend (porta 3001)
+Avvia automaticamente 3 servizi:
+- PostgreSQL database (porta 5432)
+- App unificata - UI + API (porta 3000)
 - AI Tools (porta 8000)
-- Database condiviso
 
-### Docker Compose
+### Docker Commands
 
 ```bash
 # Start all services
-docker-compose -f config/docker-compose.yml up -d
+docker-compose up -d
 
 # View logs
-docker-compose -f config/docker-compose.yml logs -f
+docker-compose logs -f
 
 # Stop all
-docker-compose -f config/docker-compose.yml down
+docker-compose down
+
+# Rebuild after code changes
+docker-compose up -d --build
 ```
+
+### Railway Deployment (3 Servizi)
+
+Per production deployment su Railway (compatibile con Free Tier):
+👉 **Vedi [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)**
+
+Railway usa i Dockerfile individuali:
+- `frontend/Dockerfile` - App unificata (UI + API)
+- `ai_tools/Dockerfile` - AI Tools
+- PostgreSQL managed by Railway
 
 ---
 
@@ -324,39 +370,44 @@ Vedi [Scraping README](scraping/README.md) per dettagli.
 
 ## 🛠️ Development Commands
 
-### Root Level
+### Unified App (Frontend)
 
 ```bash
-# Start frontend (recommended)
-npm run dev
+# Development
+cd frontend
+npm run dev              # Start app (UI + API) su porta 3000
+npm run build            # Build production
+npm run start            # Start production server
 
-# Start backend separately
-npm run dev:backend
-
-# Start frontend separately
-npm run dev:frontend
-
-# Build all
-npm run build
-
-# Prisma commands
-npm run prisma:generate
-npm run prisma:push
-npm run prisma:studio
-npm run prisma:seed
+# Prisma commands (from frontend)
+npm run prisma:generate  # Generate Prisma Client
+npm run prisma:push      # Push schema to DB
+npm run prisma:studio    # Open Prisma Studio GUI
+npm run prisma:seed      # Seed database
 ```
 
-### Module Level
+### AI Tools
 
 ```bash
-# Backend
-cd backend && npm run dev
+# AI Tools (Python)
+cd ai_tools
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+pip install -r requirements.txt
+python main.py             # Port 8000
+```
 
-# Frontend
-cd frontend && npm run dev
+### Docker
 
-# AI Tools
-cd ai_tools && python main.py
+```bash
+# Start all services (3)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all
+docker-compose down
 ```
 
 ---
@@ -365,15 +416,13 @@ cd ai_tools && python main.py
 
 ```
 crm-immobiliare/
-├── frontend/              # Next.js UI (porta 3000)
-│   ├── src/app/           # Pages & routes
+├── frontend/              # Next.js App Unificata (porta 3000)
+│   ├── src/app/           # Pages, routes & API routes
+│   │   ├── (pages)/       # UI Pages
+│   │   └── api/           # API Routes (Backend)
 │   ├── src/components/    # React components
 │   ├── src/hooks/         # Custom hooks
-│   └── src/lib/           # Utilities
-│
-├── backend/               # Next.js API (porta 3001)
-│   ├── src/app/api/       # API routes
-│   └── src/lib/           # DB & utilities
+│   └── src/lib/           # Utilities + DB client
 │
 ├── ai_tools/              # Python AI (porta 8000)
 │   ├── app/agents/        # AI agents
@@ -390,9 +439,10 @@ crm-immobiliare/
 │
 ├── config/                # Configurazione centralizzata
 │   ├── *.env.example      # Environment templates
-│   ├── docker-compose.yml # Docker orchestration
+│   ├── docker-compose.yml # Docker orchestration (3 servizi)
 │   └── README.md          # Config docs
 │
+├── backend/               # [ARCHIVED] Migrato in frontend/src/app/api
 ├── scripts/               # Automation scripts
 ├── tests/                 # Test suite
 ├── logs/                  # Centralized logs
@@ -439,15 +489,30 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Status & Roadmap
 
-- [x] **Phase 1**: Next.js migration ✅
-- [x] **Phase 2**: API implementation ✅
-- [x] **Phase 3**: AI integration ✅
-- [ ] **Phase 4**: Authentication system
-- [ ] **Phase 5**: Advanced scraping
-- [ ] **Phase 6**: Mobile app
-- [ ] **Phase 7**: Production deployment
+### ✅ Completato (v3.0.0)
+
+- [x] **App unificata** - Frontend + Backend in singola applicazione Next.js
+- [x] **Backend API completo** - 11 endpoints RESTful
+- [x] **Frontend completo** - 18 pagine con ChatGPT-style UI
+- [x] **Settings page** - Gestione API keys dalla UI
+- [x] **Database schema** - Prisma + PostgreSQL
+- [x] **Docker setup** - Multi-stage builds ottimizzati (3 servizi)
+- [x] **Railway ready** - Deployment in 3 passi (compatibile Free Tier)
+
+### 🔄 In Sviluppo
+
+- [ ] **React Query hooks** - Data fetching ottimizzato
+- [ ] **AI agents attivi** - RAG, Matching, Briefing
+- [ ] **Form dialogs** - CRUD completo dalla UI
+
+### 📋 Roadmap Futuro
+
+- [ ] **Authentication** - JWT + OAuth
+- [ ] **Web scraping attivo** - Import automatico portali
+- [ ] **Mobile app** - React Native
+- [ ] **Multi-tenant** - Supporto agenzie
 
 ---
 
@@ -476,5 +541,7 @@ See [docs/](docs/) for complete reorganization reports.
 
 **Made with ❤️ for real estate agents**
 
-**Version**: 3.0.0 (Reorganization Complete)
-**Last Updated**: 2025-10-17
+**Version**: 3.0.0 (Production Ready - Unified Architecture)
+**Last Updated**: 2025-11-06
+**Architecture**: 3-Service Deployment (Railway Free Tier Compatible)
+**Status**: ✅ App Unificata (UI + API) | ✅ AI Tools | ✅ PostgreSQL Database

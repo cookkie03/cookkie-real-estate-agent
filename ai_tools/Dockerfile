@@ -1,63 +1,44 @@
-# ==============================================
-# CRM Immobiliare - AI Tools Dockerfile
-# Python FastAPI Backend with LlamaIndex & OpenRouter
-# ==============================================
+# ============================================================================
+# AI Tools Dockerfile - Python FastAPI
+# Optimized for Railway deployment and local Docker Desktop
+# ============================================================================
 
-# Stage 1: Builder
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies for building
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
-    make \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements
-COPY requirements.txt .
-
-# Create virtual environment and install dependencies
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Stage 2: Runner (Production)
-FROM python:3.11-slim AS runner
-
-WORKDIR /app
-
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y \
-    libpq5 \
+    postgresql-client \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN useradd -m -u 1001 aiuser && \
-    chown -R aiuser:aiuser /app
+RUN groupadd --gid 1001 python && \
+    useradd --uid 1001 --gid python --shell /bin/bash --create-home python
 
-# Copy virtual environment from builder
-COPY --from=builder /opt/venv /opt/venv
+# Copy requirements
+COPY ai_tools/requirements.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY --chown=aiuser:aiuser . .
+COPY ai_tools/app ./app
+COPY ai_tools/main.py ./
+COPY database/python ./database/python
 
-# Create necessary directories with correct permissions
-RUN mkdir -p /app/logs /app/.cache && \
-    chown -R aiuser:aiuser /app/logs /app/.cache
+# Set ownership
+RUN chown -R python:python /app
 
 # Switch to non-root user
-USER aiuser
+USER python
 
-# Set environment variables
-ENV PATH="/opt/venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8000
+# Environment
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8000
 
 # Expose port
 EXPOSE 8000
