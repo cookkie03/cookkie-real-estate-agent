@@ -17,9 +17,8 @@ const nextConfig = {
     pagesBufferLength: 2,
   },
 
-  // Fix per Railway: Disabilita COMPLETAMENTE la raccolta dati durante il build
-  // Questo previene errori "Failed to collect page data" per le API routes
-  // Tutte le pagine saranno generate on-demand al primo accesso
+  // Prevent "Failed to collect page data" errors for API routes
+  // All pages will be generated on-demand on first access
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },

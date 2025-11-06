@@ -1,6 +1,6 @@
 # ============================================================================
 # Unified App Dockerfile - Frontend + Backend in one Next.js app
-# Optimized for Railway deployment and Docker Desktop
+# Optimized for Docker Compose deployment
 # ============================================================================
 
 # Stage 1: Dependencies
@@ -13,7 +13,6 @@ COPY frontend/package*.json ./
 COPY package*.json ../
 
 # Install dependencies
-# Using npm install instead of npm ci for Railway compatibility (no package-lock.json in repo)
 RUN npm install --production=false && \
     npm cache clean --force
 

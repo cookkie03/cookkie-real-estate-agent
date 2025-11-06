@@ -13,7 +13,7 @@ CRM Immobiliare is a comprehensive, single-user real estate management system fo
 
 **Tech Stack**: Next.js 14 (App Router - Unified UI + API) + TypeScript + Python (FastAPI) + Prisma + PostgreSQL/SQLite
 
-**Current Phase**: Production-Ready - Unified architecture with 3 services (Railway Free Tier compatible)
+**Current Phase**: Production-Ready - Unified architecture with 3 services (Docker Compose)
 
 **Interface Language**: Italian
 
