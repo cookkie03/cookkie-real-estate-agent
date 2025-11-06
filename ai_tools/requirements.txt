@@ -1,10 +1,10 @@
 # ============================================================================
-# DataPizza AI Framework - Requirements
+# AI Framework - Requirements
 # ============================================================================
 
-# Core DataPizza AI Framework
-datapizza-ai==0.0.2
-datapizza-ai-clients-google==0.0.2
+# Core DataPizza AI Framework (updated to latest)
+datapizza-ai>=0.0.9
+datapizza-ai-clients-google>=0.0.2
 
 # Web Framework
 fastapi>=0.115.0
