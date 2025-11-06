@@ -17,15 +17,17 @@ const nextConfig = {
     pagesBufferLength: 2,
   },
 
-  // Fix per Railway: Disabilita la raccolta dati statica durante il build
+  // Fix per Railway: Disabilita COMPLETAMENTE la raccolta dati durante il build
   // Questo previene errori "Failed to collect page data" per le API routes
-  staticPageGenerationTimeout: 1000,
+  // Tutte le pagine saranno generate on-demand al primo accesso
+  generateBuildId: async () => {
+    return 'build-' + Date.now()
+  },
 
-  // Disabilita file trace per evitare errori EPERM su Windows
+  // Disabilita la generazione statica durante il build
+  // Forza tutte le route ad essere dinamiche
   experimental: {
     outputFileTracingRoot: undefined,
-    // Disabilita ISR memory cache per evitare problemi durante il build
-    isrMemoryCacheSize: 0,
   },
 }
 

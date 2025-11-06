@@ -43,6 +43,10 @@ RUN cd ../database/prisma && npx prisma generate
 # Build application
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# Set a dummy DATABASE_URL for build time (prevents Prisma connection attempts)
+ENV DATABASE_URL="file:./dev.db"
+# Skip environment validation during build
+ENV SKIP_ENV_VALIDATION=1
 RUN npm run build
 
 # Stage 3: Runner (Production)
