@@ -1,0 +1,654 @@
+// ============================================================================
+// PRISMA SCHEMA - CRM Immobiliare
+// ============================================================================
+// This is the single source of truth for the database schema.
+// All TypeScript and Python models must stay in sync with this file.
+//
+// Database: PostgreSQL (production on Railway)
+// ORM: Prisma (TypeScript) + SQLAlchemy (Python mirror)
+//
+// Last Updated: 2025-11-06
+// Version: 3.0.0
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// 1. USER PROFILE (Single-user application)
+// ============================================================================
+model UserProfile {
+  id    String @id @default(cuid())
+
+  // Personal Info
+  fullName String
+  email    String @unique
+  phone    String?
+
+  // Agency Info
+  agencyName    String?
+  agencyVat     String?
+  agencyAddress String?
+
+  // Settings (JSON)
+  settings Json @default("{\"commissionPercent\":3.0}")
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_profile")
+}
+
+// ============================================================================
+// 2. CONTACTS (Unified: clients, owners, leads)
+// ============================================================================
+model Contact {
+  id   String @id @default(cuid())
+  code String @unique // CNT-2025-0001
+
+  // Entity Type
+  entityType String @default("person") // person, company
+
+  // Personal Info
+  fullName    String
+  firstName   String?
+  lastName    String?
+  companyName String?
+
+  // Contact Info
+  primaryPhone   String?
+  secondaryPhone String?
+  primaryEmail   String?
+  secondaryEmail String?
+
+  // Address
+  street    String?
+  civic     String?
+  city      String?
+  province  String?
+  zip       String?
+  country   String? @default("Italia")
+  latitude  Float?
+  longitude Float?
+
+  // Fiscal Data
+  taxCode     String?
+  vatNumber   String?
+  birthDate   DateTime?
+  nationality String?
+
+  // Privacy (GDPR)
+  privacyFirstContact     Boolean   @default(false)
+  privacyFirstContactDate DateTime?
+  privacyExtended         Boolean   @default(false)
+  privacyExtendedDate     DateTime?
+  privacyMarketing        Boolean   @default(false)
+
+  // Profiling
+  source     String? // website, referral, cold_call, census, portal
+  leadScore  Int?    // 0-100
+  importance String  @default("normal") // low, normal, high, vip
+
+  // Budget (if searching for property)
+  budgetMin Float?
+  budgetMax Float?
+
+  // Status
+  status          String    @default("active") // active, inactive, archived, blacklist
+  lastContactDate DateTime?
+  notes           String?   @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  ownedProperties Property[]  @relation("PropertyOwner")
+  requests        Request[]
+  matches         Match[]
+  activities      Activity[]
+  tags            EntityTag[]
+
+  // Indexes
+  @@index([code])
+  @@index([fullName])
+  @@index([city])
+  @@index([status])
+  @@index([source])
+  @@index([importance])
+  @@map("contacts")
+}
+
+// ============================================================================
+// 3. BUILDINGS (Building census)
+// ============================================================================
+model Building {
+  id   String @id @default(cuid())
+  code String @unique // BLD-2025-0001
+
+  // Address
+  street    String
+  civic     String
+  city      String
+  province  String
+  zip       String?
+  latitude  Float?
+  longitude Float?
+
+  // Cadastral Data
+  cadastralSheet    String?
+  cadastralParticle String?
+
+  // Building Info
+  yearBuilt   Int?
+  totalFloors Int?
+  totalUnits  Int?
+  hasElevator Boolean @default(false)
+  condition   String? // excellent, good, fair, poor, needs_renovation
+
+  // Census
+  lastSurveyDate  DateTime?
+  nextSurveyDue   DateTime?
+  unitsSurveyed   Int       @default(0)
+  unitsInterested Int       @default(0)
+
+  // Administrator
+  administratorName  String?
+  administratorPhone String?
+  administratorEmail String?
+
+  notes String? @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  properties Property[]
+  activities Activity[]
+  tags       EntityTag[]
+
+  // Indexes
+  @@index([code])
+  @@index([city, street, civic])
+  @@index([nextSurveyDue])
+  @@map("buildings")
+}
+
+// ============================================================================
+// 4. PROPERTIES (Real estate listings)
+// ============================================================================
+model Property {
+  id   String @id @default(cuid())
+  code String @unique // PROP-2025-0001
+
+  // Relations
+  ownerContactId String?
+  buildingId     String?
+
+  // Status
+  status     String @default("draft") // draft, available, option, sold, rented, suspended, archived
+  visibility String @default("public") // public, private, network, archived
+
+  // Source
+  source     String    @default("direct_mandate") // direct_mandate, census, web_scraping, cadastre
+  sourceUrl  String?
+  importDate DateTime?
+  verified   Boolean   @default(false)
+
+  // Address
+  street    String
+  civic     String?
+  internal  String? // int. 3, scala A
+  floor     String?
+  city      String
+  province  String
+  zone      String? // neighborhood/zone
+  zip       String?
+  latitude  Float
+  longitude Float
+
+  // Type
+  contractType     String // sale, rent
+  propertyType     String // apartment, villa, office, garage, land
+  propertyCategory String? // residential, commercial, industrial
+
+  // Dimensions
+  sqmCommercial Float?
+  sqmLivable    Float?
+  rooms         Int?
+  bedrooms      Int?
+  bathrooms     Int?
+
+  // Features (boolean)
+  hasElevator      Boolean @default(false)
+  hasParking       Boolean @default(false)
+  hasGarage        Boolean @default(false)
+  hasGarden        Boolean @default(false)
+  hasTerrace       Boolean @default(false)
+  hasBalcony       Boolean @default(false)
+  hasCellar        Boolean @default(false)
+  hasAttic         Boolean @default(false)
+  hasSwimmingPool  Boolean @default(false)
+  hasFireplace     Boolean @default(false)
+  hasAlarm         Boolean @default(false)
+  hasAirConditioning Boolean @default(false)
+
+  // Characteristics
+  condition   String? // excellent, good, fair, needs_renovation
+  heatingType String? // autonomous, centralized, floor, heat_pump
+  energyClass String? // A+, A, B, C, D, E, F, G
+  yearBuilt   Int?
+  yearRenovated Int?
+
+  // Prices
+  priceSale          Float?
+  priceRentMonthly   Float?
+  priceMinAcceptable Float? // minimum price owner accepts
+  condominiumFees    Float?
+
+  // Estimated Values (AI)
+  estimatedValue       Float?
+  estimatedDaysToSell  Int?
+  estimatedRentMonthly Float?
+
+  // Mandate (if direct_mandate)
+  mandateType      String? // exclusive, simple, verbal
+  mandateStartDate DateTime?
+  mandateEndDate   DateTime?
+  mandateNumber    String?
+
+  // Census flags
+  needsInternalVisit Boolean @default(false)
+  needsPhotos        Boolean @default(false)
+  needsValuation     Boolean @default(false)
+  ownerToContact     Boolean @default(false)
+
+  // Marketing
+  title       String?
+  description String? @db.Text
+
+  // Media
+  photosCount           Int     @default(0)
+  hasProfessionalPhotos Boolean @default(false)
+  hasVirtualTour        Boolean @default(false)
+  has3DModel            Boolean @default(false)
+  hasFloorPlan          Boolean @default(false)
+
+  // Statistics
+  viewsCount     Int @default(0)
+  inquiriesCount Int @default(0)
+  visitsCount    Int @default(0)
+  daysOnMarket   Int @default(0)
+
+  // Notes
+  notes         String? @db.Text
+  internalNotes String? @db.Text // private notes, not shown to clients
+
+  // Timestamps
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  publishedAt  DateTime?
+  archivedAt   DateTime?
+
+  // Relationships
+  owner      Contact?    @relation("PropertyOwner", fields: [ownerContactId], references: [id])
+  building   Building?   @relation(fields: [buildingId], references: [id])
+  matches    Match[]
+  activities Activity[]
+  tags       EntityTag[]
+
+  // Indexes
+  @@index([code])
+  @@index([ownerContactId])
+  @@index([buildingId])
+  @@index([status])
+  @@index([contractType])
+  @@index([propertyType])
+  @@index([city])
+  @@index([zone])
+  @@index([priceSale])
+  @@index([priceRentMonthly])
+  @@index([sqmCommercial])
+  @@index([rooms])
+  @@index([bedrooms])
+  @@index([status, contractType])
+  @@index([needsInternalVisit])
+  @@index([mandateEndDate])
+  @@map("properties")
+}
+
+// ============================================================================
+// 5. REQUESTS (Client search requests)
+// ============================================================================
+model Request {
+  id   String @id @default(cuid())
+  code String @unique // REQ-2025-0001
+
+  // Relations
+  contactId String
+
+  // Type & Status
+  requestType String @default("search_buy") // search_buy, search_rent, valuation
+  status      String @default("active") // active, paused, satisfied, cancelled
+  urgency     String @default("medium") // low, medium, high
+
+  // Search Criteria
+  contractType  String? // sale, rent
+  searchCities  Json? // ["Milano", "Roma"]
+  searchZones   Json? // ["Centro", "Porta Romana"]
+  propertyTypes Json? // ["apartment", "villa"]
+
+  // Geographic Search
+  searchRadiusKm   Float?
+  centerLatitude   Float?
+  centerLongitude  Float?
+
+  // Budget
+  priceMin Float?
+  priceMax Float?
+
+  // Size Requirements
+  sqmMin    Float?
+  sqmMax    Float?
+  roomsMin  Int?
+  roomsMax  Int?
+  bedroomsMin Int?
+  bedroomsMax Int?
+  bathroomsMin Int?
+
+  // Required Features
+  requiresElevator Boolean @default(false)
+  requiresParking  Boolean @default(false)
+  requiresGarage   Boolean @default(false)
+  requiresGarden   Boolean @default(false)
+  requiresTerrace  Boolean @default(false)
+  requiresBalcony  Boolean @default(false)
+
+  // Exclusions
+  excludeGroundFloor         Boolean @default(false)
+  excludeTopFloorNoElevator  Boolean @default(false)
+  excludeBasement            Boolean @default(false)
+  excludeNorthFacing         Boolean @default(false)
+
+  // Quality Requirements
+  minCondition   String? // minimum condition: good, fair, etc.
+  minEnergyClass String? // minimum energy class
+  maxYearBuilt   Int? // property must be built after this year
+
+  // Timing
+  moveDate   DateTime? // when client needs to move
+  expiresAt  DateTime? // when this request expires
+
+  notes String? @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  contact    Contact    @relation(fields: [contactId], references: [id])
+  matches    Match[]
+  activities Activity[]
+  tags       EntityTag[]
+
+  // Indexes
+  @@index([code])
+  @@index([contactId])
+  @@index([status])
+  @@index([requestType])
+  @@index([urgency])
+  @@index([expiresAt])
+  @@map("requests")
+}
+
+// ============================================================================
+// 6. MATCHES (AI-powered property-request matching)
+// ============================================================================
+model Match {
+  id String @id @default(cuid())
+
+  // Relations
+  requestId  String
+  propertyId String
+  contactId  String? // denormalized for quick access
+
+  // Scoring (0-100 per category)
+  scoreTotal    Int // sum of all scores
+  scoreLocation Int?
+  scorePrice    Int?
+  scoreSize     Int?
+  scoreFeatures Int?
+  scoreCondition Int?
+
+  // AI Analysis
+  aiReasoning String? @db.Text // why this is a good match
+  aiWarnings  String? @db.Text // potential issues
+
+  // Status
+  status String @default("suggested") // suggested, sent, viewed, visited, interested, rejected, closed
+
+  // Feedback
+  clientReaction String? // interested, neutral, not_interested
+  rejectionReason String? // too_expensive, wrong_location, too_small, etc.
+  clientNotes     String? @db.Text
+
+  // Actions
+  sentDate    DateTime?
+  viewedDate  DateTime?
+  visitedDate DateTime?
+
+  agentNotes String? @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  request  Request  @relation(fields: [requestId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+  contact  Contact? @relation(fields: [contactId], references: [id])
+
+  // Indexes
+  @@index([requestId])
+  @@index([propertyId])
+  @@index([contactId])
+  @@index([scoreTotal])
+  @@index([status])
+  @@index([sentDate])
+  @@map("matches")
+}
+
+// ============================================================================
+// 7. ACTIVITIES (CRM timeline: calls, visits, emails, etc.)
+// ============================================================================
+model Activity {
+  id String @id @default(cuid())
+
+  // Polymorphic Relations (can be linked to multiple entities)
+  contactId  String?
+  propertyId String?
+  requestId  String?
+  buildingId String?
+
+  // Type & Status
+  activityType String // call, email, meeting, visit, census, photo_shoot, valuation, etc.
+  status       String @default("scheduled") // scheduled, completed, cancelled, missed
+  priority     String @default("normal") // low, normal, high, urgent
+
+  // Timing
+  scheduledAt DateTime?
+  completedAt DateTime?
+  dueDate     DateTime?
+  duration    Int? // minutes
+
+  // Content
+  title       String
+  description String? @db.Text
+  outcome     String? @db.Text // what happened
+  details     Json @default("{}") // flexible extra data
+
+  // Location (for visits/meetings)
+  locationAddress String?
+  locationCity    String?
+  locationNotes   String?
+
+  // Reminders
+  reminderSent Boolean @default(false)
+  reminderDate DateTime?
+
+  notes String? @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  contact  Contact?  @relation(fields: [contactId], references: [id])
+  property Property? @relation(fields: [propertyId], references: [id])
+  request  Request?  @relation(fields: [requestId], references: [id])
+  building Building? @relation(fields: [buildingId], references: [id])
+  tags     EntityTag[]
+
+  // Indexes
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([requestId])
+  @@index([buildingId])
+  @@index([activityType])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([dueDate])
+  @@map("activities")
+}
+
+// ============================================================================
+// 8. TAGS (Universal tagging system)
+// ============================================================================
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+
+  // Category
+  category String? // property_feature, contact_interest, activity_type, etc.
+  color    String? // hex color for UI
+
+  // Usage
+  usageCount Int @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  entities EntityTag[]
+
+  @@index([name])
+  @@index([category])
+  @@map("tags")
+}
+
+// ============================================================================
+// 9. ENTITY_TAG (Polymorphic many-to-many for tags)
+// ============================================================================
+model EntityTag {
+  id String @id @default(cuid())
+
+  // Tag
+  tagId String
+
+  // Polymorphic Entity (one of these will be set)
+  contactId  String?
+  propertyId String?
+  requestId  String?
+  buildingId String?
+  activityId String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Relationships
+  tag      Tag       @relation(fields: [tagId], references: [id])
+  contact  Contact?  @relation(fields: [contactId], references: [id])
+  property Property? @relation(fields: [propertyId], references: [id])
+  request  Request?  @relation(fields: [requestId], references: [id])
+  building Building? @relation(fields: [buildingId], references: [id])
+  activity Activity? @relation(fields: [activityId], references: [id])
+
+  // Indexes
+  @@index([tagId])
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([requestId])
+  @@index([buildingId])
+  @@index([activityId])
+  @@map("entity_tags")
+}
+
+// ============================================================================
+// 10. AUDIT_LOG (Change tracking for compliance)
+// ============================================================================
+model AuditLog {
+  id String @id @default(cuid())
+
+  // Entity
+  entityType String // Contact, Property, Request, etc.
+  entityId   String
+
+  // Action
+  action String // create, update, delete
+
+  // Changes
+  oldValues Json?
+  newValues Json?
+
+  // User (future: when multi-user support is added)
+  userId String? @default("system")
+
+  // Context
+  ipAddress String?
+  userAgent String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Indexes
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// NOTES FOR MAINTENANCE
+// ============================================================================
+// 1. When adding new models, update:
+//    - This file (schema.prisma)
+//    - database/python/models.py (SQLAlchemy mirror)
+//    - Backend API endpoints
+//    - Frontend TypeScript types
+//
+// 2. When changing fields, run:
+//    - npx prisma generate (regenerate Prisma Client)
+//    - npx prisma db push (update database)
+//    - Update SQLAlchemy models if needed
+//
+// 3. For production migrations:
+//    - npx prisma migrate dev --name description
+//    - Test migration on staging first
+//    - Backup production database before migrating
+//
+// 4. Performance considerations:
+//    - All foreign keys are indexed
+//    - Add composite indexes for common queries
+//    - Use @@index for frequently filtered fields
+//    - Monitor query performance with Prisma Studio
+// ============================================================================

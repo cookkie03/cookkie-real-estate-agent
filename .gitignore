@@ -274,7 +274,7 @@ backup-*.zip
 # Old modules (removed during reorganization)
 src/
 python_ai/
-prisma/
+# prisma/ # REMOVED - was blocking database/prisma/schema.prisma
 
 # NUL file (Windows artifact)
 NUL
