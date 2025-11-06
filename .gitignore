@@ -63,11 +63,21 @@ next-env.d.ts
 # ============================================================================
 # DATABASE (CRITICAL - NEVER COMMIT!)
 # ============================================================================
-# SQLite databases
+# SQLite databases (legacy - no longer used)
 *.db
 *.db-journal
 *.sqlite
 *.sqlite3
+
+# PostgreSQL dumps and backups
+*.sql
+*.sql.gz
+*.dump
+*.pgdump
+/database/*.sql
+/database/*.sql.gz
+/backups/
+backups/
 
 # Database files in all locations
 /prisma/*.db
@@ -77,9 +87,9 @@ next-env.d.ts
 database/**/*.db
 database/**/*.db-journal
 
-# Migrations (generated)
-/prisma/migrations
-/database/prisma/migrations
+# Migrations (generated - can be versioned but be careful)
+# /prisma/migrations
+# /database/prisma/migrations
 
 # ============================================================================
 # CACHE & TEMPORARY FILES
@@ -277,7 +287,7 @@ backup-*.zip
 # Old modules (removed during reorganization)
 src/
 python_ai/
-prisma/
+# prisma/ - NOW NEEDED FOR DATABASE SCHEMA!
 
 # NUL file (Windows artifact)
 NUL

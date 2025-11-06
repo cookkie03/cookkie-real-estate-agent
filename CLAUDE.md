@@ -2,8 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Updated**: 2025-10-17
-**Version**: 3.0.0 (Reorganization Complete)
+**Last Updated**: 2025-11-06
+**Version**: 3.1.0 (PostgreSQL Migration Complete)
 
 ---
 
@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CRM Immobiliare is a comprehensive, single-user real estate management system for Italian real estate agents. The application provides complete property and client lifecycle management with AI-powered features including intelligent matching, RAG-based assistant, web scraping, interactive maps, and daily briefings.
 
-**Tech Stack**: Next.js 14 (App Router) + TypeScript + Python (FastAPI) + Prisma + SQLite
+**Tech Stack**: Next.js 14 (App Router) + TypeScript + Python (FastAPI) + Prisma + PostgreSQL
 
 **Current Phase**: Production-Ready - Complete modular architecture with 7 independent modules
 
@@ -124,7 +124,7 @@ Each module can be developed, tested, and deployed independently:
 ### 3. Git Exclusions (via .gitignore)
 **These MUST ALWAYS be git-ignored**:
 - Environment: `.env*`, `.env.local`, `.env.production`
-- Database: `*.db`, `*.db-journal`, `migrations/`
+- Database: `*.sql`, `*.sql.gz`, `*.dump`, `*.pgdump`, `backups/` (PostgreSQL dumps)
 - Cache: `.cache/`, `__pycache__/`, `.venv/`
 - Build: `.next/`, `node_modules/`, `build/`, `dist/`
 - Logs: `logs/`, `*.log`
@@ -203,7 +203,7 @@ docs/analysis/archive/CRITICITA_REPORT_20251017.md
 
 Before EVERY commit:
 - [ ] Run `git status` - no `.env*` files
-- [ ] No `*.db` or `*.db-journal` tracked
+- [ ] No database dumps tracked (`*.sql`, `*.sql.gz`, `*.dump`)
 - [ ] No hardcoded secrets (`grep -r "API_KEY" .`)
 - [ ] Seed data is fictional only
 - [ ] Build succeeds: `npm run build`
@@ -293,40 +293,76 @@ npx tsx seed.ts
 
 ### Unified Database Access
 
-**Single Source of Truth**: `database/prisma/schema.prisma` (610 lines, 10 models)
+**Single Source of Truth**: `database/prisma/schema.prisma` (PostgreSQL)
 
 **Multi-Language Access**:
 - **TypeScript** (Frontend/Backend): Prisma Client
 - **Python** (AI Tools/Scraping): SQLAlchemy (mirror models)
 
-**Location**: `database/prisma/dev.db` (centralized SQLite)
+**Database**: PostgreSQL 16 (Docker: `postgres:16-alpine`)
 
-### Database Models (10 models)
+**Connection String Format**:
+```bash
+DATABASE_URL="postgresql://crm_user:password@localhost:5432/crm_immobiliare"
+```
 
-1. **UserProfile** - Agent profile (single-user)
-2. **Contact** - Unified contacts (clients, owners, leads)
-3. **Building** - Building census
-4. **Property** - Complete properties
-5. **Request** - Client search requests
-6. **Match** - AI-powered property-request matching
-7. **Activity** - CRM timeline
-8. **Tag** - Universal tagging system
-9. **EntityTag** - Polymorphic tag relations
-10. **AuditLog** - Change tracking
+### Database Models (9 core models + User Authentication)
+
+1. **User** - Authentication (email/password) - NEW
+2. **UserProfile** - Agent profile (single-user)
+3. **Contact** - Unified contacts (clients, owners, leads)
+4. **Building** - Building census
+5. **Property** - Complete properties
+6. **Request** - Client search requests
+7. **Match** - AI-powered property-request matching
+8. **Activity** - CRM timeline
+9. **Tag** - Universal tagging system (optional)
+10. **AuditLog** - Change tracking (optional)
 
 ### Database Commands
 
 ```bash
 # From root
 npm run prisma:generate  # Regenerate client after schema changes
-npm run prisma:push      # Push schema to database
-npm run prisma:studio    # Open GUI
-npm run prisma:seed      # Seed with mock data
+npm run prisma:push      # Push schema to PostgreSQL
+npm run prisma:studio    # Open Prisma Studio GUI
+npm run prisma:seed      # Seed with fictional data
 
-# From database/prisma
+# From database directory
+cd database
+npm run generate         # Generate Prisma Client
+npm run push            # Push schema
+npm run studio          # Open GUI
+npm run seed            # Run seed script
+
+# From database/prisma directory
+cd database/prisma
 npx prisma generate
 npx prisma db push
 npx tsx seed.ts
+```
+
+### PostgreSQL Setup (Docker)
+
+**Start PostgreSQL**:
+```bash
+cd docker
+docker-compose up -d postgres
+```
+
+**Connect to PostgreSQL**:
+```bash
+docker exec -it crm-postgres psql -U crm_user -d crm_immobiliare
+```
+
+**Backup Database**:
+```bash
+docker exec crm-postgres pg_dump -U crm_user crm_immobiliare > backup.sql
+```
+
+**Restore Database**:
+```bash
+cat backup.sql | docker exec -i crm-postgres psql -U crm_user -d crm_immobiliare
 ```
 
 ### Accessing Database
@@ -592,7 +628,15 @@ config/
 
 ### Environment Variables
 
-Each module has its `.env` file pointing to shared database:
+Each module uses environment variables to connect to PostgreSQL:
+
+**Root** (`.env` for local development):
+```bash
+DATABASE_URL="postgresql://crm_user:password@localhost:5432/crm_immobiliare"
+NEXTAUTH_SECRET="your-super-secure-secret-here"
+NEXTAUTH_URL="http://localhost:3001"
+GOOGLE_API_KEY="your-google-api-key"
+```
 
 **Frontend** (`.env.local`):
 ```bash
@@ -601,21 +645,53 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 **Backend** (`.env`):
 ```bash
-DATABASE_URL="file:../database/prisma/dev.db"
-GOOGLE_API_KEY="your-api-key"
+DATABASE_URL="postgresql://crm_user:password@localhost:5432/crm_immobiliare"
+NEXTAUTH_SECRET="your-super-secure-secret-here"
+NEXTAUTH_URL="http://localhost:3001"
+GOOGLE_API_KEY="your-google-api-key"
 ```
 
 **AI Tools** (`.env`):
 ```bash
-DATABASE_URL="file:../database/prisma/dev.db"
-GOOGLE_API_KEY="your-api-key"
+DATABASE_URL="postgresql://crm_user:password@localhost:5432/crm_immobiliare"
+GOOGLE_API_KEY="your-google-api-key"
+```
+
+**Docker** (`docker/.env`):
+```bash
+# Database
+DB_NAME=crm_immobiliare
+DB_USER=crm_user
+DB_PASSWORD=your_secure_password
+DB_PORT=5432
+
+# Auth
+NEXTAUTH_SECRET=your-super-secure-secret-here
+NEXTAUTH_URL=http://localhost:3001
+
+# API Keys
+GOOGLE_API_KEY=your-google-api-key
+
+# Ports
+FRONTEND_PORT=3000
+BACKEND_PORT=3001
+AI_TOOLS_PORT=8000
 ```
 
 **Setup**:
 ```bash
-cp config/backend.env.example backend/.env
-cp config/frontend.env.example frontend/.env.local
-cp config/ai_tools.env.example ai_tools/.env
+# Copy root .env for local development
+cp .env.example .env
+
+# Or copy module-specific .env files (if they exist)
+# cp config/backend.env.example backend/.env
+# cp config/frontend.env.example frontend/.env.local
+# cp config/ai_tools.env.example ai_tools/.env
+
+# For Docker deployment
+cp docker/.env.example docker/.env
+
+# Then edit and update all values (especially DATABASE_URL, NEXTAUTH_SECRET, GOOGLE_API_KEY)
 ```
 
 **Documentation**: See [config/README.md](config/README.md)

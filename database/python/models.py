@@ -6,6 +6,8 @@ CRM Immobiliare Database Models for Python
 
 This file mirrors the Prisma schema for Python access to the database.
 Keep in sync with database/prisma/schema.prisma
+
+Database: PostgreSQL
 """
 
 from sqlalchemy import (
@@ -19,12 +21,27 @@ Base = declarative_base()
 
 
 # ============================================================================
-# 1. USER PROFILE
+# 1. USER & AUTHENTICATION
 # ============================================================================
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True)
+    email = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)  # bcrypt hashed
+    name = Column(String, nullable=False)
+    createdAt = Column(DateTime, default=datetime.utcnow)
+    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    profile = relationship("UserProfile", back_populates="user", uselist=False)
+
+
 class UserProfile(Base):
     __tablename__ = "user_profile"
 
     id = Column(String, primary_key=True)
+    userId = Column(String, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     fullName = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     phone = Column(String)
@@ -34,6 +51,9 @@ class UserProfile(Base):
     settings = Column(Text, default='{"commissionPercent":3.0}')
     createdAt = Column(DateTime, default=datetime.utcnow)
     updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="profile")
 
 
 # ============================================================================
@@ -407,6 +427,7 @@ class Activity(Base):
 # Export all models
 __all__ = [
     'Base',
+    'User',
     'UserProfile',
     'Contact',
     'Building',

@@ -1,15 +1,15 @@
 # ==============================================================================
-# Docker Compose - CRM Immobiliare AI
+# Docker Compose - CRM Immobiliare (Production)
 # ==============================================================================
 #
-# Avvio rapido:
-#   docker-compose up
-#
-# Oppure in background:
+# Quick Start:
 #   docker-compose up -d
 #
-# Ferma tutto:
+# Stop all:
 #   docker-compose down
+#
+# View logs:
+#   docker-compose logs -f
 #
 # ==============================================================================
 
@@ -17,139 +17,173 @@ version: '3.8'
 
 services:
   # ============================================================================
-  # Python AI Backend (FastAPI + DataPizza AI)
+  # PostgreSQL Database
   # ============================================================================
-  python-backend:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.python
-    container_name: crm-ai-python
-    ports:
-      - "8000:8000"
+  postgres:
+    image: postgres:16-alpine
+    container_name: crm-postgres
+    restart: unless-stopped
     environment:
-      # Database
-      DATABASE_URL: "sqlite:///./data/dev.db"
-
-      # Google AI (REQUIRED - set your API key here)
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-AIzaSyBmJ_RB6RLwvytUzsaD-rj1FolKNt06VDM}
-      GOOGLE_MODEL: "gemini-1.5-pro"
-
-      # Qdrant
-      QDRANT_MODE: "memory"
-
-      # Server
-      HOST: "0.0.0.0"
-      PORT: "8000"
-      CORS_ORIGINS: "http://localhost:3000,http://nextjs-frontend:3000"
-      ENVIRONMENT: "production"
-
-      # Logging
-      LOG_LEVEL: "INFO"
-      LOG_FORMAT: "console"
-
-      # Tracing
-      ENABLE_TRACING: "true"
-      SERVICE_NAME: "crm-immobiliare-ai"
-
-      # AI Configuration
-      AI_TEMPERATURE: "0.7"
-      AI_MAX_TOKENS: "2048"
-      AI_TIMEOUT: "60"
-
-      # RAG
-      RAG_TOP_K: "5"
-      RAG_CHUNK_SIZE: "512"
-      RAG_CHUNK_OVERLAP: "50"
-      EMBEDDING_MODEL: "models/text-embedding-004"
-
-      # Cache
-      CACHE_DIR: ".cache"
-      CACHE_TTL: "3600"
-
+      POSTGRES_DB: ${DB_NAME:-crm_immobiliare}
+      POSTGRES_USER: ${DB_USER:-crm_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${DB_PORT:-5432}:5432"
     volumes:
-      # Share database with Next.js
-      - db-data:/app/data
-      # Cache directory
-      - python-cache:/app/.cache
-
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - crm-network
-
-    restart: unless-stopped
-
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-crm_user} -d ${DB_NAME:-crm_immobiliare}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============================================================================
+  # Backend API (Next.js)
+  # ============================================================================
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: crm-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${DB_USER:-crm_user}:${DB_PASSWORD:-changeme123}@postgres:5432/${DB_NAME:-crm_immobiliare}
+
+      # NextAuth
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-generate-a-secure-secret-here}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3001}
+
+      # Google AI
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+
+      # Node
+      NODE_ENV: production
+      PORT: 3001
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    networks:
+      - crm-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
   # ============================================================================
-  # Next.js Frontend
+  # Frontend UI (Next.js)
   # ============================================================================
-  nextjs-frontend:
+  frontend:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.nextjs
-    container_name: crm-ai-nextjs
-    ports:
-      - "3000:3000"
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: crm-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
     environment:
-      # Database (shared with Python)
-      DATABASE_URL: "file:/app/data/dev.db"
+      # Backend API URL
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
 
-      # Google AI
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-AIzaSyBmJ_RB6RLwvytUzsaD-rj1FolKNt06VDM}
-
-      # Python Backend URL (internal Docker network)
-      PYTHON_AI_URL: "http://python-backend:8000"
-
-      # Next.js
-      NODE_ENV: "production"
-      NEXT_TELEMETRY_DISABLED: "1"
-
-    volumes:
-      # Share database with Python
-      - db-data:/app/data
-
+      # Node
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_TELEMETRY_DISABLED: 1
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
     networks:
       - crm-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-    depends_on:
-      python-backend:
-        condition: service_healthy
-
+  # ============================================================================
+  # AI Tools (Python FastAPI)
+  # ============================================================================
+  ai-tools:
+    build:
+      context: ../ai_tools
+      dockerfile: Dockerfile
+    container_name: crm-ai
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${DB_USER:-crm_user}:${DB_PASSWORD:-changeme123}@postgres:5432/${DB_NAME:-crm_immobiliare}
 
-  # ============================================================================
-  # Qdrant Vector Store (Optional - Uncomment to enable)
-  # ============================================================================
-  # qdrant:
-  #   image: qdrant/qdrant:latest
-  #   container_name: crm-ai-qdrant
-  #   ports:
-  #     - "6333:6333"
-  #   volumes:
-  #     - qdrant-data:/qdrant/storage
-  #   networks:
-  #     - crm-network
-  #   restart: unless-stopped
+      # Google AI (REQUIRED)
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      GOOGLE_MODEL: ${GOOGLE_MODEL:-gemini-1.5-pro}
+
+      # Qdrant
+      QDRANT_MODE: ${QDRANT_MODE:-memory}
+
+      # Server
+      HOST: 0.0.0.0
+      PORT: 8000
+      CORS_ORIGINS: http://localhost:3000,http://frontend:3000,http://localhost:3001,http://backend:3001
+      ENVIRONMENT: production
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: console
+
+      # Tracing
+      ENABLE_TRACING: ${ENABLE_TRACING:-true}
+      SERVICE_NAME: crm-immobiliare-ai
+
+      # AI Configuration
+      AI_TEMPERATURE: ${AI_TEMPERATURE:-0.7}
+      AI_MAX_TOKENS: ${AI_MAX_TOKENS:-2048}
+      AI_TIMEOUT: ${AI_TIMEOUT:-60}
+
+      # RAG
+      RAG_TOP_K: ${RAG_TOP_K:-5}
+      RAG_CHUNK_SIZE: ${RAG_CHUNK_SIZE:-512}
+      RAG_CHUNK_OVERLAP: ${RAG_CHUNK_OVERLAP:-50}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-models/text-embedding-004}
+
+      # Cache
+      CACHE_DIR: .cache
+      CACHE_TTL: ${CACHE_TTL:-3600}
+    ports:
+      - "${AI_TOOLS_PORT:-8000}:8000"
+    volumes:
+      # Cache directory
+      - ai_cache:/app/.cache
+    networks:
+      - crm-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 # ==============================================================================
 # Volumes
 # ==============================================================================
 volumes:
-  # Shared database volume
-  db-data:
+  # PostgreSQL data
+  postgres_data:
     driver: local
 
-  # Python cache
-  python-cache:
+  # AI tools cache
+  ai_cache:
     driver: local
-
-  # Qdrant data (if enabled)
-  # qdrant-data:
-  #   driver: local
 
 # ==============================================================================
 # Networks
