@@ -286,3 +286,11 @@ NUL
 # Module-specific node_modules (if any)
 /backend/node_modules/
 /frontend/node_modules/
+
+# AI Assistant instruction files (keep in root but don't track changes)
+CLAUDE.md
+GEMINI.md
+
+# Claude Code directories and files
+.qodo/
+.claude/

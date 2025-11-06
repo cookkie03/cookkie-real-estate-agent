@@ -14,7 +14,9 @@ from app.config import settings
 from app.database import init_db
 
 # Import routers
-from app.routers import chat, matching, briefing
+# from app.routers import chat  # Temporarily disabled - datapizza import issue
+# from app.routers import matching, briefing  # Temporarily disabled - datapizza import issue
+from app.routers import scraping
 
 # Configure logging
 logging.basicConfig(
@@ -160,9 +162,10 @@ async def internal_error_handler(request: Request, exc):
 
 
 # Include routers
-app.include_router(chat.router, prefix="/ai/chat", tags=["Chat"])
-app.include_router(matching.router, prefix="/ai/matching", tags=["Matching"])
-app.include_router(briefing.router, prefix="/ai/briefing", tags=["Briefing"])
+# app.include_router(chat.router, prefix="/ai/chat", tags=["Chat"])  # Temporarily disabled
+# app.include_router(matching.router, prefix="/ai/matching", tags=["Matching"])  # Temporarily disabled
+# app.include_router(briefing.router, prefix="/ai/briefing", tags=["Briefing"])  # Temporarily disabled
+app.include_router(scraping.router, prefix="/ai/scraping", tags=["Scraping"])
 # app.include_router(documents.router, prefix="/ai/documents", tags=["Documents"])  # TODO: Future feature
 
 
