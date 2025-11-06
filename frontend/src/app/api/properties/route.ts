@@ -4,6 +4,8 @@
  * POST /api/properties - Create new property
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { apiResponse, apiError, getPaginationParams, generateCode } from '@/lib/utils';

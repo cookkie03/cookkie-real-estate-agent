@@ -2,6 +2,8 @@
  * Activities API - GET/POST /api/activities
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { apiResponse, apiError, getPaginationParams } from '@/lib/utils';
