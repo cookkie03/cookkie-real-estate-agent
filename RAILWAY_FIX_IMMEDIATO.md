@@ -69,7 +69,7 @@ Sto per pushare i fix al repository (Dockerfile corretti).
 ```
 1. "+ New" → "GitHub Repo"
 2. Seleziona: cookkie-real-estate-agent
-3. Branch: claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
+3. Branch: main (o il tuo branch predefinito)
 4. Service Name: crm-app
 5. Root Directory: . (punto - lascia vuoto)
 6. Railway rileverà automaticamente railway.json
@@ -100,7 +100,7 @@ SESSION_SECRET=generate-with-openssl-rand-base64-32
 ```
 1. "+ New" → "GitHub Repo"
 2. Seleziona: cookkie-real-estate-agent
-3. Branch: claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
+3. Branch: main (o il tuo branch predefinito)
 4. Service Name: crm-ai-tools
 5. Root Directory: . (punto)
 6. Dockerfile Path: ai_tools/Dockerfile
@@ -137,13 +137,11 @@ Railway Project "empowering-courage"
 │      • Contiene: UI + API Routes
 │      • Port: 3000
 │      • Health: /api/health
-│      • Branch: claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
 │
 └── 3️⃣ crm-ai-tools (Python FastAPI)
     └─ Usa: ai_tools/Dockerfile
        • Port: 8000
        • Health: /health
-       • Branch: claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
 ```
 
 **✅ Totale: 3 servizi = Compatible con Railway Free Tier!**
@@ -213,20 +211,6 @@ O un 200 OK.
 3. **5 minuti**: Ricrea i 3 servizi corretti
 4. **3-5 minuti**: Aspetta deploy automatico
 5. **DONE!** ✅ App live su Railway
-
----
-
-## 💡 Branch da Usare
-
-**IMPORTANTE**: Quando crei i servizi su Railway, specifica questo branch:
-
-```
-claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
-```
-
-**NON usare**:
-- `main` (potrebbe non avere le ultime modifiche)
-- `claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4` (vecchia sessione)
 
 ---
 

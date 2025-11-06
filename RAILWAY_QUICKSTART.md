@@ -2,8 +2,6 @@
 
 **Deploy completo in 3 step**
 
-**⚠️ IMPORTANTE**: Usa il branch `claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC`
-
 ---
 
 ## ⚡ STEP 1: Setup Railway (2 min)
@@ -52,7 +50,7 @@ Crea i servizi **in questo ordine** (importante!):
 ```
 1. "+ New" → "GitHub Repo"
 2. Seleziona il repo: cookkie-real-estate-agent
-3. Branch: claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
+3. Branch: main (o il tuo branch predefinito)
 4. Service Name: "crm-app"
 5. Root Directory: . (lascia vuoto)
 6. Railway rileverà automaticamente railway.json
@@ -96,7 +94,7 @@ openssl rand -base64 32
 ```
 1. "+ New" → "GitHub Repo"
 2. Seleziona il repo: cookkie-real-estate-agent
-3. Branch: claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
+3. Branch: main (o il tuo branch predefinito)
 4. Service Name: "crm-ai-tools"
 5. Root Directory: . (lascia vuoto)
 6. Dockerfile Path: ai_tools/Dockerfile
@@ -240,7 +238,7 @@ Railway fa auto-deploy ad ogni push su GitHub:
 # Fai modifiche in locale
 git add .
 git commit -m "feat: nuova funzionalità"
-git push origin claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
+git push origin main
 
 # Railway deployer automaticamente! ✨
 ```
@@ -284,7 +282,6 @@ npm error npm ci can only install with an existing package-lock.json
    - `DATABASE_URL` mancante → Aggiungi la variabile con `${{crm-database.DATABASE_URL}}`
    - `GOOGLE_API_KEY` mancante → Aggiungi la tua API key
    - Database non pronto → Aspetta che il database sia "Active"
-   - Branch sbagliato → Verifica di usare il branch lungo (claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC)
 
 ### Creato servizio backend per errore
 
@@ -357,11 +354,6 @@ Se hai problemi:
 ---
 
 ## 🔑 Info Importanti
-
-**Branch da usare**:
-```
-claude/review-repository-plan-011CUrSGsM7h18Cfim1Z8jr4-011CUriJTow48FK1nJ1gpSjC
-```
 
 **Servizi da creare** (in ordine):
 1. crm-database (PostgreSQL)
