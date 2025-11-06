@@ -16,9 +16,16 @@ const nextConfig = {
     maxInactiveAge: 60 * 1000,
     pagesBufferLength: 2,
   },
+
+  // Fix per Railway: Disabilita la raccolta dati statica durante il build
+  // Questo previene errori "Failed to collect page data" per le API routes
+  staticPageGenerationTimeout: 1000,
+
   // Disabilita file trace per evitare errori EPERM su Windows
   experimental: {
     outputFileTracingRoot: undefined,
+    // Disabilita ISR memory cache per evitare problemi durante il build
+    isrMemoryCacheSize: 0,
   },
 }
 
