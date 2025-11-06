@@ -1,0 +1,115 @@
+# ============================================================================
+# .dockerignore - CRM Immobiliare
+# Exclude unnecessary files from Docker build context
+# ============================================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Dependencies (will be installed in container)
+**/node_modules
+**/.pnp
+**/.pnp.js
+
+# Python
+**/__pycache__
+**/*.py[cod]
+**/*$py.class
+**/.venv
+**/venv
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+
+# Build outputs
+**/build
+**/dist
+**/.next
+**/out
+**/.cache
+
+# Environment files (NEVER include in images)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Database files (handled by volumes)
+**/*.db
+**/*.db-journal
+**/*.db-shm
+**/*.db-wal
+**/postgres_data
+
+# Logs
+**/logs
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# IDE
+**/.vscode
+**/.idea
+**/*.swp
+**/*.swo
+*~
+**/.DS_Store
+
+# Testing
+**/coverage
+**/.nyc_output
+**/test-results
+
+# Documentation
+**/docs
+**/*.md
+!README.md
+**/CHANGELOG.md
+**/LICENSE
+
+# Temporary files
+**/tmp
+**/temp
+**/.tmp
+
+# Docker files (not needed inside container)
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+.github/workflows
+
+# Backups
+**/backup-*
+**/.backup_*
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Uploads (handled by volumes)
+**/uploads
+**/public/uploads
+
+# Scripts (if not needed in production)
+**/scripts
+
+# Tests
+**/tests
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.test.js
+**/*.spec.ts
+**/*.spec.tsx
+**/*.spec.js
+
+# Configuration files (some might be needed, be selective)
+# Uncomment if not needed in production
+# **/.prettierrc
+# **/.eslintrc*
+# **/jest.config.js

@@ -1,0 +1,104 @@
+# ============================================================================
+# Docker Compose - CRM Immobiliare (Development Mode)
+# Use with: docker-compose -f docker-compose.dev.yml up
+#
+# Differences from production:
+# - Builds images locally instead of pulling from GHCR
+# - No Watchtower (not needed for development)
+# - Development-friendly settings
+# ============================================================================
+
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:16-alpine
+    container_name: crm-database-dev
+    environment:
+      POSTGRES_USER: crm_user
+      POSTGRES_PASSWORD: crm_password
+      POSTGRES_DB: crm_immobiliare
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crm_network_dev
+
+  # Next.js App (Frontend + Backend unified)
+  app:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: crm-app-dev
+    environment:
+      DATABASE_URL: postgresql://crm_user:crm_password@database:5432/crm_immobiliare
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-your_google_api_key_here}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      NODE_ENV: development
+      PORT: 3000
+      SESSION_SECRET: development_secret_not_for_production
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: development_secret_not_for_production
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount uploads and backups as named volumes
+      - app_uploads_dev:/app/public/uploads
+      - app_backups_dev:/app/backups
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crm_network_dev
+    restart: unless-stopped
+
+  # AI Tools (FastAPI)
+  ai-tools:
+    build:
+      context: .
+      dockerfile: ai_tools/Dockerfile
+    container_name: crm-ai-tools-dev
+    environment:
+      DATABASE_URL: postgresql://crm_user:crm_password@database:5432/crm_immobiliare
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-your_google_api_key_here}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crm_network_dev
+    restart: unless-stopped
+
+volumes:
+  postgres_data_dev:
+    driver: local
+  app_uploads_dev:
+    driver: local
+  app_backups_dev:
+    driver: local
+
+networks:
+  crm_network_dev:
+    driver: bridge
