@@ -18,6 +18,7 @@
     "start": "npm run start:frontend",
     "start:backend": "cd backend && npm start",
     "start:frontend": "cd frontend && npm start",
+    "start:production": "concurrently \"npm run start:backend\" \"npm run start:frontend\" \"npm run ai:start\"",
     "lint": "npm run lint:backend && npm run lint:frontend",
     "lint:backend": "cd backend && npm run lint",
     "lint:frontend": "cd frontend && npm run lint",

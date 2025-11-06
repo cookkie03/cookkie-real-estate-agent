@@ -11,13 +11,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CRM Immobiliare is a comprehensive, single-user real estate management system for Italian real estate agents. The application provides complete property and client lifecycle management with AI-powered features including intelligent matching, RAG-based assistant, web scraping, interactive maps, and daily briefings.
 
-**Tech Stack**: Next.js 14 (App Router) + TypeScript + Python (FastAPI) + Prisma + SQLite
+**Tech Stack**: Next.js 14 (App Router - Unified UI + API) + TypeScript + Python (FastAPI) + Prisma + PostgreSQL/SQLite
 
-**Current Phase**: Production-Ready - Complete modular architecture with 7 independent modules
+**Current Phase**: Production-Ready - Unified architecture with 3 services (Railway Free Tier compatible)
 
 **Interface Language**: Italian
 
-**Architecture**: Modular monorepo with clear separation of concerns
+**Architecture**: Unified Next.js app + AI Tools + Database (3-service deployment)
 
 ---
 
@@ -28,11 +28,13 @@ CRM Immobiliare is a comprehensive, single-user real estate management system fo
 ### 1. IDENTIFY THE TARGET MODULE
 
 Before writing any code, precisely identify the target module and file(s):
-- **Frontend**: `frontend/src/app/`, `frontend/src/components/`
-- **Backend**: `backend/src/app/api/`
+- **Frontend (UI)**: `frontend/src/app/`, `frontend/src/components/`
+- **Backend (API)**: `frontend/src/app/api/` (unified with frontend)
 - **AI Tools**: `ai_tools/app/agents/`, `ai_tools/app/tools/`
 - **Database**: `database/prisma/schema.prisma`, `database/python/models.py`
 - **Scraping**: `scraping/portals/`
+
+**Note**: Frontend and Backend are now unified in the same Next.js application under `frontend/`.
 
 ### 2. ISOLATE THE CHANGE
 
@@ -41,11 +43,13 @@ Your changes **must** be confined *only* to the identified target. Do not refact
 ### 3. RESPECT MODULE BOUNDARIES
 
 All interactions between modules must go through established APIs:
-- **Frontend ↔ Backend**: REST API (`/api/*`)
-- **Backend ↔ AI Tools**: HTTP requests to FastAPI (port 8000)
-- **Backend ↔ Database**: Prisma Client
-- **AI Tools ↔ Database**: SQLAlchemy
-- **Scraping → Database**: SQLAlchemy
+- **Frontend (UI) ↔ Backend (API)**: Internal Next.js API routes (`/api/*`) - same app
+- **App ↔ AI Tools**: HTTP requests to FastAPI (port 8000)
+- **App (Backend) ↔ Database**: Prisma Client (TypeScript)
+- **AI Tools ↔ Database**: SQLAlchemy (Python)
+- **Scraping → Database**: SQLAlchemy (Python)
+
+**Note**: Frontend and Backend are unified - UI pages can directly import server-side functions via Server Components or call `/api/*` routes.
 
 4.  **PROTECT CRITICAL INFRASTRUCTURE**: Core foundational files are considered **off-limits** for modification unless the task is *specifically* about changing them. Your primary responsibility is to preserve the stability of the application. Accidental modifications to these files are a critical failure. Protected files include, but are not limited to:
     -   **Database Schema (`prisma/schema.prisma`)**
@@ -63,15 +67,15 @@ All interactions between modules must go through established APIs:
 
 ```
 crm-immobiliare/
-├── frontend/              # Next.js 14 UI (port 3000)
-│   ├── src/app/           # Pages & routes (18 routes)
+├── frontend/              # Next.js 14 UNIFIED (UI + API, port 3000)
+│   ├── src/app/           # Pages & API routes
+│   │   ├── (pages)/       # UI Pages (18 routes)
+│   │   └── api/           # API endpoints (11 endpoints)
 │   ├── src/components/    # React components
 │   ├── src/hooks/         # Custom hooks
-│   └── src/lib/           # Utilities
+│   └── src/lib/           # Utilities + DB client
 │
-├── backend/               # Next.js 14 API (port 3001)
-│   ├── src/app/api/       # API routes (9 endpoints)
-│   └── src/lib/           # DB & utilities
+├── backend/               # [ARCHIVED] - Merged into frontend/src/app/api
 │
 ├── ai_tools/              # Python AI (port 8000)
 │   ├── app/agents/        # AI agents (3)
@@ -96,10 +100,11 @@ crm-immobiliare/
 ### Module Independence
 
 Each module can be developed, tested, and deployed independently:
-- **Frontend**: `cd frontend && npm run dev`
-- **Backend**: `cd backend && npm run dev`
-- **AI Tools**: `cd ai_tools && python main.py`
+- **App (Frontend + Backend)**: `cd frontend && npm run dev` (port 3000)
+- **AI Tools**: `cd ai_tools && python main.py` (port 8000)
 - **Database**: Self-contained with Prisma + SQLAlchemy
+
+**Note**: The unified app (frontend/) includes both UI and API in a single Next.js application for simpler deployment.
 
 ---
 
@@ -217,60 +222,49 @@ Before EVERY commit:
 
 ```bash
 # Install all dependencies
-npm run install:all
+npm install              # Root dependencies
+cd frontend && npm install
+cd ai_tools && pip install -r requirements.txt
 
 # Development
-npm run dev              # Start frontend
-npm run dev:all          # Start all services (frontend + backend)
-npm run dev:backend      # Backend only
-npm run dev:frontend     # Frontend only
+cd frontend && npm run dev  # Start unified app (UI + API) on port 3000
 
 # Build
-npm run build            # Build all modules
-npm run build:backend    # Backend only
-npm run build:frontend   # Frontend only
+cd frontend && npm run build  # Build unified app
 
-# Docker
-npm run docker:up        # Start all containers
-npm run docker:down      # Stop all containers
-npm run docker:logs      # View logs
+# Docker (3 services)
+docker-compose up -d           # Start all containers
+docker-compose down            # Stop all containers
+docker-compose logs -f         # View logs
 
-# Database
-npm run prisma:generate  # Generate Prisma Client
-npm run prisma:push      # Push schema to DB
-npm run prisma:studio    # Open Prisma Studio GUI
-npm run prisma:seed      # Seed database
-npm run prisma:migrate   # Run migrations
+# Database (from frontend directory)
+cd frontend
+npm run prisma:generate   # Generate Prisma Client
+npm run prisma:push       # Push schema to DB
+npm run prisma:studio     # Open Prisma Studio GUI
+npm run prisma:seed       # Seed database
 
-# AI & Scraping
-npm run ai:start         # Start AI tools
-npm run scraping:start   # Start scraping
+# AI Tools
+cd ai_tools
+python main.py            # Start FastAPI on port 8000
 
 # Testing
-npm test                 # Run all tests
-npm run test:backend     # Backend tests
-npm run test:frontend    # Frontend tests
+npm test                  # Run all tests (planned)
 
 # Cleanup
-npm run clean            # Remove node_modules and builds
+rm -rf frontend/.next
+rm -rf frontend/node_modules
 ```
 
 ### Module Level
 
 ```bash
-# Frontend
+# App (Unified Frontend + Backend)
 cd frontend
 npm install
-npm run dev              # Port 3000
+npm run dev              # Port 3000 (UI + API)
 npm run build
-npm test
-
-# Backend
-cd backend
-npm install
-npm run dev              # Port 3001
-npm run build
-npm test
+npm test                 # (planned)
 
 # AI Tools (Python)
 cd ai_tools
@@ -280,11 +274,17 @@ source .venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 python main.py             # Port 8000
 
-# Database
+# Database (from frontend or database/prisma)
 cd database/prisma
 npx prisma generate
 npx prisma db push
 npx tsx seed.ts
+
+# Or from frontend
+cd frontend
+npm run prisma:generate
+npm run prisma:push
+npm run prisma:seed
 ```
 
 ---
@@ -441,38 +441,41 @@ Component will be added to `src/components/ui/` automatically.
 
 ---
 
-## 🔌 Backend Architecture
+## 🔌 Backend Architecture (UNIFIED WITH FRONTEND)
 
-**Location**: `backend/`
+**Location**: `frontend/src/app/api/` (unified with UI)
 **Framework**: Next.js 14 (API Routes)
-**Port**: 3001
+**Port**: 3000 (same as frontend)
 
 ### Structure
 
 ```
-backend/
+frontend/
 ├── src/
 │   ├── app/
-│   │   └── api/               # API Routes (9 endpoints)
-│   │       ├── health/        # Health check
-│   │       ├── ai/
-│   │       │   ├── briefing/  # Daily briefing
-│   │       │   ├── chat/      # RAG chat
-│   │       │   └── matching/  # AI matching
-│   │       └── chat/          # Legacy chat
+│   │   ├── api/               # API Routes (11 endpoints)
+│   │   │   ├── health/        # Health check
+│   │   │   ├── properties/    # Properties CRUD
+│   │   │   ├── contacts/      # Contacts CRUD
+│   │   │   ├── requests/      # Search requests
+│   │   │   ├── matches/       # AI matches
+│   │   │   ├── activities/    # Timeline
+│   │   │   ├── buildings/     # Building census
+│   │   │   ├── tags/          # Tagging system
+│   │   │   └── settings/      # Settings
+│   │   │
+│   │   └── (pages)/           # UI Pages
 │   │
 │   └── lib/                   # DB & utilities
-│       ├── db/                # Prisma client
-│       └── utils/
-│
-├── next.config.js
-└── package.json
+│       ├── db.ts              # Prisma client
+│       ├── validation.ts      # Zod schemas
+│       └── utils.ts           # Utilities (UI + API)
 ```
 
 ### Creating API Endpoint
 
 ```typescript
-// backend/src/app/api/properties/route.ts
+// frontend/src/app/api/properties/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -491,7 +494,9 @@ export async function POST(request: Request) {
 }
 ```
 
-**Documentation**: See [backend/README.md](backend/README.md)
+**Documentation**: See [frontend/README.md](frontend/README.md)
+
+**Note**: Backend and Frontend are now unified in a single Next.js application for simpler deployment (3 services instead of 4).
 
 ---
 

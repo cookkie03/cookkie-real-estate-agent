@@ -1,0 +1,88 @@
+# ============================================================================
+# Docker Compose - Local Development (3 Services)
+# Frontend + Backend unified in one Next.js app
+# Use with: docker-compose up -d
+# ============================================================================
+
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:16-alpine
+    container_name: crm-database
+    environment:
+      POSTGRES_USER: crm_user
+      POSTGRES_PASSWORD: crm_password
+      POSTGRES_DB: crm_immobiliare
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crm_network
+
+  # Next.js App (Frontend + Backend unified)
+  app:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: crm-app
+    environment:
+      DATABASE_URL: postgresql://crm_user:crm_password@database:5432/crm_immobiliare
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-your_google_api_key_here}
+      NODE_ENV: production
+      PORT: 3000
+      SESSION_SECRET: ${SESSION_SECRET:-development_secret_change_in_production}
+    ports:
+      - "3000:3000"
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crm_network
+    restart: unless-stopped
+
+  # AI Tools (FastAPI)
+  ai-tools:
+    build:
+      context: .
+      dockerfile: ai_tools/Dockerfile
+    container_name: crm-ai-tools
+    environment:
+      DATABASE_URL: postgresql://crm_user:crm_password@database:5432/crm_immobiliare
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-your_google_api_key_here}
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crm_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  crm_network:
+    driver: bridge

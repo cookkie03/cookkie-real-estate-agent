@@ -13,9 +13,6 @@
 .env.production
 .env.test
 *.env.local
-*.env.docker
-.env.docker
-docker/.env.docker
 
 # ============================================================================
 # DEPENDENCIES
@@ -216,8 +213,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# lib/ # COMMENTED - was blocking frontend/src/lib and backend/src/lib
+# lib64/ # COMMENTED - Python venv libs, now handled by .venv/ pattern
 parts/
 sdist/
 var/
@@ -275,9 +272,9 @@ backup-*.zip
 .backup_fase9/
 
 # Old modules (removed during reorganization)
-src/
+# src/ # COMMENTED - was blocking frontend/src and backend/src
 python_ai/
-prisma/
+# prisma/ # REMOVED - was blocking database/prisma/schema.prisma
 
 # NUL file (Windows artifact)
 NUL
@@ -289,3 +286,11 @@ NUL
 # Module-specific node_modules (if any)
 /backend/node_modules/
 /frontend/node_modules/
+
+# AI Assistant instruction files (keep in root but don't track changes)
+CLAUDE.md
+GEMINI.md
+
+# Claude Code directories and files
+.qodo/
+.claude/
