@@ -272,7 +272,7 @@ backup-*.zip
 .backup_fase9/
 
 # Old modules (removed during reorganization)
-src/
+# src/ # COMMENTED - was blocking frontend/src and backend/src
 python_ai/
 # prisma/ # REMOVED - was blocking database/prisma/schema.prisma
 
