@@ -3,6 +3,8 @@
  * GET/PUT/DELETE /api/contacts/[id]
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { apiResponse, apiError } from '@/lib/utils';

@@ -3,6 +3,8 @@
  * Manage environment variables and configuration
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest } from 'next/server';
 import { apiResponse, apiError } from '@/lib/utils';
 import { updateSettingsSchema } from '@/lib/validation';
