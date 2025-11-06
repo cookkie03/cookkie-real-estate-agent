@@ -78,6 +78,8 @@ ENV HOSTNAME="0.0.0.0"
 # Switch to non-root user
 USER nextjs
 
+RUN npx prisma migrate deploy
+
 # Expose port
 EXPOSE 3000
 
