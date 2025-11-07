@@ -29,28 +29,36 @@ CRM Immobiliare è un sistema completo di gestione per agenti immobiliari singol
 
 ## 🚀 Quick Start
 
-### 🐳 Deploy con Docker Compose (Consigliato)
+### 🐳 Deploy con Docker (Consigliato)
 
-**Il modo più semplice per deployare il CRM:**
+**Il modo più semplice per deployare il CRM con auto-aggiornamento da GitHub:**
 
 ```bash
-# Clone repository
-git clone https://github.com/your-org/crm-immobiliare.git
-cd crm-immobiliare
+# 1. Clone repository
+git clone https://github.com/cookkie03/cookkie-real-estate-agent.git
+cd cookkie-real-estate-agent
 
-# Configure environment
-cp config/root.env.example .env
-# Edit .env with your values
+# 2. Configure environment
+cp .env.example .env
+# Modifica .env con i tuoi valori
 
-# Start all services
+# 3. Start all services
 docker-compose up -d
 ```
 
-Questo avvia automaticamente:
-- ✅ PostgreSQL database
-- ✅ Next.js App (Frontend + API)
-- ✅ AI Tools (FastAPI)
-- ✅ Network e volumi configurati
+**Auto-update**: Ogni push al branch `main` aggiorna automaticamente i container entro 5 minuti grazie a Watchtower!
+
+**Servizi inclusi**:
+- ✅ PostgreSQL 16 Database
+- ✅ Next.js 14 App (Frontend + Backend API)
+- ✅ Python FastAPI (AI Tools)
+- ✅ Watchtower (Auto-update)
+
+**Documentazione completa**: **[docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md)**
+- 📦 Deployment su Synology NAS (GUI)
+- 🖥️ Deployment con Docker Desktop (GUI)
+- 💻 Deployment CLI per server Linux
+- 🔧 Troubleshooting completo
 
 ### 💻 Sviluppo Locale
 

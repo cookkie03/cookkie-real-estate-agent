@@ -184,9 +184,8 @@ $RECYCLE.BIN/
 # ============================================================================
 # DOCKER
 # ============================================================================
-# Don't ignore Dockerfiles and docker-compose
-# But ignore Docker build artifacts
-.dockerignore
+# Dockerfiles, docker-compose.yml, and .dockerignore should be committed
+# (No exclusions - all Docker files are tracked)
 
 # ============================================================================
 # BACKUP FILES

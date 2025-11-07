@@ -53,6 +53,9 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+# Install runtime dependencies (netcat for DB health check)
+RUN apk add --no-cache netcat-openbsd
+
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
@@ -69,15 +72,21 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/database/prisma ./database/prisma
 
+# Copy entrypoint script
+COPY frontend/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Set environment
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+# Create required directories
+RUN mkdir -p /app/public/uploads /app/backups && \
+    chown -R nextjs:nodejs /app/public/uploads /app/backups
+
 # Switch to non-root user
 USER nextjs
-
-RUN npx prisma migrate deploy
 
 # Expose port
 EXPOSE 3000
@@ -86,5 +95,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
-CMD ["node", "server.js"]
+# Use entrypoint for migrations + start
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

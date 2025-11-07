@@ -1,51 +1,85 @@
 # ============================================================================
-# Docker Compose - CRM Immobiliare (3 Services)
-# Frontend + Backend unified in one Next.js app
-# Use with: docker-compose up -d
+# Docker Compose - CRM Immobiliare
+# Configurazione unificata per sviluppo e produzione
+# ============================================================================
 #
-# Services:
-# - database: PostgreSQL 16
-# - app: Next.js (Frontend + API)
-# - ai-tools: Python FastAPI (AI agents)
+# REQUISITI:
+# - Docker Engine 20.10+ o Docker Desktop
+# - File .env configurato (copia da .env.example)
+#
+# UTILIZZO:
+# 1. Copia .env.example in .env e configura le tue variabili
+# 2. Avvia: docker-compose up -d
+# 3. Verifica: docker-compose ps
+# 4. Logs: docker-compose logs -f
+#
+# AUTO-UPDATE:
+# - Watchtower controlla GitHub Container Registry ogni 5 minuti
+# - Aggiorna automaticamente i container quando rileva nuove immagini
+# - I dati (database, uploads, backup) sono persistenti e sopravvivono agli aggiornamenti
+#
+# SERVIZI:
+# - database: PostgreSQL 16 (porta 5432)
+# - app: Next.js Frontend + Backend API (porta 3000)
+# - ai-tools: Python FastAPI AI Agents (porta 8000)
+# - watchtower: Monitor auto-aggiornamento
+#
 # ============================================================================
 
 version: '3.9'
 
 services:
-  # PostgreSQL Database
+  # ==============================================================================
+  # DATABASE - PostgreSQL 16
+  # ==============================================================================
   database:
     image: postgres:16-alpine
     container_name: crm-database
     environment:
-      POSTGRES_USER: crm_user
-      POSTGRES_PASSWORD: crm_password
-      POSTGRES_DB: crm_immobiliare
+      POSTGRES_USER: ${POSTGRES_USER:-crm_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm_password_CHANGE_THIS}
+      POSTGRES_DB: ${POSTGRES_DB:-crm_immobiliare}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U crm_user"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crm_user}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - crm_network
+    restart: unless-stopped
 
-  # Next.js App (Frontend + Backend unified)
+  # ==============================================================================
+  # APP - Next.js (Frontend + Backend API)
+  # ==============================================================================
   app:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-cookkie03}/crm-immobiliare-app:latest
     container_name: crm-app
+    pull_policy: always
     environment:
-      DATABASE_URL: postgresql://crm_user:crm_password@database:5432/crm_immobiliare
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-your_google_api_key_here}
-      NODE_ENV: production
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-crm_user}:${POSTGRES_PASSWORD:-crm_password_CHANGE_THIS}@database:5432/${POSTGRES_DB:-crm_immobiliare}
+
+      # API Keys
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+
+      # Application
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
-      SESSION_SECRET: ${SESSION_SECRET:-development_secret_change_in_production}
+
+      # Authentication
+      SESSION_SECRET: ${SESSION_SECRET:-GENERATE_A_STRONG_SECRET_HERE}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-GENERATE_A_STRONG_SECRET_HERE}
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - app_uploads:/app/public/uploads
+      - app_backups:/app/backups
     depends_on:
       database:
         condition: service_healthy
@@ -58,19 +92,28 @@ services:
     networks:
       - crm_network
     restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
-  # AI Tools (FastAPI)
+  # ==============================================================================
+  # AI TOOLS - Python FastAPI
+  # ==============================================================================
   ai-tools:
-    build:
-      context: .
-      dockerfile: ai_tools/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-cookkie03}/crm-immobiliare-ai:latest
     container_name: crm-ai-tools
+    pull_policy: always
     environment:
-      DATABASE_URL: postgresql://crm_user:crm_password@database:5432/crm_immobiliare
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-your_google_api_key_here}
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-crm_user}:${POSTGRES_PASSWORD:-crm_password_CHANGE_THIS}@database:5432/${POSTGRES_DB:-crm_immobiliare}
+
+      # API Keys
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+
+      # Application
       PORT: 8000
     ports:
-      - "8000:8000"
+      - "${AI_PORT:-8000}:8000"
     depends_on:
       database:
         condition: service_healthy
@@ -83,11 +126,61 @@ services:
     networks:
       - crm_network
     restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
+  # ==============================================================================
+  # WATCHTOWER - Auto-update dei container
+  # ==============================================================================
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: crm-watchtower
+    environment:
+      # Controlla aggiornamenti ogni 5 minuti
+      WATCHTOWER_POLL_INTERVAL: ${WATCHTOWER_POLL_INTERVAL:-300}
+
+      # Monitora solo container con label watchtower.enable=true
+      WATCHTOWER_LABEL_ENABLE: "true"
+
+      # Rimuovi vecchie immagini dopo update
+      WATCHTOWER_CLEANUP: "true"
+
+      # Non includere container fermi
+      WATCHTOWER_INCLUDE_STOPPED: "false"
+
+      # Abilita log dettagliati (set to "true" for debugging)
+      WATCHTOWER_DEBUG: ${WATCHTOWER_DEBUG:-false}
+
+      # Notifiche (opzionali - vedi .env.example)
+      # WATCHTOWER_NOTIFICATIONS: ${WATCHTOWER_NOTIFICATIONS:-}
+      # WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL: ${SLACK_WEBHOOK_URL:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - crm_network
+    restart: unless-stopped
+
+# ==============================================================================
+# VOLUMI PERSISTENTI
+# ==============================================================================
+# Questi volumi conservano i dati anche quando i container vengono aggiornati
 volumes:
   postgres_data:
     driver: local
+    name: crm_postgres_data
 
+  app_uploads:
+    driver: local
+    name: crm_app_uploads
+
+  app_backups:
+    driver: local
+    name: crm_app_backups
+
+# ==============================================================================
+# NETWORK
+# ==============================================================================
 networks:
   crm_network:
     driver: bridge
+    name: crm_network
