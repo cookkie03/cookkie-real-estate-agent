@@ -127,6 +127,18 @@ class Settings(BaseSettings):
         description="AI request timeout in seconds"
     )
 
+    # Retry Configuration (for Google AI fallback)
+    ai_max_retries: int = Field(
+        default=3,
+        alias="AI_MAX_RETRIES",
+        description="Maximum retry attempts for AI requests"
+    )
+    ai_retry_delay: int = Field(
+        default=2,
+        alias="AI_RETRY_DELAY",
+        description="Delay in seconds between retries (exponential backoff)"
+    )
+
     # RAG Configuration
     rag_top_k: int = Field(
         default=5,

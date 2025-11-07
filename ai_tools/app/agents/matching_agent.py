@@ -10,6 +10,7 @@ from datapizza.tools import tool
 import json
 
 from app.config import settings
+from app.utils import retry_with_exponential_backoff
 from app.database import SessionLocal
 from app.models import Property, Request, Match
 
@@ -167,8 +168,14 @@ poi fornisci:
 Rispondi in formato strutturato e conciso.
 """
 
+    # Create retry-wrapped execution function
+    @retry_with_exponential_backoff()
+    def _run_with_retry():
+        return agent.run(prompt)
+
     try:
-        response = agent.run(prompt)
+        # Run agent with automatic retry on failures
+        response = _run_with_retry()
 
         return {
             "success": True,
@@ -180,6 +187,6 @@ Rispondi in formato strutturato e conciso.
     except Exception as e:
         return {
             "success": False,
-            "error": str(e),
+            "error": f"Matching Agent failed after retries: {str(e)}",
             "algorithmicScore": algorithmic_score,
         }

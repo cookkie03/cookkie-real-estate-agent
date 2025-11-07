@@ -16,7 +16,6 @@ export async function GET() {
     // Return current settings (masked for security)
     const settings = {
       googleApiKey: process.env.GOOGLE_API_KEY ? '***' + process.env.GOOGLE_API_KEY?.slice(-4) : null,
-      openaiApiKey: process.env.OPENAI_API_KEY ? '***' + process.env.OPENAI_API_KEY?.slice(-4) : null,
       databaseUrl: process.env.DATABASE_URL ? 'postgresql://***' : null,
       nodeEnv: process.env.NODE_ENV,
       port: process.env.PORT || '3001',
@@ -45,7 +44,6 @@ export async function PUT(request: NextRequest) {
     let envContent = '';
 
     if (data.googleApiKey) envContent += `GOOGLE_API_KEY=${data.googleApiKey}\n`;
-    if (data.openaiApiKey) envContent += `OPENAI_API_KEY=${data.openaiApiKey}\n`;
     if (data.smtpHost) envContent += `SMTP_HOST=${data.smtpHost}\n`;
     if (data.smtpPort) envContent += `SMTP_PORT=${data.smtpPort}\n`;
     if (data.corsOrigins) envContent += `CORS_ORIGINS=${data.corsOrigins}\n`;

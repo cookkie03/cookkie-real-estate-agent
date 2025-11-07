@@ -11,6 +11,7 @@ from datapizza.tools import tool
 import json
 
 from app.config import settings
+from app.utils import retry_with_exponential_backoff
 from app.database import SessionLocal
 from app.models import Activity, Match, Request, Property
 
@@ -241,8 +242,14 @@ Usa gli strumenti disponibili per raccogliere:
 Poi genera un briefing strutturato e motivante seguendo il formato indicato.
 """
 
+    # Create retry-wrapped execution function
+    @retry_with_exponential_backoff()
+    def _run_with_retry():
+        return agent.run(prompt)
+
     try:
-        response = agent.run(prompt)
+        # Run agent with automatic retry on failures
+        response = _run_with_retry()
 
         return {
             "success": True,
@@ -254,5 +261,5 @@ Poi genera un briefing strutturato e motivante seguendo il formato indicato.
     except Exception as e:
         return {
             "success": False,
-            "error": str(e)
+            "error": f"Briefing Agent failed after retries: {str(e)}"
         }
