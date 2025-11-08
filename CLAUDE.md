@@ -645,7 +645,7 @@ tests/
 
 ### Docker Compose Services
 
-**4 containers** (not 3 as docs claim):
+**4 containers**:
 1. `database` - PostgreSQL 16
 2. `app` - Next.js (UI + API)
 3. `ai-tools` - FastAPI
@@ -658,6 +658,56 @@ tests/
 - `app_uploads` - User uploads
 - `app_backups` - Backups
 
+### GitHub Container Registry (GHCR) Setup
+
+**IMPORTANT**: Before running `docker-compose up -d` for the first time, you MUST ensure Docker images exist on GHCR.
+
+**Check if images exist**:
+```
+https://github.com/YOUR_USERNAME?tab=packages
+```
+
+Look for:
+- `crm-immobiliare-app`
+- `crm-immobiliare-ai`
+
+**If images DON'T exist** (first deployment):
+1. Go to: `https://github.com/YOUR_ORG/YOUR_REPO/actions`
+2. Select workflow: **"Docker Build & Publish"**
+3. Click **"Run workflow"** → Select branch `main` → **"Run workflow"**
+4. Wait ~5-10 minutes for build to complete
+5. Then run: `docker-compose up -d`
+
+**If images exist but are PRIVATE**:
+
+**Option A - Make them public** (recommended for open-source):
+1. Go to package settings: `https://github.com/users/YOUR_USERNAME/packages/container/crm-immobiliare-app/settings`
+2. Scroll to "Danger Zone" → "Change visibility"
+3. Select "Public" → Confirm
+4. Repeat for `crm-immobiliare-ai`
+
+**Option B - Add authentication** (for private images):
+1. Create GitHub token: `https://github.com/settings/tokens/new`
+   - Name: `Docker GHCR Access`
+   - Scope: `read:packages`
+2. Add to `.env`:
+   ```bash
+   GITHUB_USERNAME=your_username
+   GITHUB_TOKEN=ghp_yourtoken123456789
+   ```
+3. Login Docker locally:
+   ```bash
+   docker login ghcr.io -u your_username -p ghp_yourtoken
+   ```
+
+**Watchtower authentication** is configured in `docker-compose.yml`:
+```yaml
+watchtower:
+  environment:
+    REPO_USER: ${GITHUB_USERNAME:-}
+    REPO_PASS: ${GITHUB_TOKEN:-}
+```
+
 ### Environment in Docker
 
 **Override mechanism**:
@@ -668,6 +718,29 @@ environment:
 ```
 
 **Precedence**: docker-compose.yml > .env > defaults
+
+### Deployment Workflow
+
+**Production deployment flow**:
+```
+1. Push to main branch
+   ↓
+2. GitHub Actions triggers "Docker Build & Publish"
+   ↓
+3. Builds app + ai-tools images
+   ↓
+4. Pushes to ghcr.io/YOUR_USERNAME/crm-immobiliare-*:latest
+   ↓
+5. Watchtower detects new images (within 5 min)
+   ↓
+6. Pulls latest images
+   ↓
+7. Restarts containers with new code
+   ↓
+8. ✅ Auto-deployed!
+```
+
+**Manual trigger**: Use GitHub Actions UI to run workflow on any branch
 
 ---
 
