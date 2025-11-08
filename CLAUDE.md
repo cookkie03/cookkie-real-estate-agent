@@ -41,6 +41,29 @@ CRM Immobiliare is designed around three core principles that **MUST** guide eve
 - ❌ **Unexplained failures** → Every error has a solution
 - ❌ **Hidden features** → Make everything discoverable
 - ❌ **Configuration via code** → Configuration via GUI wizard
+- ❌ **Docker requiring manual GHCR auth** → Images MUST be public
+- ❌ **"Build locally" workarounds** → Fix the root cause instead
+- ❌ **Creating alternative deployment methods** → ONE way only
+
+### ⚡ CRITICAL DEPLOYMENT RULE
+
+**A novice cloning this repo MUST be able to run**:
+```bash
+docker-compose up -d
+```
+**and have it work immediately, without**:
+- Creating GitHub tokens
+- Going to GitHub web UI
+- Understanding GitHub Actions
+- Configuring authentication
+- Reading documentation beyond QUICKSTART.md
+
+**How to achieve this**:
+1. Docker images on GHCR **MUST be public** (not private)
+2. Maintainer sets this up **ONCE** (triggering workflow + making images public)
+3. All other users benefit forever
+
+**If a deployment method requires more than 2 commands, it's TOO COMPLEX.**
 
 ---
 
@@ -660,53 +683,31 @@ tests/
 
 ### GitHub Container Registry (GHCR) Setup
 
-**IMPORTANT**: Before running `docker-compose up -d` for the first time, you MUST ensure Docker images exist on GHCR.
+**FOR MAINTAINERS ONLY** (do this ONCE, all users benefit):
 
-**Check if images exist**:
+**Initial setup** (first time only):
+1. Trigger workflow: https://github.com/YOUR_ORG/YOUR_REPO/actions → "Docker Build & Publish" → "Run workflow" on `main`
+2. Wait ~5-10 minutes for images to build
+3. Make images public:
+   - Go to: https://github.com/YOUR_USERNAME?tab=packages
+   - For each package (`crm-immobiliare-app`, `crm-immobiliare-ai`):
+     - Click package → Settings → "Change visibility" → "Public"
+
+**That's it!** Now everyone can run:
+```bash
+docker-compose up -d  # ✅ Works for everyone
 ```
-https://github.com/YOUR_USERNAME?tab=packages
-```
 
-Look for:
-- `crm-immobiliare-app`
-- `crm-immobiliare-ai`
-
-**If images DON'T exist** (first deployment):
-1. Go to: `https://github.com/YOUR_ORG/YOUR_REPO/actions`
-2. Select workflow: **"Docker Build & Publish"**
-3. Click **"Run workflow"** → Select branch `main` → **"Run workflow"**
-4. Wait ~5-10 minutes for build to complete
-5. Then run: `docker-compose up -d`
-
-**If images exist but are PRIVATE**:
-
-**Option A - Make them public** (recommended for open-source):
-1. Go to package settings: `https://github.com/users/YOUR_USERNAME/packages/container/crm-immobiliare-app/settings`
-2. Scroll to "Danger Zone" → "Change visibility"
-3. Select "Public" → Confirm
-4. Repeat for `crm-immobiliare-ai`
-
-**Option B - Add authentication** (for private images):
-1. Create GitHub token: `https://github.com/settings/tokens/new`
-   - Name: `Docker GHCR Access`
-   - Scope: `read:packages`
-2. Add to `.env`:
-   ```bash
-   GITHUB_USERNAME=your_username
-   GITHUB_TOKEN=ghp_yourtoken123456789
-   ```
-3. Login Docker locally:
-   ```bash
-   docker login ghcr.io -u your_username -p ghp_yourtoken
-   ```
-
-**Watchtower authentication** is configured in `docker-compose.yml`:
+**Watchtower authentication** (optional, only if you want private images):
 ```yaml
+# docker-compose.yml already configured
 watchtower:
   environment:
-    REPO_USER: ${GITHUB_USERNAME:-}
+    REPO_USER: ${GITHUB_USERNAME:-}  # Only needed for private images
     REPO_PASS: ${GITHUB_TOKEN:-}
 ```
+
+**NOTE**: For this project, images SHOULD be public (open-source). Private images complicate deployment for end users.
 
 ### Environment in Docker
 
