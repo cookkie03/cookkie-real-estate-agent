@@ -25,72 +25,49 @@ export const ROUTES = {
   TOOL: "/tool",
 } as const;
 
-// Navigation Menu Items
+// Navigation Menu Items - 7 voci essenziali consolidate
 export const NAV_ITEMS = [
   {
     label: "Dashboard",
     href: ROUTES.HOME,
     icon: "LayoutDashboard",
+    description: "Panoramica e statistiche",
   },
   {
     label: "Immobili",
     href: ROUTES.PROPERTIES,
     icon: "Building2",
+    description: "Gestione proprietà in portafoglio",
   },
   {
     label: "Clienti",
     href: ROUTES.CLIENTS,
     icon: "Users",
-  },
-  {
-    label: "Richieste",
-    href: ROUTES.REQUESTS,
-    icon: "Search",
-  },
-  {
-    label: "Matching",
-    href: ROUTES.MATCHING,
-    icon: "Target",
-  },
-  {
-    label: "Attività",
-    href: ROUTES.ACTIVITIES,
-    icon: "Activity",
-  },
-  {
-    label: "Mappa",
-    href: ROUTES.MAP,
-    icon: "Map",
-  },
-  {
-    label: "Edifici",
-    href: ROUTES.BUILDINGS,
-    icon: "Home",
-  },
-  {
-    label: "Agenda",
-    href: ROUTES.CALENDAR,
-    icon: "Calendar",
-  },
-  {
-    label: "Azioni",
-    href: ROUTES.ACTIONS,
-    icon: "CheckSquare",
+    description: "Contatti e richieste clienti",
   },
   {
     label: "Scraping",
     href: ROUTES.SCRAPING,
     icon: "Globe",
+    description: "Acquisizione automatica da web",
   },
   {
-    label: "Tool",
-    href: ROUTES.TOOL,
-    icon: "Wrench",
+    label: "Matching",
+    href: ROUTES.MATCHING,
+    icon: "Target",
+    description: "Abbinamenti AI proprietà-cliente",
+  },
+  {
+    label: "Agenda",
+    href: ROUTES.CALENDAR,
+    icon: "Calendar",
+    description: "Appuntamenti e attività",
   },
   {
     label: "Impostazioni",
     href: ROUTES.SETTINGS,
     icon: "Settings",
+    description: "Configurazione sistema",
   },
 ] as const;
 

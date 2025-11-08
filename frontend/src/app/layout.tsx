@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
-import { Sidebar } from "@/components/layouts/Sidebar";
+import { TopBar } from "@/components/layouts/TopBar";
 
 export const metadata: Metadata = {
   title: "CRM Immobiliare - Gestione Completa",
@@ -17,17 +17,15 @@ export default function RootLayout({
     <html lang="it" suppressHydrationWarning>
       <body className="font-sans antialiased">
         <Providers>
-          <div className="flex h-screen overflow-hidden">
-            {/* Sidebar - fixed left */}
-            <Sidebar />
+          {/* Top Bar Navigation - Fixed top */}
+          <TopBar />
 
-            {/* Main content area - with left margin for sidebar */}
-            <main className="ml-64 flex-1 overflow-y-auto bg-background">
-              <div className="container mx-auto p-6">
-                {children}
-              </div>
-            </main>
-          </div>
+          {/* Main content area - with top padding for fixed header */}
+          <main className="pt-16 min-h-screen bg-background">
+            <div className="container mx-auto p-4 md:p-6 lg:p-8">
+              {children}
+            </div>
+          </main>
         </Providers>
       </body>
     </html>
