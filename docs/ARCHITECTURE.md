@@ -390,8 +390,8 @@ properties = session.query(Property)\
 **Format**: JSON
 
 ```typescript
-// Frontend
-const properties = await fetch('http://localhost:3001/api/properties')
+// Frontend (Unified Architecture - API on same port as UI)
+const properties = await fetch('http://localhost:3000/api/properties')
   .then(r => r.json());
 
 // Backend

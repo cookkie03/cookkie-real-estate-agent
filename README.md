@@ -11,17 +11,17 @@
 
 ## 📋 Overview
 
-CRM Immobiliare è un sistema completo di gestione per agenti immobiliari singoli, con funzionalità AI avanzate:
+CRM Immobiliare è un sistema completo di gestione per agenti immobiliari singoli, con funzionalità AI avanzate, costruito con un'architettura moderna unificata.
 
-### ✨ Features Principali
+### ✨ Funzionalità Principali
 
-- 🏠 **Gestione Immobili** - CRUD completo con dettagli, foto, caratteristiche
-- 👥 **Gestione Clienti** - Profili completi, richieste, priorità
-- 🤖 **AI Matching** - Matching automatico property-cliente con scoring
-- 💬 **RAG Assistant** - Chat AI con accesso diretto al database
+- 🏠 **Gestione Immobili** - CRUD completo con foto, caratteristiche, valutazione
+- 👥 **Gestione Clienti** - Profili, richieste, timeline attività
+- 🤖 **AI Matching** - Matching automatico property-cliente con scoring 0-100
+- 💬 **RAG Assistant** - Chat AI con accesso al database
 - 📊 **Dashboard** - Statistiche real-time, attività, calendario
-- 🗺️ **Mappa Interattiva** - Visualizzazione geografica immobili
-- ⌨️ **Command Palette** - Navigazione rapida (Cmd/Ctrl+K)
+- 🗺️ **Mappa Interattiva** - Visualizzazione geografica
+- ⚡ **Command Palette** - Navigazione rapida (Cmd/Ctrl+K)
 - 🌐 **Web Scraping** - Import automatico da portali immobiliari
 - 📧 **Daily Briefing** - Report giornaliero AI-generated
 
@@ -29,246 +29,89 @@ CRM Immobiliare è un sistema completo di gestione per agenti immobiliari singol
 
 ## 🚀 Quick Start
 
-### 🐳 Deploy con Docker (Consigliato)
-
-**Il modo più semplice per deployare il CRM con auto-aggiornamento da GitHub:**
+**⏱️ Installation time: 5 minutes**
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/cookkie03/cookkie-real-estate-agent.git
 cd cookkie-real-estate-agent
 
-# 2. Configure environment
-cp .env.example .env
-# Modifica .env con i tuoi valori
+# 2. Run installation script
+chmod +x scripts/install.sh
+./scripts/install.sh
 
-# 3. Start all services
-docker-compose up -d
+# 3. Get Google AI API Key
+# Visit: https://aistudio.google.com/app/apikey
+# Add to frontend/.env.local and ai_tools/.env
+
+# 4. Start services
+./scripts/start-all.sh
+
+# 5. Open application
+# Frontend & API: http://localhost:3000
+# AI Tools API: http://localhost:8000/docs
 ```
 
-**Auto-update**: Ogni push al branch `main` aggiorna automaticamente i container entro 5 minuti grazie a Watchtower!
-
-**Servizi inclusi**:
-- ✅ PostgreSQL 16 Database
-- ✅ Next.js 14 App (Frontend + Backend API)
-- ✅ Python FastAPI (AI Tools)
-- ✅ Watchtower (Auto-update)
-
-**Documentazione completa**: **[docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md)**
-- 📦 Deployment su Synology NAS (GUI)
-- 🖥️ Deployment con Docker Desktop (GUI)
-- 💻 Deployment CLI per server Linux
-- 🔧 Troubleshooting completo
-
-### 💻 Sviluppo Locale
-
-#### Prerequisites
-
-- **Node.js** 20+
-- **npm** o **yarn**
-- **Python** 3.11+ (per AI tools)
-- **Docker** (opzionale)
-
-#### Opzione 1: Docker (Più Semplice)
-
-```bash
-# Clone repository
-git clone https://github.com/yourusername/crm-immobiliare.git
-cd crm-immobiliare
-
-# Start con Docker Compose (3 servizi)
-docker-compose up -d
-
-# Accedi
-# App (UI + API): http://localhost:3000
-# AI Tools:       http://localhost:8000
-# Database:       PostgreSQL su porta 5432
-```
-
-#### Opzione 2: Sviluppo Nativo
-
-```bash
-# 1. Clone repository
-git clone https://github.com/yourusername/crm-immobiliare.git
-cd crm-immobiliare
-
-# 2. Install dependencies
-npm install
-
-# 3. Setup configurazione
-cp config/backend.env.example backend/.env
-cp config/frontend.env.example frontend/.env.local
-cp config/ai_tools.env.example ai_tools/.env
-
-# 4. Configure database (PostgreSQL recommended)
-cd database/prisma
-npx prisma generate
-npx prisma db push
-npx tsx seed.ts  # Dati di esempio
-
-# 5. Start development
-cd ../..
-cd frontend
-npm run dev  # App unificata (UI + API) su porta 3000
-
-# AI Tools (opzionale, in another terminal)
-cd ../ai_tools
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-.venv\Scripts\activate      # Windows
-pip install -r requirements.txt
-python main.py  # Porta 8000
-```
-
-### Accesso
-
-- **App (UI + API)**: http://localhost:3000
-- **Health Check**: http://localhost:3000/api/health
-- **AI Tools**: http://localhost:8000/health
-- **AI API Docs**: http://localhost:8000/docs
+**👉 For full setup instructions: [QUICK_START.md](QUICK_START.md)**
 
 ---
 
-## 📦 Architettura Modulare
+## 📦 Architecture (v3.0.0 - Unified)
 
-Il progetto è organizzato in moduli indipendenti con deployment unificato:
+Modern modular architecture with **unified deployment**:
 
 ```
-/
-├── frontend/          # Next.js App Unificata (UI + API, porta 3000)
-├── ai_tools/          # Python AI (porta 8000)
-├── database/          # Prisma + PostgreSQL (centralizzato)
-├── scraping/          # Web scraping modules
-├── config/            # Configurazione centralizzata
-├── scripts/           # Automation scripts
-├── tests/             # Test suite
-├── logs/              # Log centralizzati
-└── docs/              # Documentazione
+├── frontend/        # Next.js 14 (UI + API - port 3000)
+├── ai_tools/        # Python FastAPI (port 8000)
+├── database/        # Prisma + SQLite/PostgreSQL
+└── scraping/        # Web scraping modules
 ```
 
-### Moduli Principali
-
-| Modulo | Linguaggio | Descrizione | Docs |
-|--------|------------|-------------|------|
-| **frontend** | TypeScript | App Next.js 14 (UI + API) | [README](frontend/README.md) |
-| **ai_tools** | Python | AI agents + tools | [README](ai_tools/README.md) |
-| **database** | SQL/TS/Py | Prisma + SQLAlchemy | [README](database/README.md) |
-| **scraping** | Python | Web scraping | [README](scraping/README.md) |
-| **config** | - | Configurazione | [README](config/README.md) |
-
-**Nota**: L'architettura è stata semplificata unificando Frontend e Backend in un'unica applicazione Next.js, riducendo da 4 a 3 servizi per deployment semplificato.
+**Key Features**:
+- ✅ **Unified Architecture** - Frontend + Backend on same port (3000)
+- ✅ **3-Service Deployment** - Simplified with Docker Compose
+- ✅ **Google AI Primary** - All AI features use Google Gemini (Optional OpenRouter fallback)
+- ✅ **Production Ready** - Complete with logging, monitoring, health checks
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **UI**: shadcn/ui (Radix UI)
-- **Styling**: Tailwind CSS
-- **State**: React Query
-- **Forms**: react-hook-form + Zod
-
-### Backend
-- **Framework**: Next.js 14 (API Routes)
-- **Language**: TypeScript
-- **Database**: Prisma ORM
-- **Validation**: Zod
-
-### AI Tools
-- **Framework**: FastAPI
-- **Language**: Python 3.13
-- **AI**: DataPizza AI + Google Gemini
-- **Vector Store**: Qdrant
-- **Database**: SQLAlchemy
-
-### Database
-- **Development**: PostgreSQL (locale) o SQLite
-- **Production**: PostgreSQL (Docker Compose)
-- **ORM**: Prisma (Node.js) + SQLAlchemy (Python)
-- **Migrations**: Prisma Migrate
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | Next.js 14 + TypeScript | UI + API Routes |
+| **AI** | FastAPI + Python 3.13 | AI agents (RAG, Matching, Briefing) |
+| **Database** | Prisma + PostgreSQL/SQLite | Data persistence |
+| **AI Model** | Google Gemini (Primary) | LLM for AI features |
+| **UI Components** | shadcn/ui + Tailwind | React components |
+| **State** | React Query | Client-side caching |
 
 ---
 
-## 📚 Documentazione
+## 📚 Documentation
 
-### Guide Principali
+### Getting Started
+- **[QUICK_START.md](QUICK_START.md)** ⭐ - 5-minute setup guide
+- **[CLAUDE.md](CLAUDE.md)** - Complete project documentation (source of truth)
+- **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)** - Detailed setup guide
+- **[docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md)** - Production deployment
 
-- 🐳 **[Docker Quickstart](docs/setup/DOCKER_QUICKSTART.md)** ⭐ - Deployment con Docker Compose (PRINCIPALE)
-- 📖 [Getting Started](docs/GETTING_STARTED.md) - Setup locale
-- 🏗️ [Architettura](docs/ARCHITECTURE.md) - Architettura sistema
+### Architecture & Guides
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture details
+- **[docs/](docs/)** - Full documentation index
 
-### Documentazione Moduli
-
-- [Frontend README](frontend/README.md) - UI components, pages, styling, API routes
-- [AI Tools README](ai_tools/README.md) - AI agents, tools, config
-- [Database README](database/README.md) - Schema, migrations, seed
-- [Scraping README](scraping/README.md) - Web scraping modules
-- [Config README](config/README.md) - Environment variables
-
-### Report Riorganizzazione
-
-- [FASE 1](docs/reorganization/FASE1_COMPLETATA.md) - Cleanup e consolidamento
-- [FASE 2](docs/reorganization/FASE2_COMPLETATA.md) - Centralizzazione configurazione
+### Module Guides
+- [frontend/README.md](frontend/README.md) - UI components and API routes
+- [ai_tools/README.md](ai_tools/README.md) - AI agents and configuration
+- [database/README.md](database/README.md) - Database schema and models
+- [config/README.md](config/README.md) - Environment variables
 
 ---
 
-## ⚙️ Configuration
-
-Tutte le configurazioni sono centralizzate in `/config`:
+## 🐳 Docker Deployment
 
 ```bash
-# Backend
-cp config/backend.env.example backend/.env
-
-# Frontend
-cp config/frontend.env.example frontend/.env.local
-
-# AI Tools
-cp config/ai_tools.env.example ai_tools/.env
-
-# Scraping (optional)
-cp config/scraping.env.example scraping/.env
-```
-
-### Variabili Essenziali
-
-```bash
-# Database (shared)
-DATABASE_URL="file:../database/prisma/dev.db"
-
-# Google AI (required for AI features)
-GOOGLE_API_KEY="your-api-key-here"
-
-# Ports
-FRONTEND: 3000
-BACKEND:  3001
-AI_TOOLS: 8000
-```
-
-Vedi [Config README](config/README.md) per dettagli completi.
-
----
-
-## 🐳 Docker
-
-### Sviluppo Locale con Docker
-
-```bash
-# From project root
-docker-compose up -d
-```
-
-Avvia automaticamente 3 servizi:
-- PostgreSQL database (porta 5432)
-- App unificata - UI + API (porta 3000)
-- AI Tools (porta 8000)
-
-### Docker Commands
-
-```bash
-# Start all services
+# Start all 3 services
 docker-compose up -d
 
 # View logs
@@ -276,146 +119,104 @@ docker-compose logs -f
 
 # Stop all
 docker-compose down
-
-# Rebuild after code changes
-docker-compose up -d --build
 ```
 
-**Deployment Production**: Per deployment in produzione, utilizza lo stesso `docker-compose.yml` con configurazioni appropriate (vedi `docs/setup/DOCKER_QUICKSTART.md`)
+Services:
+- **App** (UI + API): http://localhost:3000
+- **AI Tools**: http://localhost:8000
+- **Database**: PostgreSQL (port 5432)
+
+**Auto-Update**: Watchtower automatically updates containers when new images are pushed to GitHub Container Registry every 5 minutes.
 
 ---
 
-## 🧪 Testing
+## 🤖 AI Configuration
 
+### Primary Service: Google Gemini ✅
+All AI features use Google AI Studio API as PRIMARY service:
+- **RAG Assistant** - Chat with database access
+- **AI Matching** - Property-request matching
+- **Daily Briefing** - Personalized briefing
+- **Semantic Search** - Web scraping enhancement
+
+**Get API Key**: https://aistudio.google.com/app/apikey
+
+### Configuration
 ```bash
-# Run all tests
-npm test
-
-# Unit tests
-npm run test:unit
-
-# Integration tests
-npm run test:integration
-
-# E2E tests
-npm run test:e2e
+# Add to environment files
+export GOOGLE_API_KEY="your-key-here"
 ```
 
----
-
-## 📊 Database Schema
-
-### Modelli Principali
-
-- **UserProfile** - Profilo agente immobiliare
-- **Contact** - Contatti (clienti, proprietari, lead)
-- **Property** - Immobili completi
-- **Request** - Richieste di ricerca clienti
-- **Match** - Matching property-request AI
-- **Activity** - Timeline CRM
-- **Tag** - Sistema tagging universale
-
-Vedi [Database README](database/README.md) per schema completo.
-
----
-
-## 🤖 AI Features
-
-### RAG Assistant
-Chat AI con accesso diretto al database via custom tools.
-
-**Esempi query**:
-- "Mostrami appartamenti a Milano sotto 200k"
-- "Chi sono i clienti VIP?"
-- "Dammi statistiche vendite mese corrente"
-
-### AI Matching
-Matching automatico property-cliente con scoring intelligente.
-
-### Daily Briefing
-Report giornaliero AI-generated con attività suggerite.
-
-Vedi [AI Tools README](ai_tools/README.md) per dettagli.
-
----
-
-## 🌐 Web Scraping
-
-Import automatico da portali immobiliari:
-- Immobiliare.it
-- Casa.it
-- Idealista.it
-
-```bash
-cd scraping
-python cli.py scrape --portal all --city Milano
-```
-
-Vedi [Scraping README](scraping/README.md) per dettagli.
+### Optional: OpenRouter Fallback
+OpenRouter is NOT currently implemented. Future integration planned as optional fallback.
 
 ---
 
 ## 🔐 Security
 
-### Environment Variables
-- ❌ **MAI** committare `.env`, `.env.local`
-- ✅ Solo `.env.example` files committati
-- ✅ Usa placeholder per secrets
-
-### Data Privacy
-- 🔒 Seed data **SOLO fittizio**
-- 🔒 No real addresses, emails, phones
-- 🔒 Database files git-ignored
-
 ### Best Practices
-- Validation con Zod (input/output)
-- Sanitization query SQL
-- Rate limiting API (future)
-- Authentication (future)
+✅ **Environment Files**
+- Never commit `.env` files
+- Always use `.env.example` templates
+- Use `NEXT_PUBLIC_*` only for public values
+
+✅ **Data Privacy**
+- All seed data is fictional
+- No real personal information
+- Database files git-ignored
+
+✅ **API Security**
+- Input validation with Zod
+- CORS configuration
+- Health checks on all services
 
 ---
 
-## 🛠️ Development Commands
+## 🛠️ Development
 
-### Unified App (Frontend)
+### Core Commands
 
 ```bash
-# Development
+# Frontend (UI + API unified)
 cd frontend
-npm run dev              # Start app (UI + API) su porta 3000
-npm run build            # Build production
-npm run start            # Start production server
+npm install
+npm run dev           # Start on port 3000
 
-# Prisma commands (from frontend)
-npm run prisma:generate  # Generate Prisma Client
-npm run prisma:push      # Push schema to DB
-npm run prisma:studio    # Open Prisma Studio GUI
-npm run prisma:seed      # Seed database
-```
-
-### AI Tools
-
-```bash
 # AI Tools (Python)
 cd ai_tools
 python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
+source .venv/bin/activate
 pip install -r requirements.txt
-python main.py             # Port 8000
+python main.py        # Start on port 8000
+
+# Database
+cd frontend
+npm run prisma:generate    # Generate Prisma Client
+npm run prisma:push        # Push schema to database
+npm run prisma:seed        # Seed with sample data
 ```
 
-### Docker
+---
 
-```bash
-# Start all services (3)
-docker-compose up -d
+## 📊 Project Status
 
-# View logs
-docker-compose logs -f
+### ✅ Completed
+- [x] Unified architecture (Frontend + API in single app)
+- [x] 3-service Docker deployment
+- [x] Complete API endpoints
+- [x] Database schema with 10 models
+- [x] AI agents with Google Gemini
+- [x] Web scraping modules
+- [x] Comprehensive documentation
 
-# Stop all
-docker-compose down
-```
+### 🔄 In Development
+- [ ] Advanced AI features
+- [ ] Enhanced scraping
+
+### 📋 Planned
+- [ ] Authentication system (JWT/OAuth)
+- [ ] Mobile app (React Native)
+- [ ] Multi-tenant support
 
 ---
 
@@ -423,132 +224,66 @@ docker-compose down
 
 ```
 crm-immobiliare/
-├── frontend/              # Next.js App Unificata (porta 3000)
-│   ├── src/app/           # Pages, routes & API routes
-│   │   ├── (pages)/       # UI Pages
-│   │   └── api/           # API Routes (Backend)
-│   ├── src/components/    # React components
-│   ├── src/hooks/         # Custom hooks
-│   └── src/lib/           # Utilities + DB client
+├── frontend/              # Next.js App (port 3000)
+│   ├── src/app/           # Pages & API routes
+│   └── src/components/    # React components
 │
-├── ai_tools/              # Python AI (porta 8000)
+├── ai_tools/              # Python FastAPI (port 8000)
 │   ├── app/agents/        # AI agents
-│   ├── app/tools/         # Custom tools
-│   └── app/routers/       # FastAPI routes
+│   └── app/tools/         # Custom tools
 │
-├── database/              # Database centralizzato
-│   ├── prisma/            # Prisma schema & migrations
+├── database/              # Database layer
+│   ├── prisma/            # Schema & migrations
 │   └── python/            # SQLAlchemy models
 │
 ├── scraping/              # Web scraping
-│   ├── portals/           # Portal scrapers
-│   └── common/            # Shared utilities
-│
-├── config/                # Configurazione centralizzata
-│   ├── *.env.example      # Environment templates
-│   ├── docker-compose.yml # Docker orchestration (3 servizi)
-│   └── README.md          # Config docs
-│
-├── backend/               # [ARCHIVED] Migrato in frontend/src/app/api
+├── config/                # Configuration
 ├── scripts/               # Automation scripts
-├── tests/                 # Test suite
-├── logs/                  # Centralized logs
-└── docs/                  # Documentation
+├── docs/                  # Documentation
+└── tests/                 # Test suite
 ```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### Development Workflow
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
+Development workflow:
+1. Create feature branch
+2. Implement changes following modular principles (CLAUDE.md)
+3. Run tests and build
+4. Create pull request
 
 ---
 
 ## 📝 License
 
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
-
----
-
-## 🙏 Acknowledgments
-
-- **Next.js** - The React Framework
-- **Prisma** - Next-generation ORM
-- **shadcn/ui** - Re-usable components
-- **Google Gemini** - AI capabilities
-- **DataPizza AI** - AI agent framework
+MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
 ## 📞 Support
 
-- 📖 [Documentation](docs/)
-- 🐛 [Issue Tracker](https://github.com/yourusername/crm-immobiliare/issues)
-- 💬 [Discussions](https://github.com/yourusername/crm-immobiliare/discussions)
+- 📖 **Documentation**: [docs/](docs/) and [CLAUDE.md](CLAUDE.md)
+- 🐛 **Issues**: GitHub Issues
+- 💬 **Discussions**: GitHub Discussions
 
 ---
 
-## 🗺️ Status & Roadmap
+## 🙏 Acknowledgments
 
-### ✅ Completato (v3.0.0)
-
-- [x] **App unificata** - Frontend + Backend in singola applicazione Next.js
-- [x] **Backend API completo** - 11 endpoints RESTful
-- [x] **Frontend completo** - 18 pagine con ChatGPT-style UI
-- [x] **Settings page** - Gestione API keys dalla UI
-- [x] **Database schema** - Prisma + PostgreSQL
-- [x] **Docker setup** - Multi-stage builds ottimizzati (3 servizi)
-- [x] **Production ready** - Deployment con Docker Compose
-
-### 🔄 In Sviluppo
-
-- [ ] **React Query hooks** - Data fetching ottimizzato
-- [ ] **AI agents attivi** - RAG, Matching, Briefing
-- [ ] **Form dialogs** - CRUD completo dalla UI
-
-### 📋 Roadmap Futuro
-
-- [ ] **Authentication** - JWT + OAuth
-- [ ] **Web scraping attivo** - Import automatico portali
-- [ ] **Mobile app** - React Native
-- [ ] **Multi-tenant** - Supporto agenzie
-
----
-
----
-
-## 📦 Reorganization Complete
-
-This project has been fully reorganized into a modular, scalable architecture:
-
-✅ **9 Phases Completed**:
-1. ✅ Cleanup and Code Consolidation
-2. ✅ Configuration Centralization
-3. ✅ Structured Documentation
-4. ✅ Automation Scripts
-5. ✅ Docker & Containerization
-6. ✅ Testing & CI/CD
-7. ✅ Logging & Monitoring
-8. ✅ Database Standardization
-9. ✅ Finalization & Cleanup
-
-**Result**: Clean, modular, production-ready architecture.
-
-See [docs/](docs/) for complete reorganization reports.
+- **Next.js** - React framework
+- **Prisma** - Database ORM
+- **shadcn/ui** - UI components
+- **Google Gemini** - AI capabilities
+- **FastAPI** - Python web framework
 
 ---
 
 **Made with ❤️ for real estate agents**
 
 **Version**: 3.0.0 (Production Ready - Unified Architecture)
-**Last Updated**: 2025-11-06
-**Architecture**: 3-Service Deployment (Docker Compose)
-**Status**: ✅ App Unificata (UI + API) | ✅ AI Tools | ✅ PostgreSQL Database
+**Last Updated**: 2025-11-08
+**Architecture**: Unified (port 3000) + AI Tools (port 8000) + Database
+**Status**: ✅ Production Ready
