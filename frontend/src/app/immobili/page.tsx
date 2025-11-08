@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Building2, Plus, Filter, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { propertiesApi } from "@/lib/api";
@@ -149,9 +150,11 @@ export default function PropertiesPage() {
               ? "Prova a modificare i filtri di ricerca"
               : "Inizia aggiungendo il tuo primo immobile"}
           </p>
-          <Button size="lg">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Immobile
+          <Button size="lg" asChild>
+            <Link href="/immobili/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Immobile
+            </Link>
           </Button>
         </div>
       ) : (
@@ -167,8 +170,11 @@ export default function PropertiesPage() {
         size="lg"
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
         aria-label="Nuovo immobile"
+        asChild
       >
-        <Plus className="h-6 w-6" />
+        <Link href="/immobili/new">
+          <Plus className="h-6 w-6" />
+        </Link>
       </Button>
     </div>
   );
