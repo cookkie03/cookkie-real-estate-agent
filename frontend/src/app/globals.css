@@ -178,3 +178,34 @@
     display: none !important;
   }
 }
+
+/* Touch optimizations for iPad/Mobile */
+@layer utilities {
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .mobile-friendly {
+    @apply touch-target active:scale-95 transition-transform;
+  }
+}
+
+/* Smooth scrolling for better UX */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* Focus visible for accessibility */
+@layer base {
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}

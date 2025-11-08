@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Save, Key, User, Building, Shield, TestTube } from "lucide-react";
+import { Save, Key, User, Building, Shield, TestTube } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useState } from "react";

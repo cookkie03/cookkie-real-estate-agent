@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare, Plus } from "lucide-react";
+import { CheckSquare } from "lucide-react";
 
 export default function ActionsPage() {
   return (
@@ -9,7 +9,7 @@ export default function ActionsPage() {
         <div>
           <h1 className="page-header">Azioni Suggerite</h1>
           <p className="text-muted-foreground">
-            Le azioni suggerite dall'AI per aumentare le conversioni
+            Le azioni suggerite dall&apos;AI per aumentare le conversioni
           </p>
         </div>
       </div>
@@ -19,7 +19,7 @@ export default function ActionsPage() {
           <CheckSquare className="mx-auto mb-4 h-12 w-12 opacity-20" />
           <h3 className="mb-2 text-lg font-medium">Azioni Suggerite</h3>
           <p className="text-sm text-muted-foreground">
-            L'AI suggerirà azioni prioritarie basate sui tuoi dati
+            L&apos;AI suggerirà azioni prioritarie basate sui tuoi dati
           </p>
         </div>
       </div>
