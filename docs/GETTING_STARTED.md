@@ -62,8 +62,7 @@ chmod +x scripts/*.sh
    ```
 
 4. **Apri Browser**
-   - Frontend: http://localhost:3000
-   - API Backend: http://localhost:3001
+   - Frontend & API: http://localhost:3000 (unified architecture)
    - AI Tools: http://localhost:8000/docs
 
 ## Verifica Installazione
@@ -71,8 +70,7 @@ chmod +x scripts/*.sh
 Il sistema dovrebbe mostrare:
 
 ```
-✅ Frontend ready at http://localhost:3000
-✅ Backend ready at http://localhost:3001
+✅ Frontend & API ready at http://localhost:3000 (unified architecture)
 ✅ AI Tools ready at http://localhost:8000
 ```
 
@@ -88,8 +86,7 @@ Il sistema dovrebbe mostrare:
 
 ```
 cookkie-real-estate-agent/
-├── backend/          # API Next.js (porta 3001)
-├── frontend/         # UI Next.js (porta 3000)
+├── frontend/         # UI & API Next.js (porta 3000 - unified)
 ├── ai_tools/         # Backend AI Python (porta 8000)
 ├── scraping/         # Web scraping modules
 ├── database/         # Database layer (Prisma + SQLite)
@@ -196,17 +193,17 @@ Esempi di query nella search bar:
 
 ### 4. Usa le API
 
-#### API Backend (REST)
+#### API Backend (REST - Unified Architecture)
 
 ```bash
 # Get all properties
-curl http://localhost:3001/api/properties
+curl http://localhost:3000/api/properties
 
 # Get single property
-curl http://localhost:3001/api/properties/{id}
+curl http://localhost:3000/api/properties/{id}
 
 # Search
-curl "http://localhost:3001/api/properties?city=Milano&minPrice=100000"
+curl "http://localhost:3000/api/properties?city=Milano&minPrice=100000"
 ```
 
 #### AI Tools API
@@ -275,17 +272,20 @@ npx prisma studio
 
 ### Environment Variables
 
-Modifica `config/.env` per le API keys e le porte:
+Modifica `frontend/.env.local` per le API keys:
 
 ```bash
 # Google AI (REQUIRED)
-GOOGLE_API_KEY=your_key_here
+NEXT_PUBLIC_GOOGLE_API_KEY=your_key_here
 
-# Ports
-FRONTEND_PORT=3000
-BACKEND_PORT=3001
-AI_TOOLS_PORT=8000
+# API URL (unified architecture - frontend & API on same port)
+NEXT_PUBLIC_API_URL=http://localhost:3000
+
+# AI Tools URL
+NEXT_PUBLIC_AI_URL=http://localhost:8000
 ```
+
+**Nota**: L'applicazione usa un'architettura unificata dove Frontend e API Backend girano insieme sulla porta 3000. Non c'è una porta separata per il backend (non è 3001).
 
 La configurazione del database è gestita separatamente, vedi la sezione "Configurazione del Database" sopra.
 
