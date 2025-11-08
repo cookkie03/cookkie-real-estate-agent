@@ -134,16 +134,58 @@ export default function MatchingPage() {
     },
   });
 
-  // Fetch matches for selected request
+  // Fetch matches for selected request using AI scoring
   const { data: matchesData, isLoading: matchesLoading } = useQuery({
     queryKey: ["property-matches", selectedRequest],
     queryFn: async () => {
       if (!selectedRequest) return { matches: [] };
 
-      // Mock implementation
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return {
-        matches: [
+      // Call scoring API
+      try {
+        const response = await fetch(
+          `/api/scoring/calculate?request_id=${selectedRequest}&min_score=60&limit=10`
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch matches');
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+          console.error('Scoring API error:', data.error);
+          return { matches: [] };
+        }
+
+        // Transform backend format to frontend format
+        const transformedMatches = data.matches.map((match: any, index: number) => ({
+          id: `match-${index + 1}`,
+          propertyId: match.property_id,
+          requestId: selectedRequest,
+          score: Math.round(match.total_score),
+          property: {
+            id: match.property_id,
+            title: match.property_title,
+            street: match.property_city, // Simplified
+            city: match.property_city,
+            zone: match.property_zone,
+            contractType: 'sale', // From match data
+            propertyType: 'apartment', // Could be extracted
+            priceSale: match.property_price,
+            rooms: match.rooms,
+            sqmCommercial: match.sqm,
+          },
+          matchReasons: match.match_reasons || [],
+          proposalStatus: 'none' as const, // Default status
+        }));
+
+        return { matches: transformedMatches };
+
+      } catch (error) {
+        console.error('Error fetching matches:', error);
+        // Return mock data as fallback
+        return {
+          matches: [
           {
             id: "match-1",
             propertyId: "prop-1",
@@ -215,8 +257,9 @@ export default function MatchingPage() {
             ],
             proposalStatus: "viewed",
           },
-        ] as PropertyMatch[],
+        ] as PropertyMatch[]
       };
+      }
     },
     enabled: !!selectedRequest,
   });

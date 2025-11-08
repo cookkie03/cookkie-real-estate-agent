@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import { TopBar } from "@/components/layouts/TopBar";
+import { AIChatButton } from "@/components/features/AIChatButton";
 
 export const metadata: Metadata = {
   title: "CRM Immobiliare - Gestione Completa",
@@ -26,6 +27,9 @@ export default function RootLayout({
               {children}
             </div>
           </main>
+
+          {/* AI Chat - Floating button (available on all pages) */}
+          <AIChatButton />
         </Providers>
       </body>
     </html>
