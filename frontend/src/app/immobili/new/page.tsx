@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ImageUpload } from "@/components/features/ImageUpload";
 import { propertiesApi } from "@/lib/api";
 import { PROPERTY_TYPE, CONTRACT_TYPE } from "@/lib/constants";
 
@@ -23,6 +24,7 @@ import { PROPERTY_TYPE, CONTRACT_TYPE } from "@/lib/constants";
 
 export default function NewPropertyPage() {
   const router = useRouter();
+  const [images, setImages] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     // Type & Contract
     contractType: "sale",
@@ -311,6 +313,19 @@ export default function NewPropertyPage() {
                 onCheckedChange={(checked) => setFormData({ ...formData, hasBalcony: checked })}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Images */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Immagini</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Carica le foto dell'immobile. La prima immagine sarà utilizzata come principale.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ImageUpload value={images} onChange={setImages} maxFiles={20} maxSizeMB={10} />
           </CardContent>
         </Card>
 
