@@ -668,46 +668,41 @@ tests/
 
 ### Docker Compose Services
 
-**4 containers**:
+**3 containers**:
 1. `database` - PostgreSQL 16
 2. `app` - Next.js (UI + API)
 3. `ai-tools` - FastAPI
-4. `watchtower` - Auto-updater
-
-**Auto-update**: Watchtower checks GitHub Container Registry every 5 minutes, pulls latest images, and restarts containers.
 
 **Volumes** (persistent data):
 - `postgres_data` - Database
 - `app_uploads` - User uploads
 - `app_backups` - Backups
 
-### GitHub Container Registry (GHCR) Setup
+### How It Works
 
-**FOR MAINTAINERS ONLY** (do this ONCE, all users benefit):
-
-**Initial setup** (first time only):
-1. Trigger workflow: https://github.com/YOUR_ORG/YOUR_REPO/actions → "Docker Build & Publish" → "Run workflow" on `main`
-2. Wait ~5-10 minutes for images to build
-3. Make images public:
-   - Go to: https://github.com/YOUR_USERNAME?tab=packages
-   - For each package (`crm-immobiliare-app`, `crm-immobiliare-ai`):
-     - Click package → Settings → "Change visibility" → "Public"
-
-**That's it!** Now everyone can run:
+**Docker Compose** builds images **locally** from source:
 ```bash
-docker-compose up -d  # ✅ Works for everyone
+docker-compose up -d
 ```
 
-**Watchtower authentication** (optional, only if you want private images):
-```yaml
-# docker-compose.yml already configured
-watchtower:
-  environment:
-    REPO_USER: ${GITHUB_USERNAME:-}  # Only needed for private images
-    REPO_PASS: ${GITHUB_TOKEN:-}
+**First build**: 5-10 minutes (compiles everything)
+**Subsequent builds**: ~30 seconds (uses cache)
+
+**No external dependencies**:
+- ✅ No GitHub Container Registry
+- ✅ No authentication tokens
+- ✅ No pre-built images
+- ✅ Just works™
+
+### Updating
+
+**To get latest code**:
+```bash
+git pull
+docker-compose up -d --build
 ```
 
-**NOTE**: For this project, images SHOULD be public (open-source). Private images complicate deployment for end users.
+Docker will rebuild only changed services.
 
 ### Environment in Docker
 
@@ -719,29 +714,6 @@ environment:
 ```
 
 **Precedence**: docker-compose.yml > .env > defaults
-
-### Deployment Workflow
-
-**Production deployment flow**:
-```
-1. Push to main branch
-   ↓
-2. GitHub Actions triggers "Docker Build & Publish"
-   ↓
-3. Builds app + ai-tools images
-   ↓
-4. Pushes to ghcr.io/YOUR_USERNAME/crm-immobiliare-*:latest
-   ↓
-5. Watchtower detects new images (within 5 min)
-   ↓
-6. Pulls latest images
-   ↓
-7. Restarts containers with new code
-   ↓
-8. ✅ Auto-deployed!
-```
-
-**Manual trigger**: Use GitHub Actions UI to run workflow on any branch
 
 ---
 

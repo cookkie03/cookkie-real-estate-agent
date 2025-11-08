@@ -1,6 +1,6 @@
 # ============================================================================
 # Docker Compose - CRM Immobiliare
-# Configurazione unificata per sviluppo e produzione
+# Build locale per sviluppo e produzione
 # ============================================================================
 #
 # REQUISITI:
@@ -8,21 +8,18 @@
 # - File .env configurato (copia da .env.example)
 #
 # UTILIZZO:
-# 1. Copia .env.example in .env e configura le tue variabili
+# 1. Copia .env.example in .env: cp .env.example .env
 # 2. Avvia: docker-compose up -d
 # 3. Verifica: docker-compose ps
 # 4. Logs: docker-compose logs -f
 #
-# AUTO-UPDATE:
-# - Watchtower controlla GitHub Container Registry ogni 5 minuti
-# - Aggiorna automaticamente i container quando rileva nuove immagini
-# - I dati (database, uploads, backup) sono persistenti e sopravvivono agli aggiornamenti
+# PRIMO AVVIO:
+# Il primo build richiede 5-10 minuti, i successivi ~30 secondi (cache).
 #
 # SERVIZI:
 # - database: PostgreSQL 16 (porta 5432)
 # - app: Next.js Frontend + Backend API (porta 3000)
 # - ai-tools: Python FastAPI AI Agents (porta 8000)
-# - watchtower: Monitor auto-aggiornamento
 #
 # ============================================================================
 
@@ -54,9 +51,11 @@ services:
   # APP - Next.js (Frontend + Backend API)
   # ==============================================================================
   app:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-cookkie03}/crm-immobiliare-app:latest
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: crm-immobiliare-app:latest
     container_name: crm-app
-    pull_policy: always
     environment:
       # Database
       DATABASE_URL: postgresql://${POSTGRES_USER:-crm_user}:${POSTGRES_PASSWORD:-crm_password_CHANGE_THIS}@database:5432/${POSTGRES_DB:-crm_immobiliare}
@@ -89,16 +88,16 @@ services:
     networks:
       - crm_network
     restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
 
   # ==============================================================================
   # AI TOOLS - Python FastAPI
   # ==============================================================================
   ai-tools:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-cookkie03}/crm-immobiliare-ai:latest
+    build:
+      context: .
+      dockerfile: ai_tools/Dockerfile
+    image: crm-immobiliare-ai:latest
     container_name: crm-ai-tools
-    pull_policy: always
     environment:
       # Database
       DATABASE_URL: postgresql://${POSTGRES_USER:-crm_user}:${POSTGRES_PASSWORD:-crm_password_CHANGE_THIS}@database:5432/${POSTGRES_DB:-crm_immobiliare}
@@ -122,48 +121,10 @@ services:
     networks:
       - crm_network
     restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-
-  # ==============================================================================
-  # WATCHTOWER - Auto-update dei container
-  # ==============================================================================
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: crm-watchtower
-    environment:
-      # Controlla aggiornamenti ogni 5 minuti
-      WATCHTOWER_POLL_INTERVAL: ${WATCHTOWER_POLL_INTERVAL:-300}
-
-      # Monitora solo container con label watchtower.enable=true
-      WATCHTOWER_LABEL_ENABLE: "true"
-
-      # Rimuovi vecchie immagini dopo update
-      WATCHTOWER_CLEANUP: "true"
-
-      # Non includere container fermi
-      WATCHTOWER_INCLUDE_STOPPED: "false"
-
-      # Abilita log dettagliati (set to "true" for debugging)
-      WATCHTOWER_DEBUG: ${WATCHTOWER_DEBUG:-false}
-
-      # Autenticazione GHCR per immagini private (opzionale)
-      REPO_USER: ${GITHUB_USERNAME:-}
-      REPO_PASS: ${GITHUB_TOKEN:-}
-
-      # Notifiche (opzionali - vedi .env.example)
-      # WATCHTOWER_NOTIFICATIONS: ${WATCHTOWER_NOTIFICATIONS:-}
-      # WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL: ${SLACK_WEBHOOK_URL:-}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - crm_network
-    restart: unless-stopped
 
 # ==============================================================================
 # VOLUMI PERSISTENTI
 # ==============================================================================
-# Questi volumi conservano i dati anche quando i container vengono aggiornati
 volumes:
   postgres_data:
     driver: local

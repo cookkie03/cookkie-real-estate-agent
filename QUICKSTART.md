@@ -27,20 +27,7 @@ docker-compose up -d
 
 **Fatto!** Il wizard di setup ti guiderà nella configurazione iniziale.
 
-**⚠️ Primo deploy? Errore "denied"?**
-Se vedi `error from registry: denied`, significa che le immagini Docker non sono ancora pubbliche su GitHub Container Registry.
-
-**Soluzione rapida** (solo la prima volta):
-1. Vai su: https://github.com/cookkie03/cookkie-real-estate-agent/actions
-2. Clicca su **"Docker Build & Publish"**
-3. Clicca su **"Run workflow"** → Seleziona `main` → **"Run workflow"**
-4. Aspetta 5-10 minuti che il build finisca
-5. Rendi pubbliche le immagini:
-   - https://github.com/cookkie03?tab=packages
-   - Clicca su ogni package → Settings → Change visibility → Public
-6. Riprova: `docker-compose up -d`
-
-Dopo questa configurazione iniziale, tutti gli altri utenti potranno fare `docker-compose up -d` direttamente.
+**⏱️ Nota**: Il primo avvio richiede 5-10 minuti per buildare le immagini Docker. Gli avvii successivi sono quasi istantanei (~30 secondi) grazie alla cache.
 
 ---
 
