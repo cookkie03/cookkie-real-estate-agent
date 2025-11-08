@@ -26,8 +26,6 @@
 #
 # ============================================================================
 
-version: '3.9'
-
 services:
   # ==============================================================================
   # DATABASE - PostgreSQL 16
@@ -148,6 +146,10 @@ services:
 
       # Abilita log dettagliati (set to "true" for debugging)
       WATCHTOWER_DEBUG: ${WATCHTOWER_DEBUG:-false}
+
+      # Autenticazione GHCR per immagini private (opzionale)
+      REPO_USER: ${GITHUB_USERNAME:-}
+      REPO_PASS: ${GITHUB_TOKEN:-}
 
       # Notifiche (opzionali - vedi .env.example)
       # WATCHTOWER_NOTIFICATIONS: ${WATCHTOWER_NOTIFICATIONS:-}
