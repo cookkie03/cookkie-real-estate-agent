@@ -3,6 +3,7 @@
 # ==============================================
 # CRM Immobiliare - Script di Installazione
 # Linux/macOS Setup Script
+# v3.0.0 - Unified Architecture
 # ==============================================
 
 set -e
@@ -73,27 +74,13 @@ echo ""
 
 # Creazione directory necessarie
 print_step "Creazione directory strutturali..."
-mkdir -p logs/backend logs/frontend logs/ai_tools logs/scraping
+mkdir -p logs/frontend logs/ai_tools logs/scraping
 mkdir -p database/prisma
-mkdir -p config
 print_success "Directory create"
 echo ""
 
-# Installazione dipendenze Backend
-print_step "Installazione dipendenze Backend..."
-cd backend
-if [ -f "package.json" ]; then
-    npm install
-    print_success "Dipendenze Backend installate"
-else
-    print_error "backend/package.json non trovato"
-    exit 1
-fi
-cd ..
-echo ""
-
-# Installazione dipendenze Frontend
-print_step "Installazione dipendenze Frontend..."
+# Installazione dipendenze Frontend (Unified - UI + API)
+print_step "Installazione dipendenze Frontend (UI + API unificati)..."
 cd frontend
 if [ -f "package.json" ]; then
     npm install
@@ -140,7 +127,7 @@ echo ""
 
 # Setup Database
 print_step "Setup Database (Prisma)..."
-cd backend
+cd frontend
 if [ -f "../database/prisma/schema.prisma" ]; then
     # Genera Prisma Client
     npx prisma generate --schema=../database/prisma/schema.prisma
@@ -154,7 +141,7 @@ if [ -f "../database/prisma/schema.prisma" ]; then
     read -p "Vuoi popolare il database con dati di esempio? (s/n) " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[SsYy]$ ]]; then
-        npx prisma db seed
+        npx prisma db seed --schema=../database/prisma/schema.prisma
         print_success "Database popolato con dati di esempio"
     fi
 else
@@ -167,30 +154,23 @@ echo ""
 # Verifica file .env
 print_step "Verifica configurazione ambiente..."
 
-if [ ! -f "config/.env.backend" ]; then
-    print_warning "config/.env.backend non trovato"
-    if [ -f "config/backend.env.example" ]; then
-        print_step "Copia template..."
-        cp config/backend.env.example config/.env.backend
-        print_success "Creato config/.env.backend da template"
-    fi
-fi
-
-if [ ! -f "config/.env.frontend" ]; then
-    print_warning "config/.env.frontend non trovato"
+if [ ! -f "frontend/.env.local" ]; then
+    print_warning "frontend/.env.local non trovato"
     if [ -f "config/frontend.env.example" ]; then
         print_step "Copia template..."
-        cp config/frontend.env.example config/.env.frontend
-        print_success "Creato config/.env.frontend da template"
+        cp config/frontend.env.example frontend/.env.local
+        print_success "Creato frontend/.env.local da template"
+        print_warning "⚠ IMPORTANTE: Modifica frontend/.env.local e aggiungi GOOGLE_API_KEY"
     fi
 fi
 
-if [ ! -f "config/.env.ai" ]; then
-    print_warning "config/.env.ai non trovato"
+if [ ! -f "ai_tools/.env" ]; then
+    print_warning "ai_tools/.env non trovato"
     if [ -f "config/ai_tools.env.example" ]; then
         print_step "Copia template..."
-        cp config/ai_tools.env.example config/.env.ai
-        print_success "Creato config/.env.ai da template"
+        cp config/ai_tools.env.example ai_tools/.env
+        print_success "Creato ai_tools/.env da template"
+        print_warning "⚠ IMPORTANTE: Modifica ai_tools/.env e aggiungi GOOGLE_API_KEY"
     fi
 fi
 
@@ -200,12 +180,20 @@ echo ""
 echo "=========================================="
 echo "Prossimi passi:"
 echo "=========================================="
-echo "1. Configura i file .env in /config"
-echo "2. Avvia l'applicazione: ./scripts/start-all.sh"
-echo "3. Accedi a:"
-echo "   - Frontend: http://localhost:3000"
-echo "   - Backend API: http://localhost:3001"
-echo "   - AI Tools: http://localhost:8000"
+echo "1. Configura le API keys:"
+echo "   - frontend/.env.local → NEXT_PUBLIC_GOOGLE_API_KEY"
+echo "   - ai_tools/.env → GOOGLE_API_KEY"
+echo ""
+echo "2. Ottieni la chiave Google AI Studio:"
+echo "   https://aistudio.google.com/app/apikey"
+echo ""
+echo "3. Avvia l'applicazione:"
+echo "   ./scripts/start-all.sh"
+echo ""
+echo "4. Accedi a:"
+echo "   - Frontend & API: http://localhost:3000 (architettura unificata)"
+echo "   - AI Tools API: http://localhost:8000/docs"
 echo ""
 echo "Per documentazione completa: cat docs/GETTING_STARTED.md"
 echo "=========================================="
+echo ""

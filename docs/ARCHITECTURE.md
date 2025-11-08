@@ -33,7 +33,8 @@ Sistema modulare multi-linguaggio con separazione netta tra:
 ┌───────────────────┐   ┌──────────────────────────┐
 │   Backend API     │   │      AI Tools API        │
 │  (Next.js API)    │   │   (FastAPI + Python)     │
-│  Port: 3001       │   │     Port: 8000           │
+│  Port: 3000*      │   │     Port: 8000           │
+│  (unified w/ UI)  │   │                          │
 │                   │   │                          │
 │  - CRUD APIs      │   │  - RAG Assistant         │
 │  - Validation     │   │  - Matching Agent        │
@@ -62,9 +63,19 @@ Sistema modulare multi-linguaggio con separazione netta tra:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## Architecture Unified (v3.0.0)
+
+**IMPORTANTE**: L'applicazione usa un'architettura **UNIFICATA** dove:
+- **Frontend (UI)** e **Backend (API)** girano insieme sulla porta **3000** in un'unica applicazione Next.js
+- Non esiste una porta separata per il backend (non è 3001)
+- I percorsi API sono sotto `/api/*` (es: `/api/properties`, `/api/contacts`)
+- Questa architettura semplifica il deployment e riduce la complessità
+
+Le API sono definite in `frontend/src/app/api/` e girano sullo stesso server della UI.
+
 ## Component Architecture
 
-### 1. Frontend Module
+### 1. Frontend Module (UNIFIED - UI + API)
 
 **Tech Stack:**
 - Next.js 14 (App Router)
@@ -105,11 +116,11 @@ frontend/
 ```
 
 **Communication:**
-- Backend API: HTTP REST (port 3001)
+- Backend API: HTTP REST (port 3000 - **UNIFIED** with Frontend)
 - AI Tools API: HTTP REST (port 8000)
 - State: React Query (cache + refetch)
 
-### 2. Backend API Module
+### 2. Backend API Module (UNIFIED in Frontend)
 
 **Tech Stack:**
 - Next.js 14 API Routes
@@ -117,26 +128,32 @@ frontend/
 - Prisma ORM
 - Zod (validation)
 
-**Directory Structure:**
+**Directory Structure** (dentro `frontend/`):
 ```
-backend/
-├── src/
-│   ├── app/api/              # API Routes
-│   │   ├── properties/
-│   │   │   └── route.ts      # GET, POST /api/properties
-│   │   ├── contacts/
-│   │   │   └── route.ts      # GET, POST /api/contacts
-│   │   ├── requests/
-│   │   ├── matches/
-│   │   └── activities/
+frontend/src/
+├── app/
+│   ├── (pages)/              # UI Pages
+│   │   ├── page.tsx          # Homepage
+│   │   ├── immobili/
+│   │   ├── clienti/
+│   │   └── ...
 │   │
-│   └── lib/
-│       ├── db/               # Database layer
-│       │   ├── index.ts      # Prisma client
-│       │   └── helpers.ts    # Query helpers
-│       │
-│       └── validation/       # Zod schemas
-│           └── schemas.ts
+│   └── api/                  # API Routes (UNIFIED PORT 3000)
+│       ├── properties/
+│       │   └── route.ts      # GET, POST /api/properties
+│       ├── contacts/
+│       │   └── route.ts      # GET, POST /api/contacts
+│       ├── requests/
+│       ├── matches/
+│       └── activities/
+│
+└── lib/
+    ├── db/                   # Database layer
+    │   ├── index.ts          # Prisma client
+    │   └── helpers.ts        # Query helpers
+    │
+    └── validation/           # Zod schemas
+        └── schemas.ts
 ```
 
 **API Pattern:**
@@ -373,8 +390,8 @@ properties = session.query(Property)\
 **Format**: JSON
 
 ```typescript
-// Frontend
-const properties = await fetch('http://localhost:3001/api/properties')
+// Frontend (Unified Architecture - API on same port as UI)
+const properties = await fetch('http://localhost:3000/api/properties')
   .then(r => r.json());
 
 // Backend

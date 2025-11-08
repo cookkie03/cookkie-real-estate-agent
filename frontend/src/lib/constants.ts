@@ -3,8 +3,8 @@
  * Routes, status options, and other fixed values
  */
 
-// API Base URL
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// API Base URL (Unified architecture - API routes on same port as UI)
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 // Application Routes
 export const ROUTES = {

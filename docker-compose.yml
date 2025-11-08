@@ -63,9 +63,8 @@ services:
       # Database
       DATABASE_URL: postgresql://${POSTGRES_USER:-crm_user}:${POSTGRES_PASSWORD:-crm_password_CHANGE_THIS}@database:5432/${POSTGRES_DB:-crm_immobiliare}
 
-      # API Keys
+      # API Keys (Google AI is primary service)
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
 
       # Application
       NODE_ENV: ${NODE_ENV:-production}
@@ -106,9 +105,8 @@ services:
       # Database
       DATABASE_URL: postgresql://${POSTGRES_USER:-crm_user}:${POSTGRES_PASSWORD:-crm_password_CHANGE_THIS}@database:5432/${POSTGRES_DB:-crm_immobiliare}
 
-      # API Keys
+      # API Keys (Google AI is primary service)
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
 
       # Application
       PORT: 8000
