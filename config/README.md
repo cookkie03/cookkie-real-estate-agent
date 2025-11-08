@@ -26,7 +26,10 @@ config/
 ```bash
 # Dalla root del progetto
 
-# Frontend (Unified - UI + API)
+# Backend
+cp config/backend.env.example backend/.env
+
+# Frontend
 cp config/frontend.env.example frontend/.env.local
 
 # AI Tools
@@ -35,8 +38,6 @@ cp config/ai_tools.env.example ai_tools/.env
 # Scraping (opzionale)
 cp config/scraping.env.example scraping/.env
 ```
-
-**Nota**: Non esiste un file `.env` separato per il backend perché l'architettura è unificata - Backend API e Frontend girano insieme sulla stessa porta (3000).
 
 ### 2. Compila le Variabili
 
@@ -60,8 +61,9 @@ DATABASE_URL="sqlite:///../database/prisma/dev.db"
 
 ### Ports Standardizzati
 ```bash
-Frontend UI + Backend API:  3000  (architettura unificata)
-AI Tools:                   8000
+Frontend UI:     3000
+Backend API:     3001
+AI Tools:        8000
 ```
 
 ### Google AI (Required)
@@ -74,22 +76,36 @@ Ottieni la chiave su: https://aistudio.google.com/app/apikey
 
 ## 📦 Configurazione per Modulo
 
-### Frontend UI + Backend API (Port 3000 - UNIFIED)
+### Backend API (Port 3001)
+
+**File**: `backend/.env`
+**Template**: `config/backend.env.example`
+
+```bash
+DATABASE_URL="file:../database/prisma/dev.db"
+PORT=3001
+NODE_ENV=development
+PYTHON_AI_URL="http://localhost:8000"
+GOOGLE_API_KEY=""  # Optional
+```
+
+**Avvio**:
+```bash
+cd backend
+npm run dev  # Porta 3001
+```
+
+---
+
+### Frontend UI (Port 3000)
 
 **File**: `frontend/.env.local`
 **Template**: `config/frontend.env.example`
 
 ```bash
-# API URL points to same server (unified architecture)
-NEXT_PUBLIC_API_URL=http://localhost:3000
-
-# AI Tools URL (separate service)
+NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_AI_URL=http://localhost:8000
-
-# Google AI (optional for direct API access)
-NEXT_PUBLIC_GOOGLE_API_KEY=""
-
-# Environment
+NEXT_PUBLIC_GOOGLE_API_KEY=""  # Optional
 NODE_ENV=development
 NEXT_TELEMETRY_DISABLED=1
 ```
@@ -97,7 +113,7 @@ NEXT_TELEMETRY_DISABLED=1
 **Avvio**:
 ```bash
 cd frontend
-npm run dev  # Porta 3000 (serve sia UI che API)
+npm run dev  # Porta 3000
 ```
 
 ---
@@ -114,8 +130,7 @@ GOOGLE_MODEL=gemini-1.5-pro
 QDRANT_MODE=memory
 HOST=0.0.0.0
 PORT=8000
-# CORS: Allow requests only from unified frontend (port 3000)
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 ```
 
 **Avvio**:

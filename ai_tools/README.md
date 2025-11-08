@@ -17,7 +17,7 @@ Next.js (Frontend)  →  FastAPI (AI Backend)  →  SQLite Database
 ### 1. Creazione Virtual Environment
 
 ```bash
-cd ai_tools
+cd python_ai
 
 # Windows
 python -m venv .venv
@@ -110,7 +110,7 @@ curl -X POST http://localhost:8000/ai/documents/ingest \
 ## 📂 Struttura Progetto
 
 ```
-ai_tools/
+python_ai/
 ├── main.py                    # FastAPI entry point
 ├── requirements.txt           # Dipendenze Python
 ├── .env.example              # Template variabili ambiente
