@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Users, Plus, Filter, Search } from "lucide-react";
+import { Users, Plus, Filter, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClientCard } from "@/components/features/ClientCard";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,6 +19,7 @@ import { cn } from "@/lib/utils";
  * Professional contact management with:
  * - Search bar (debounced)
  * - Quick filters (All, Active, Leads)
+ * - Advanced filters (Sheet drawer)
  * - Client cards with avatars
  * - FAB for new client
  *
@@ -25,13 +29,25 @@ import { cn } from "@/lib/utils";
 
 type QuickFilter = "all" | "active" | "lead";
 
+interface AdvancedFilters {
+  status?: string;
+  importance?: string;
+  entityType?: string;
+  budgetMin?: string;
+  budgetMax?: string;
+  city?: string;
+  province?: string;
+}
+
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Fetch contacts
   const { data, isLoading } = useQuery({
-    queryKey: ["contacts", quickFilter],
+    queryKey: ["contacts", quickFilter, advancedFilters],
     queryFn: async () => {
       try {
         const filters: any = { page: 1, pageSize: 50 };
@@ -40,6 +56,15 @@ export default function ClientsPage() {
         } else if (quickFilter === "lead") {
           filters.source = "lead";
         }
+        // Apply advanced filters
+        if (advancedFilters.status) filters.status = advancedFilters.status;
+        if (advancedFilters.importance) filters.importance = advancedFilters.importance;
+        if (advancedFilters.entityType) filters.entityType = advancedFilters.entityType;
+        if (advancedFilters.budgetMin) filters.budgetMin = Number(advancedFilters.budgetMin);
+        if (advancedFilters.budgetMax) filters.budgetMax = Number(advancedFilters.budgetMax);
+        if (advancedFilters.city) filters.city = advancedFilters.city;
+        if (advancedFilters.province) filters.province = advancedFilters.province;
+
         return await api.contacts.list(filters);
       } catch {
         return { contacts: [], pagination: { total: 0, page: 1, limit: 50, pages: 0 } };
@@ -55,6 +80,23 @@ export default function ClientsPage() {
         c.fullName.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : contacts;
+
+  // Count active advanced filters
+  const activeFiltersCount = Object.values(advancedFilters).filter(Boolean).length;
+
+  // Clear all advanced filters
+  const clearAdvancedFilters = () => {
+    setAdvancedFilters({});
+  };
+
+  // Remove single filter
+  const removeFilter = (key: keyof AdvancedFilters) => {
+    setAdvancedFilters((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -115,12 +157,204 @@ export default function ClientsPage() {
             Lead
           </button>
 
-          {/* Advanced Filters Button */}
-          <button className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg border text-sm hover:bg-accent">
-            <Filter className="h-4 w-4" />
-            Filtri avanzati
-          </button>
+          {/* Advanced Filters Sheet */}
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <button className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg border text-sm hover:bg-accent">
+                <Filter className="h-4 w-4" />
+                Filtri avanzati
+                {activeFiltersCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </button>
+            </SheetTrigger>
+            <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filtri Avanzati</SheetTitle>
+              </SheetHeader>
+
+              <div className="space-y-4 py-6">
+                {/* Status */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Stato</label>
+                  <Select
+                    value={advancedFilters.status || ""}
+                    onValueChange={(value) => setAdvancedFilters({ ...advancedFilters, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona stato..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Attivo</SelectItem>
+                      <SelectItem value="inactive">Inattivo</SelectItem>
+                      <SelectItem value="lead">Lead</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Importance */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Importanza</label>
+                  <Select
+                    value={advancedFilters.importance || ""}
+                    onValueChange={(value) => setAdvancedFilters({ ...advancedFilters, importance: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona importanza..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Bassa</SelectItem>
+                      <SelectItem value="normal">Normale</SelectItem>
+                      <SelectItem value="high">Alta (VIP)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Entity Type */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Tipo Entità</label>
+                  <Select
+                    value={advancedFilters.entityType || ""}
+                    onValueChange={(value) => setAdvancedFilters({ ...advancedFilters, entityType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona tipo..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="person">Persona</SelectItem>
+                      <SelectItem value="company">Azienda</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Budget Range */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Budget di Ricerca</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min €"
+                      value={advancedFilters.budgetMin || ""}
+                      onChange={(e) => setAdvancedFilters({ ...advancedFilters, budgetMin: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max €"
+                      value={advancedFilters.budgetMax || ""}
+                      onChange={(e) => setAdvancedFilters({ ...advancedFilters, budgetMax: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* City */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Città</label>
+                  <Input
+                    placeholder="Es. Milano"
+                    value={advancedFilters.city || ""}
+                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, city: e.target.value })}
+                  />
+                </div>
+
+                {/* Province */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Provincia</label>
+                  <Input
+                    placeholder="Es. MI"
+                    maxLength={2}
+                    value={advancedFilters.province || ""}
+                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, province: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <SheetFooter className="gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={clearAdvancedFilters}
+                  disabled={activeFiltersCount === 0}
+                >
+                  Azzera filtri
+                </Button>
+                <Button type="button" onClick={() => setSheetOpen(false)}>
+                  Applica
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
+
+        {/* Active Filters Badges */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {advancedFilters.status && (
+              <Badge variant="secondary" className="gap-1">
+                Stato: {advancedFilters.status}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("status")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.importance && (
+              <Badge variant="secondary" className="gap-1">
+                Importanza: {advancedFilters.importance}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("importance")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.entityType && (
+              <Badge variant="secondary" className="gap-1">
+                Tipo: {advancedFilters.entityType}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("entityType")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.budgetMin && (
+              <Badge variant="secondary" className="gap-1">
+                Budget min: €{advancedFilters.budgetMin}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("budgetMin")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.budgetMax && (
+              <Badge variant="secondary" className="gap-1">
+                Budget max: €{advancedFilters.budgetMax}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("budgetMax")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.city && (
+              <Badge variant="secondary" className="gap-1">
+                Città: {advancedFilters.city}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("city")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.province && (
+              <Badge variant="secondary" className="gap-1">
+                Provincia: {advancedFilters.province}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("province")}
+                />
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Results Count */}
         <div className="text-sm text-muted-foreground">

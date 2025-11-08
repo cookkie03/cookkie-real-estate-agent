@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, Plus, Filter, Search } from "lucide-react";
+import { Building2, Plus, Filter, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { propertiesApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PropertyCard } from "@/components/features/PropertyCard";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,6 +19,7 @@ import { cn } from "@/lib/utils";
  * Professional property portfolio management with:
  * - Search bar (debounced)
  * - Quick filters (pills: All, Sale, Rent)
+ * - Advanced filters (Sheet drawer)
  * - Property cards grid
  * - FAB for new property
  *
@@ -25,19 +29,46 @@ import { cn } from "@/lib/utils";
 
 type QuickFilter = "all" | "sale" | "rent";
 
+interface AdvancedFilters {
+  propertyType?: string;
+  priceMin?: string;
+  priceMax?: string;
+  roomsMin?: string;
+  roomsMax?: string;
+  bathroomsMin?: string;
+  surfaceMin?: string;
+  surfaceMax?: string;
+  city?: string;
+  zone?: string;
+}
+
 export default function PropertiesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Fetch properties
   const { data, isLoading } = useQuery({
-    queryKey: ["properties", quickFilter],
+    queryKey: ["properties", quickFilter, advancedFilters],
     queryFn: async () => {
       try {
         const filters: any = { page: 1, pageSize: 50 };
         if (quickFilter !== "all") {
           filters.contractType = quickFilter;
         }
+        // Apply advanced filters
+        if (advancedFilters.propertyType) filters.propertyType = advancedFilters.propertyType;
+        if (advancedFilters.priceMin) filters.priceMin = Number(advancedFilters.priceMin);
+        if (advancedFilters.priceMax) filters.priceMax = Number(advancedFilters.priceMax);
+        if (advancedFilters.roomsMin) filters.roomsMin = Number(advancedFilters.roomsMin);
+        if (advancedFilters.roomsMax) filters.roomsMax = Number(advancedFilters.roomsMax);
+        if (advancedFilters.bathroomsMin) filters.bathroomsMin = Number(advancedFilters.bathroomsMin);
+        if (advancedFilters.surfaceMin) filters.surfaceMin = Number(advancedFilters.surfaceMin);
+        if (advancedFilters.surfaceMax) filters.surfaceMax = Number(advancedFilters.surfaceMax);
+        if (advancedFilters.city) filters.city = advancedFilters.city;
+        if (advancedFilters.zone) filters.zone = advancedFilters.zone;
+
         return await propertiesApi.list(filters);
       } catch {
         return { properties: [], pagination: { total: 0, page: 1, limit: 50, pages: 0 } };
@@ -55,6 +86,23 @@ export default function PropertiesPage() {
           .includes(searchQuery.toLowerCase())
       )
     : properties;
+
+  // Count active advanced filters
+  const activeFiltersCount = Object.values(advancedFilters).filter(Boolean).length;
+
+  // Clear all advanced filters
+  const clearAdvancedFilters = () => {
+    setAdvancedFilters({});
+  };
+
+  // Remove single filter
+  const removeFilter = (key: keyof AdvancedFilters) => {
+    setAdvancedFilters((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -117,12 +165,249 @@ export default function PropertiesPage() {
             Affitto
           </button>
 
-          {/* Advanced Filters Button */}
-          <button className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg border text-sm hover:bg-accent">
-            <Filter className="h-4 w-4" />
-            Filtri avanzati
-          </button>
+          {/* Advanced Filters Sheet */}
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <button className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg border text-sm hover:bg-accent">
+                <Filter className="h-4 w-4" />
+                Filtri avanzati
+                {activeFiltersCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </button>
+            </SheetTrigger>
+            <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filtri Avanzati</SheetTitle>
+              </SheetHeader>
+
+              <div className="space-y-4 py-6">
+                {/* Property Type */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Tipologia</label>
+                  <Select
+                    value={advancedFilters.propertyType || ""}
+                    onValueChange={(value) => setAdvancedFilters({ ...advancedFilters, propertyType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona tipologia..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="apartment">Appartamento</SelectItem>
+                      <SelectItem value="house">Casa</SelectItem>
+                      <SelectItem value="villa">Villa</SelectItem>
+                      <SelectItem value="studio">Monolocale</SelectItem>
+                      <SelectItem value="loft">Loft</SelectItem>
+                      <SelectItem value="office">Ufficio</SelectItem>
+                      <SelectItem value="commercial">Commerciale</SelectItem>
+                      <SelectItem value="land">Terreno</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Price Range */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Prezzo</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min €"
+                      value={advancedFilters.priceMin || ""}
+                      onChange={(e) => setAdvancedFilters({ ...advancedFilters, priceMin: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max €"
+                      value={advancedFilters.priceMax || ""}
+                      onChange={(e) => setAdvancedFilters({ ...advancedFilters, priceMax: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Rooms */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Camere</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={advancedFilters.roomsMin || ""}
+                      onChange={(e) => setAdvancedFilters({ ...advancedFilters, roomsMin: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={advancedFilters.roomsMax || ""}
+                      onChange={(e) => setAdvancedFilters({ ...advancedFilters, roomsMax: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* Bathrooms */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Bagni (min)</label>
+                  <Input
+                    type="number"
+                    placeholder="Numero minimo bagni"
+                    value={advancedFilters.bathroomsMin || ""}
+                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, bathroomsMin: e.target.value })}
+                  />
+                </div>
+
+                {/* Surface Area */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Superficie (m²)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min m²"
+                      value={advancedFilters.surfaceMin || ""}
+                      onChange={(e) => setAdvancedFilters({ ...advancedFilters, surfaceMin: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max m²"
+                      value={advancedFilters.surfaceMax || ""}
+                      onChange={(e) => setAdvancedFilters({ ...advancedFilters, surfaceMax: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* City */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Città</label>
+                  <Input
+                    placeholder="Es. Milano"
+                    value={advancedFilters.city || ""}
+                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, city: e.target.value })}
+                  />
+                </div>
+
+                {/* Zone */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Zona</label>
+                  <Input
+                    placeholder="Es. Centro"
+                    value={advancedFilters.zone || ""}
+                    onChange={(e) => setAdvancedFilters({ ...advancedFilters, zone: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <SheetFooter className="gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={clearAdvancedFilters}
+                  disabled={activeFiltersCount === 0}
+                >
+                  Azzera filtri
+                </Button>
+                <Button type="button" onClick={() => setSheetOpen(false)}>
+                  Applica
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
+
+        {/* Active Filters Badges */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {advancedFilters.propertyType && (
+              <Badge variant="secondary" className="gap-1">
+                Tipo: {advancedFilters.propertyType}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("propertyType")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.priceMin && (
+              <Badge variant="secondary" className="gap-1">
+                Min: €{advancedFilters.priceMin}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("priceMin")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.priceMax && (
+              <Badge variant="secondary" className="gap-1">
+                Max: €{advancedFilters.priceMax}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("priceMax")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.roomsMin && (
+              <Badge variant="secondary" className="gap-1">
+                Camere min: {advancedFilters.roomsMin}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("roomsMin")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.roomsMax && (
+              <Badge variant="secondary" className="gap-1">
+                Camere max: {advancedFilters.roomsMax}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("roomsMax")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.bathroomsMin && (
+              <Badge variant="secondary" className="gap-1">
+                Bagni min: {advancedFilters.bathroomsMin}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("bathroomsMin")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.surfaceMin && (
+              <Badge variant="secondary" className="gap-1">
+                Superficie min: {advancedFilters.surfaceMin}m²
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("surfaceMin")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.surfaceMax && (
+              <Badge variant="secondary" className="gap-1">
+                Superficie max: {advancedFilters.surfaceMax}m²
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("surfaceMax")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.city && (
+              <Badge variant="secondary" className="gap-1">
+                Città: {advancedFilters.city}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("city")}
+                />
+              </Badge>
+            )}
+            {advancedFilters.zone && (
+              <Badge variant="secondary" className="gap-1">
+                Zona: {advancedFilters.zone}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => removeFilter("zone")}
+                />
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Results Count */}
         <div className="text-sm text-muted-foreground">
