@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Calendar as CalendarIcon, Plus, List, CalendarDays } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Calendar as CalendarIcon, Plus, List, CalendarDays, Save } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,7 +18,7 @@ import { cn } from "@/lib/utils";
  * Calendar and activities management with:
  * - List view with filters
  * - Calendar view (placeholder)
- * - Quick add activity
+ * - Quick add activity dialog
  *
  * @module pages/agenda
  * @since v3.1.1
@@ -25,6 +28,16 @@ type QuickFilter = "all" | "today" | "week" | "overdue";
 
 export default function AgendaPage() {
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    type: "meeting",
+    date: "",
+    time: "",
+  });
+
+  const queryClient = useQueryClient();
 
   // Fetch activities
   const { data, isLoading } = useQuery({
@@ -32,7 +45,6 @@ export default function AgendaPage() {
     queryFn: async () => {
       try {
         const filters: any = { page: 1, pageSize: 50 };
-        // Add date filters based on quickFilter
         return await api.activities.list(filters);
       } catch {
         return { activities: [], pagination: { total: 0, page: 1, limit: 50, pages: 0 } };
@@ -40,7 +52,41 @@ export default function AgendaPage() {
     },
   });
 
+  // Create activity mutation
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const dateTime = formData.date && formData.time
+        ? new Date(`${formData.date}T${formData.time}`)
+        : new Date();
+
+      return await api.activities.create({
+        ...formData,
+        date: dateTime,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      setDialogOpen(false);
+      setFormData({
+        title: "",
+        description: "",
+        type: "meeting",
+        date: "",
+        time: "",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate();
+  };
+
   const activities = data?.activities || [];
+
+  // Get default date/time for form
+  const today = new Date().toISOString().split('T')[0];
+  const now = new Date().toTimeString().slice(0, 5);
 
   return (
     <div className="space-y-4">
@@ -139,10 +185,31 @@ export default function AgendaPage() {
                   ? "Prova a modificare i filtri di ricerca"
                   : "Inizia aggiungendo un appuntamento o un'attività"}
               </p>
-              <Button size="lg" disabled>
-                <Plus className="h-4 w-4 mr-2" />
-                Nuova Attività
-              </Button>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuova Attività
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Nuova Attività</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <ActivityForm formData={formData} setFormData={setFormData} today={today} now={now} />
+                    <div className="flex gap-3 justify-end">
+                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                        Annulla
+                      </Button>
+                      <Button type="submit" disabled={createMutation.isPending}>
+                        <Save className="h-4 w-4 mr-2" />
+                        {createMutation.isPending ? "Salvataggio..." : "Salva"}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           ) : (
             <div className="space-y-3">
@@ -153,7 +220,9 @@ export default function AgendaPage() {
                 >
                   <div className="flex-1">
                     <h3 className="font-semibold">{activity.title}</h3>
-                    <p className="text-sm text-muted-foreground">{activity.description}</p>
+                    {activity.description && (
+                      <p className="text-sm text-muted-foreground">{activity.description}</p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-2">
                       {new Date(activity.date).toLocaleString("it-IT")}
                     </p>
@@ -181,15 +250,119 @@ export default function AgendaPage() {
         </TabsContent>
       </Tabs>
 
-      {/* FAB */}
-      <Button
-        size="lg"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
-        aria-label="Nuova attività"
-        disabled
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
+      {/* FAB with Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button
+            size="lg"
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
+            aria-label="Nuova attività"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Nuova Attività</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <ActivityForm formData={formData} setFormData={setFormData} today={today} now={now} />
+            <div className="flex gap-3 justify-end">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={createMutation.isPending}>
+                Annulla
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending}>
+                <Save className="h-4 w-4 mr-2" />
+                {createMutation.isPending ? "Salvataggio..." : "Salva"}
+              </Button>
+            </div>
+            {createMutation.isError && (
+              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                Errore durante il salvataggio. Riprova.
+              </div>
+            )}
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+/**
+ * Activity Form Component
+ */
+function ActivityForm({
+  formData,
+  setFormData,
+  today,
+  now
+}: {
+  formData: any;
+  setFormData: (data: any) => void;
+  today: string;
+  now: string;
+}) {
+  return (
+    <>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Tipo *</label>
+        <Select
+          value={formData.type}
+          onValueChange={(value) => setFormData({ ...formData, type: value })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="meeting">Incontro</SelectItem>
+            <SelectItem value="viewing">Visita immobile</SelectItem>
+            <SelectItem value="call">Chiamata</SelectItem>
+            <SelectItem value="email">Email</SelectItem>
+            <SelectItem value="task">Attività generica</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Titolo *</label>
+        <Input
+          required
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          placeholder="Es. Visita appartamento con Mario Rossi"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Data *</label>
+          <Input
+            required
+            type="date"
+            value={formData.date || today}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Ora *</label>
+          <Input
+            required
+            type="time"
+            value={formData.time || now}
+            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Note</label>
+        <Textarea
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="Aggiungi dettagli sull'attività..."
+          rows={3}
+        />
+      </div>
+    </>
   );
 }
