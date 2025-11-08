@@ -4,10 +4,10 @@
 // This is the single source of truth for the database schema.
 // All TypeScript and Python models must stay in sync with this file.
 //
-// Database: PostgreSQL (production on Railway)
+// Database: SQLite (development) / PostgreSQL (production in Docker)
 // ORM: Prisma (TypeScript) + SQLAlchemy (Python mirror)
 //
-// Last Updated: 2025-11-06
+// Last Updated: 2025-11-08
 // Version: 3.0.0
 // ============================================================================
 
@@ -17,7 +17,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -104,7 +104,7 @@ model Contact {
   // Status
   status          String    @default("active") // active, inactive, archived, blacklist
   lastContactDate DateTime?
-  notes           String?   @db.Text
+  notes           String?   
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -165,7 +165,7 @@ model Building {
   administratorPhone String?
   administratorEmail String?
 
-  notes String? @db.Text
+  notes String? 
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -274,7 +274,7 @@ model Property {
 
   // Marketing
   title       String?
-  description String? @db.Text
+  description String? 
 
   // Media
   photosCount           Int     @default(0)
@@ -290,8 +290,8 @@ model Property {
   daysOnMarket   Int @default(0)
 
   // Notes
-  notes         String? @db.Text
-  internalNotes String? @db.Text // private notes, not shown to clients
+  notes         String? 
+  internalNotes String?  // private notes, not shown to clients
 
   // Timestamps
   createdAt    DateTime  @default(now())
@@ -388,7 +388,7 @@ model Request {
   moveDate   DateTime? // when client needs to move
   expiresAt  DateTime? // when this request expires
 
-  notes String? @db.Text
+  notes String? 
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -430,8 +430,8 @@ model Match {
   scoreCondition Int?
 
   // AI Analysis
-  aiReasoning String? @db.Text // why this is a good match
-  aiWarnings  String? @db.Text // potential issues
+  aiReasoning String?  // why this is a good match
+  aiWarnings  String?  // potential issues
 
   // Status
   status String @default("suggested") // suggested, sent, viewed, visited, interested, rejected, closed
@@ -439,14 +439,14 @@ model Match {
   // Feedback
   clientReaction String? // interested, neutral, not_interested
   rejectionReason String? // too_expensive, wrong_location, too_small, etc.
-  clientNotes     String? @db.Text
+  clientNotes     String? 
 
   // Actions
   sentDate    DateTime?
   viewedDate  DateTime?
   visitedDate DateTime?
 
-  agentNotes String? @db.Text
+  agentNotes String? 
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -492,8 +492,8 @@ model Activity {
 
   // Content
   title       String
-  description String? @db.Text
-  outcome     String? @db.Text // what happened
+  description String? 
+  outcome     String?  // what happened
   details     Json @default("{}") // flexible extra data
 
   // Location (for visits/meetings)
@@ -505,7 +505,7 @@ model Activity {
   reminderSent Boolean @default(false)
   reminderDate DateTime?
 
-  notes String? @db.Text
+  notes String? 
 
   // Timestamps
   createdAt DateTime @default(now())

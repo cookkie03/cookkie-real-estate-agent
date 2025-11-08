@@ -78,7 +78,12 @@
       "Bash(else echo \"seed.ts not found\")",
       "Bash(DATABASE_URL=\"file:./dev.db\" npx tsx:*)",
       "Bash(export DATABASE_URL=\"file:./dev.db\")",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(dir:*)",
+      "Bash(nul)",
+      "Bash(then cat .env.example)",
+      "Bash(cat:*)",
+      "Bash(npm run setup:*)"
     ],
     "deny": [],
     "ask": []

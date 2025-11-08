@@ -1,739 +1,814 @@
-# GEMINI.md - CRM Immobiliare
+# GEMINI.md
 
-**Guida permanente per Gemini CLI su questo progetto**
+This file provides guidance to Gemini Code Assist when working with code in this repository.
 
----
-
-## 🎯 Project Identity
-
-**Name**: CRM Immobiliare  
-**Purpose**: Single-user real estate management system for Italian real estate agents  
-**Type**: Full-stack web application (local-first)  
-**Stage**: Foundation → Feature development → Production
-
-**Key Characteristics**:
-- ✅ Local-first (SQLite database, runs locally)
-- ✅ Single-user (no authentication/multi-tenant)
-- ✅ Italian UI (all user-facing text in Italian)
-- ✅ AI-ready (prepared for matching, RAG, scraping features)
+**Last Updated**: 2025-11-08
+**Version**: 3.1.1 (Documentation Streamline)
 
 ---
 
-## 🏗️ Technology Stack
+## 🎯 Project Philosophy: ESSENTIALITY, SIMPLICITY, INTUITIVITY
 
-### Core Framework
-```typescript
-{
-  "framework": "Next.js 14+",          // App Router only
-  "language": "TypeScript",            // Strict mode
-  "runtime": "Node.js 18+",
-  "deployment": "Local development"
-}
+CRM Immobiliare is designed around three core principles that **MUST** guide every development decision:
+
+### 1. **ESSENTIALITY** (Essenzialità)
+- **One command to start everything**: `npm run dev` → app + AI tools running
+- **One .env file**: All configuration in a single root `.env.example`
+- **Zero manual setup**: Auto-generated secrets, automatic database creation
+- **Minimal dependencies**: Only what's truly necessary
+- **No redundancy**: Each feature exists in ONE place only
+
+### 2. **SIMPLICITY** (Semplicità)
+- **For beginners**: A novice must be able to start the app in < 5 minutes
+- **Self-explanatory**: Code and UI should explain themselves
+- **Conventional over complex**: Use standard patterns, avoid clever tricks
+- **Progressive disclosure**: Simple by default, advanced when needed
+- **Clear error messages**: Every error tells you exactly what to do
+
+### 3. **INTUITIVITY** (Intuitività)
+- **Wizard-driven setup**: GUI configuration wizard at first launch
+- **Discoverable features**: Users find features naturally through UI
+- **Contextual help**: Help where you need it, when you need it
+- **Visual feedback**: Loading states, success/error messages, progress bars
+- **Smart defaults**: Works great out-of-the-box, customizable if needed
+
+### 🚫 Anti-Patterns to AVOID
+
+- ❌ **Multiple config files scattered** → Use ONE .env in root
+- ❌ **Manual secret generation** → Auto-generate everything
+- ❌ **Complex installation steps** → Two commands max
+- ❌ **Separate backend/frontend commands** → One unified command
+- ❌ **Unexplained failures** → Every error has a solution
+- ❌ **Hidden features** → Make everything discoverable
+- ❌ **Configuration via code** → Configuration via GUI wizard
+
+---
+
+## 📋 Project Overview
+
+**CRM Immobiliare** is a comprehensive, single-user real estate management system for Italian real estate agents. Built with modern tools and AI-powered features.
+
+**Tech Stack**:
+- Frontend + API: Next.js 14 (App Router, unified)
+- AI: Python 3.13 (FastAPI + Google Gemini)
+- Database: SQLite (dev) / PostgreSQL (prod)
+- ORM: Prisma (TS) + SQLAlchemy (Python)
+
+**Current Phase**: Production-Ready v3.1.0
+
+**Interface Language**: Italian (UI), English (code/docs)
+
+**Architecture**: 2 main components + database
+- App (UI + API): `frontend/` → Port 3000
+- AI Tools: `ai_tools/` → Port 8000
+- Database: `database/prisma/` → SQLite (dev) or PostgreSQL (Docker)
+
+**Deployment**: Docker Compose (4 containers: db, app, ai, watchtower)
+
+---
+
+## 🚀 Getting Started (The Essence)
+
+### For Users (New Developer)
+
+```bash
+# 1. Clone & Install
+git clone <repo>
+cd cookkie-real-estate-agent
+npm install
+
+# 2. Setup (auto-generates .env with secrets)
+npm run setup
+
+# 3. Start EVERYTHING
+npm run dev
+
+# 4. Open browser → http://localhost:3000
+# Setup wizard guides you through configuration!
 ```
 
-### Database & ORM
-```typescript
-{
-  "database": "SQLite",                // File-based (prisma/dev.db)
-  "orm": "Prisma",                     // Latest version
-  "migrations": "Prisma Migrate",
-  "gui": "Prisma Studio"
-}
-```
+**That's it!** Two actual commands (`npm run setup` + `npm run dev`).
 
-### Frontend Stack
-```typescript
-{
-  "ui_library": "shadcn/ui",           // Radix UI primitives
-  "styling": "Tailwind CSS",           // Utility-first
-  "icons": "lucide-react",             // Icon library
-  "state": "@tanstack/react-query",    // Server state
-  "forms": "react-hook-form",          // Form handling
-  "validation": "Zod"                  // Schema validation
-}
-```
+### For Docker (Production)
 
-### Future Integrations (Not Yet Implemented)
-```typescript
-{
-  "llm": "OpenRouter API",             // External API calls only
-  "rag": "LlamaIndex",                 // When implemented
-  "embeddings": "Ollama or API",       // Local or fallback
-  "scraping": "Puppeteer/Playwright"   // When implemented
-}
+```bash
+# 1. Clone
+git clone <repo>
+cd cookkie-real-estate-agent
+
+# 2. Setup
+npm run setup
+
+# 3. Start Docker
+docker-compose up -d
+
+# Done! → http://localhost:3000
 ```
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Simplified Architecture
 
-The project follows a modular monorepo structure. Each top-level directory is an independent module with its own responsibilities.
+### Directory Structure
 
 ```
 cookkie-real-estate-agent/
-├── frontend/              # Next.js 14 UI
-├── backend/               # Next.js 14 API
-├── ai_tools/              # Python AI Tools (FastAPI)
-├── database/              # Prisma Schema & DB files
-├── scraping/              # Python Scrapers
-├── config/                # Centralized configuration
-├── scripts/               # Automation scripts
-├── tests/                 # Unit, Integration, E2E tests
-├── logs/                  # Log files
-├── docs/                  # Documentation
-├── CLAUDE.md              # Volatile implementation details
-└── GEMINI.md              # This file (permanent principles)
+├── .env                    # ⭐ ONE config file (auto-generated)
+├── package.json            # ⭐ 15 simple scripts (not 40!)
+│
+├── frontend/               # Next.js App (UI + API unified)
+│   ├── src/app/            # Pages + API routes
+│   │   ├── setup/          # ⭐ Setup wizard (first launch)
+│   │   ├── api/            # API endpoints
+│   │   └── */              # Feature pages
+│   ├── src/components/     # React components
+│   ├── src/lib/            # Utils + config
+│   │   └── config.ts       # ⭐ Centralized config management
+│   └── src/middleware.ts   # ⭐ Auto-redirect to setup
+│
+├── ai_tools/               # Python AI (FastAPI)
+│   ├── app/agents/         # 3 AI agents
+│   └── app/tools/          # 7 custom tools
+│
+├── database/               # Database layer
+│   ├── prisma/             # Prisma schema
+│   │   └── schema.prisma   # ⭐ Multi-provider (SQLite/PostgreSQL)
+│   └── python/             # SQLAlchemy models
+│
+├── scripts/                # ⭐ ONE script only
+│   └── setup-env.js        # Auto-setup .env with secrets
+│
+└── docs/                   # Documentation
+    ├── QUICKSTART.md       # ⭐ Start here (5 min guide)
+    ├── ARCHITECTURE.md     # System architecture
+    └── */                  # Other guides
 ```
-*For a more detailed breakdown, see the `CLAUDE.md` file.*
+
+**Key Changes from v3.0.0**:
+- ✅ Unified `.env` (not 5 different files)
+- ✅ Setup wizard UI (not manual config)
+- ✅ Auto-generated secrets (not manual openssl commands)
+- ✅ One `npm run dev` command (not separate frontend/backend/ai)
+- ✅ SQLite default (not PostgreSQL requirement for dev)
+- ✅ Middleware auto-redirect (not manual navigation)
 
 ---
 
-## 🚀 Quick Start Commands
+## ⚡ Development Principles
 
-These commands are run from the project root. They orchestrate actions across the different modules.
+### 1. ESSENTIAL Commands Only
 
-### First-Time Setup
+**Root package.json** has exactly **15 scripts** (down from 40+):
+
+```json
+{
+  "setup": "node scripts/setup-env.js",           // Auto-setup
+  "dev": "... npm run dev:app && dev:ai",         // ⭐ Start EVERYTHING
+  "dev:app": "cd frontend && npm run dev",        // App only
+  "dev:ai": "cd ai_tools && python main.py",      // AI only
+  "build": "cd frontend && npm run build",        // Build
+  "start": "cd frontend && npm start",            // Production start
+  "prisma:*": "...",                              // Database commands
+  "docker:*": "...",                              // Docker commands
+  "install": "npm install && cd frontend && ...", // Install all
+  "clean": "rm -rf node_modules ..."              // Cleanup
+}
+```
+
+**What we DON'T have anymore**:
+- ❌ `dev:all`, `dev:frontend`, `dev:backend` (redundant)
+- ❌ `install:all`, `install:frontend`, `install:backend` (confusing)
+- ❌ `start:production`, `start:backend`, `start:frontend` (too many)
+- ❌ 27 shell scripts in `scripts/` (now just 1!)
+
+### 2. SIMPLE Configuration
+
+**Before (v3.0.0)**: 5 different .env files
+- `config/backend.env.example`
+- `config/frontend.env.example`
+- `config/ai_tools.env.example`
+- `config/docker.env.example`
+- `.env.example` (root)
+
+**Now (v3.1.0)**: ONE `.env.example` in root
+
 ```bash
-# Install all dependencies across all modules
-npm run install:all
-
-# Generate Prisma Client for all modules
-npm run prisma:generate
-
-# Apply schema changes to the database
-npm run prisma:push
-
-# Seed the database with initial test data
-npm run prisma:seed
+# .env.example structure
+DATABASE_URL="file:./database/prisma/dev.db"  # SQLite default
+SESSION_SECRET=                                # Auto-generated
+NEXTAUTH_SECRET=                               # Auto-generated
+POSTGRES_PASSWORD=                             # Auto-generated
+GOOGLE_API_KEY=                                # Via GUI wizard
 ```
 
-### Main Development Commands
-```bash
-# Start all services (frontend + backend) concurrently
-npm run dev:all
+**Auto-generation script**: `scripts/setup-env.js`
+- Copies `.env.example` to `.env`
+- Generates all secrets automatically
+- User only needs to run `npm run setup`
 
-# Start only the frontend (http://localhost:3000)
-npm run dev:frontend
+### 3. INTUITIVE First Launch
 
-# Start only the backend API (http://localhost:3001)
-npm run dev:backend
+**Setup Wizard** (`/setup` route):
+1. **User Profile**: Name, email, phone
+2. **Agency Info**: Name, VAT, address (optional)
+3. **API Keys**: Google AI key (with test button!)
+4. **Review & Complete**
 
-# Start the AI services (http://localhost:8000)
-npm run ai:start
-```
+**Middleware** (`frontend/src/middleware.ts`):
+- Auto-redirects to `/setup` if no UserProfile exists
+- Protects all routes except `/setup` and `/api/setup`
+- User can't break the app by navigating away
 
-### Database Management
-```bash
-# Open Prisma Studio GUI for live DB access
-npm run prisma:studio
+**Configuration Precedence**:
+1. **Database** (UserProfile.settings) - GUI configured
+2. **Environment** (.env file) - Fallback
+3. **Defaults** (hardcoded) - Last resort
 
-# Push schema changes to the database
-npm run prisma:push
-
-# Create a new migration from schema changes
-npm run prisma:migrate
-
-# Reset the database (CAUTION: deletes all data)
-npm run prisma:reset
-```
-
-### Code Quality & Testing
-```bash
-# Run linter for all modules
-npm run lint
-
-# Run all tests
-npm test
-```
-*For a complete list of commands and module-specific instructions, see `CLAUDE.md`.*
+See `frontend/src/lib/config.ts` for implementation.
 
 ---
 
-## 🏛️ Architectural Principles
-
-These are the foundational principles that guide the project's architecture and long-term evolution.
-
-### 1. Modular by Design
-The system is organized into clear and independent domains. While co-located in a monorepo, each of these components should be treated as a separate module with clear boundaries.
-- **`frontend/`**: Next.js UI, dashboards, and user-facing components.
-- **`backend/`**: Core CRM logic, REST APIs, and business services.
-- **`ai_tools/`**: All AI-related modules (matching, RAG, agents).
-- **`scraping/`**: Independent web scrapers for various data sources.
-- **`database/`**: Prisma schema, migrations, and seeding scripts.
-
-### 2. Formal Interfaces
-Modules **must** communicate through well-defined, formal interfaces, such as REST APIs, RPC, or a message bus. Direct, hard-coded dependencies and cross-module imports should be avoided to maintain decoupling and allow for independent development and deployment.
-
-### 3. Centralized & Externalized Configuration
-All configuration—including environment settings, credentials, and feature flags—is externalized into `.env` files. A central `/config` directory may be used for modular settings files. No configuration should be hardcoded within the application logic.
-
-### 4. Comprehensive Documentation
-A dedicated `/docs` directory serves as the single source of truth for all project documentation.
-
-**MANDATORY Rule - Report e File Temporanei**:
-
-Quando generi report, analisi, o file di documentazione temporanei:
-
-❌ **MAI nella root del progetto**
-✅ **SEMPRE categorizzati in `/docs` nelle subdirectory appropriate**
-
-**Categorizzazione Report**:
-
-1. **Report di Riorganizzazione/Refactoring**:
-   - Directory: `docs/reorganization/`
-   - Esempio: `PHASE_X_COMPLETE.md`, `REFACTOR_REPORT.md`
-   - **Archivia se non più necessario**: Sposta in `docs/reorganization/archive/`
-
-2. **Report di Analisi/Debug**:
-   - Directory: `docs/analysis/`
-   - Esempio: `PERFORMANCE_ANALYSIS.md`, `BUG_REPORT.md`
-   - **Archivia dopo risoluzione**: `docs/analysis/archive/`
-
-3. **Guide Setup/Migration**:
-   - Directory: `docs/setup/`
-   - Esempio: `MIGRATION_GUIDE.md`, `SETUP_NOTES.md`
-   - **Mantieni se ancora rilevanti**, archivia versioni obsolete
-
-4. **Report AI Integration**:
-   - Directory: `docs/ai-integration/`
-   - Esempio: `AI_INTEGRATION_SUMMARY.md`
-   - **Archivia versioni superate**
-
-5. **Report Temporanei** (specifici di task/feature):
-   - Directory: `docs/temp/` (git-ignored)
-   - **Elimina dopo completamento task**
-   - Oppure sposta in archive se potrebbe servire
-
-**Regola d'Oro**:
-- Se il report è **permanente** (es: ARCHITECTURE.md) → `docs/` directory principale
-- Se il report è **temporaneo/specifico** → `docs/[categoria]/`
-- Se il report è **obsoleto** → `docs/[categoria]/archive/`
-- **Mai** lasciare report nella root oltre il tempo strettamente necessario
-
-**Esempio Workflow Corretto**:
-```bash
-# ❌ WRONG - Report nella root
-CRITICITA_REPORT.md              # NO!
-ANALYSIS_DATABASE.md             # NO!
-
-# ✅ CORRECT - Report categorizzati
-docs/analysis/CRITICITA_REPORT.md
-docs/analysis/DATABASE_ANALYSIS.md
-
-# ✅ CORRECT - Archiviati dopo uso
-docs/analysis/archive/CRITICITA_REPORT_20251017.md
-```
-
-**Key documents** (permanenti in `docs/`):
-- `GETTING_STARTED.md`: Onboarding guide for new developers.
-- `ARCHITECTURE.md`: System architecture and diagrams.
-- `API_REFERENCE.md`: API endpoint documentation.
-- Architectural diagrams and data flow charts.
-
-### 5. Automated Testing & CI/CD
-A root `/tests` directory contains all automated tests (unit, integration, E2E). Every commit and pull request is validated through a CI/CD pipeline (e.g., GitHub Actions) to ensure code quality, run tests, and prevent regressions.
-
-### 6. Streamlined Developer Experience
-The project must provide a "one-click" setup experience. Automated scripts (e.g., `run.sh`, `docker-compose.yml`) should handle the entire installation and bootstrap process, allowing a new developer to get the system running with a single command.
-
----
-
-## 🎨 Architecture Patterns
-
-### Component Pattern (ALWAYS USE)
-```typescript
-"use client"; // Only if using hooks or browser APIs
-
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-
-interface ComponentProps {
-  title: string;
-  count?: number;
-  onAction?: () => void;
-}
-
-export function ComponentName({ title, count = 0, onAction }: ComponentProps) {
-  const [state, setState] = useState<number>(count);
-
-  const handleClick = () => {
-    setState(prev => prev + 1);
-    onAction?.();
-  };
-
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <Button onClick={handleClick}>Count: {state}</Button>
-    </div>
-  );
-}
-```
-
-### API Route Pattern (ALWAYS USE)
-```typescript
-// src/app/api/[resource]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { resourceSchema } from '@/lib/validation/schemas';
-
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-
-    const items = await prisma.resource.findMany({
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: items,
-      meta: { page, limit },
-    });
-  } catch (error) {
-    console.error('GET /api/resource:', error);
-    return NextResponse.json(
-      { success: false, error: 'Errore nel caricamento' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const validated = resourceSchema.parse(body);
-
-    const created = await prisma.resource.create({
-      data: validated,
-    });
-
-    return NextResponse.json(
-      { success: true, data: created },
-      { status: 201 }
-    );
-  } catch (error) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { success: false, error: 'Dati non validi' },
-        { status: 400 }
-      );
-    }
-    return NextResponse.json(
-      { success: false, error: 'Errore creazione' },
-      { status: 500 }
-    );
-  }
-}
-```
-
-### React Query Hook Pattern (ALWAYS USE)
-```typescript
-// src/lib/hooks/useResource.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-
-export function useResources() {
-  return useQuery({
-    queryKey: ['resources'],
-    queryFn: async () => {
-      const res = await fetch('/api/resources');
-      if (!res.ok) throw new Error('Fetch failed');
-      return res.json();
-    },
-  });
-}
-
-export function useCreateResource() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: any) => {
-      const res = await fetch('/api/resources', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Create failed');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
-      toast.success('Risorsa creata');
-    },
-    onError: () => {
-      toast.error('Errore creazione');
-    },
-  });
-}
-```
-
----
-
-## 🔒 Permanent Constraints (NEVER VIOLATE)
-
-### 1. Local-First Architecture
-```
-✅ DO: Use SQLite file database (prisma/dev.db)
-✅ DO: Keep all data processing local
-✅ DO: Run everything on localhost
-
-❌ DON'T: Use PostgreSQL, MySQL, or remote databases
-❌ DON'T: Require external services (except OpenRouter for LLM)
-❌ DON'T: Store data in cloud services
-```
-
-### 2. Single-User System
-```
-✅ DO: Design for one user only
-✅ DO: Simplify without auth complexity
-
-❌ DON'T: Implement multi-user features
-❌ DON'T: Add authentication/authorization
-❌ DON'T: Create user management systems
-```
-
-### 3. Italian User Interface
-```
-✅ DO: All UI labels in Italian
-✅ DO: Error messages in Italian
-✅ DO: Form placeholders in Italian
-✅ DO: Notifications in Italian
-
-❌ DON'T: Use English for user-facing text
-❌ DON'T: Mix languages in UI
-```
-
-### 4. Technology Lock-In
-```
-✅ DO: Use Next.js 14+ App Router
-✅ DO: Use TypeScript strict mode
-✅ DO: Use Prisma ORM
-✅ DO: Use SQLite database
-✅ DO: Use shadcn/ui components
-
-❌ DON'T: Suggest Pages Router
-❌ DON'T: Use JavaScript instead of TypeScript
-❌ DON'T: Use other ORMs (TypeORM, Sequelize, etc.)
-❌ DON'T: Change to other UI libraries
-
-### 5. File Position
-```
-✅ DO: Keep GEMINI.md and CLAUDE.md in the root directory
-
-❌ DON'T: Move GEMINI.md or CLAUDE.md to any subdirectory
-```
-```
-
----
-
-## 💎 Code Quality Principles (ALWAYS APPLY)
-
-### Modularity
-- Components < 200 lines (split if larger)
-- Functions < 50 lines (split if larger)
-- Single Responsibility Principle
-- Reusable components in `src/components/shared/`
-- Feature-specific logic grouped by domain
-
-### Clarity
-- Descriptive variable names (`immobileData` not `data`)
-- TypeScript types for everything
-- JSDoc comments for public functions
-- No `any` types (use `unknown` if needed)
-- No magic numbers (use named constants)
-
-### Scalability
-- Generic components accept props
-- API follows REST conventions
-- Database queries optimized (select only needed fields)
-- Avoid tight coupling
-- Prepare for future features (matching, RAG, scraping)
-
-### Maintainability
-- Consistent naming: `camelCase` (JS), `PascalCase` (Components)
-- Imports use path aliases (`@/`)
-- Shared utilities in `src/lib/`
-- TypeScript types in separate files when complex
-
----
-
-## 🤖 AI Intervention Principles
-
-### 1. Surgical Precision (Intervento Chirurgico)
-**This is a primary directive.** All code modifications must be **surgical**. The AI must identify the exact, minimal section of the codebase that requires changes and avoid any modifications to unrelated files or logic. The goal is to act like a scalpel, not a hammer, ensuring that interventions are targeted, efficient, and minimize the risk of side effects.
-
-This principle is especially critical for protecting the foundational pillars of the application. Core infrastructure, such as the **database schema (`prisma/schema.prisma`)**, global configurations, and established API contracts, must be considered **read-only** unless a task explicitly and intentionally targets them for modification. The primary goal is to preserve the integrity and stability of the system at all times.
-
-### 2. Leverage Modularity (Sfruttare la Modularità)
-The AI **must** leverage the project's modular architecture. Before making changes, it must first identify the relevant module (e.g., `frontend`, `backend`, `ai_tools`, `database`) and confine its operations within that module's boundaries. Changes must respect the formal interfaces between modules, reinforcing the system's decoupled and scalable design.
-
----
-
-## 🚫 Critical DON'Ts (NEVER DO)
-
-1. ❌ **DO NOT** edit files in `src/components/ui/` (shadcn/ui managed)
-2. ❌ **DO NOT** use `any` type in TypeScript
-3. ❌ **DO NOT** use localStorage/sessionStorage (not supported)
-4. ❌ **DO NOT** hardcode data in components (use props/API)
-5. ❌ **DO NOT** skip error handling in API routes
-6. ❌ **DO NOT** commit sensitive data (API keys, credentials)
-7. ❌ **DO NOT** use external databases (only SQLite)
-8. ❌ **DO NOT** write English UI text (Italian only)
-9. ❌ **DO NOT** create deeply nested code (max 4 levels)
-10. ❌ **DO NOT** skip input validation (always use Zod)
-
----
-
-## 📊 Database Guidelines
-
-### Prisma Schema Rules
-```prisma
-// ALWAYS use these patterns
-model Example {
-  id          String   @id @default(cuid())      // Primary key
-  createdAt   DateTime @default(now())            // Creation time
-  updatedAt   DateTime @updatedAt                 // Auto-update
-  
-  // Relations
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-```
-
-### JSON Serialization (SQLite Limitation)
-```typescript
-// SQLite doesn't support JSON natively - always serialize
-
-// WHEN SAVING to database
-const jsonString = JSON.stringify({ key: 'value' });
-await prisma.model.create({
-  data: { jsonField: jsonString }
-});
-
-// WHEN READING from database
-const record = await prisma.model.findUnique({ where: { id } });
-const data = JSON.parse(record.jsonField || '{}');
-```
-
-### Query Best Practices
-```typescript
-// ✅ DO: Use try/catch
-try {
-  const data = await prisma.model.findMany();
-} catch (error) {
-  console.error('Query failed:', error);
-}
-
-// ✅ DO: Select only needed fields
-const users = await prisma.user.findMany({
-  select: { id: true, name: true }
-});
-
-// ✅ DO: Use pagination
-const items = await prisma.item.findMany({
-  skip: (page - 1) * limit,
-  take: limit,
-});
-
-// ❌ DON'T: Trust client input
-const unsafe = await prisma.user.findUnique({
-  where: { id: req.body.id } // Validate first!
-});
-```
-
----
-
-## 🎨 UI/UX Guidelines
-
-### Component Usage
-```typescript
-// ✅ DO: Use shadcn/ui components
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-
-// ✅ DO: Use cn() for conditional classes
-import { cn } from '@/lib/utils';
-<div className={cn("base", isActive && "active")} />
-
-// ❌ DON'T: Modify ui/ components directly
-// ❌ DON'T: Create custom components if shadcn/ui has one
-```
-
-### Responsive Design
-```typescript
-// Mobile-first approach
-<div className="
-  flex flex-col          // Mobile: stack vertically
-  md:flex-row           // Tablet: horizontal
-  lg:gap-8              // Desktop: larger gap
-  xl:max-w-7xl          // Large: max width
-">
-  {/* Content */}
-</div>
-```
-
-### User Feedback (ALWAYS PROVIDE)
-```typescript
-import { toast } from 'sonner';
-
-// Success
-toast.success('Immobile creato con successo');
-
-// Error
-toast.error('Errore nella creazione');
-
-// Loading states
-{isLoading ? <Skeleton /> : <Content />}
-
-// Empty states
-{items.length === 0 ? <EmptyState /> : <List />}
-```
-
----
-
-## 🔧 Development Workflow
+## 🛠️ Development Guidelines
 
 ### When Adding New Features
 
-1. **Plan** data model (Prisma schema)
-2. **Create** API routes (`src/app/api/`)
-3. **Add** validation schemas (`src/lib/validation/`)
-4. **Build** React Query hooks (`src/lib/hooks/`)
-5. **Design** UI components (`src/components/`)
-6. **Create** pages (`src/app/`)
-7. **Test** manually (run server, test all paths)
-8. **Commit** with descriptive message
+**Ask yourself**:
+1. **Is it essential?** → If not, don't add it
+2. **Is it simple?** → Can a beginner understand it?
+3. **Is it intuitive?** → Does the UI guide the user?
 
-### Naming Conventions
+**Before writing code**:
+1. **Identify target module**: Frontend, AI Tools, or Database?
+2. **Check existing patterns**: Don't reinvent the wheel
+3. **Respect module boundaries**: Use APIs, not direct imports
 
-**Files**:
-- Components: `ImmobileCard.tsx` (PascalCase)
-- Hooks: `useImmobili.ts` (camelCase with 'use')
-- Utils: `formatCurrency.ts` (camelCase)
-- API Routes: `route.ts` (Next.js convention)
+**Example - Adding a new setting**:
 
-**Code**:
-- Variables: `immobileData` (camelCase)
-- Functions: `calculateScore` (camelCase)
-- Components: `ImmobileCard` (PascalCase)
-- Constants: `API_BASE_URL` (UPPER_SNAKE_CASE)
-- Types: `ImmobileProps` (PascalCase)
-
-### Git Conventions
-```bash
-# Format: type(scope): description
-git commit -m "feat(api): add immobili CRUD endpoints"
-git commit -m "fix(ui): correct mobile navigation"
-git commit -m "refactor(hooks): optimize useImmobili"
-git commit -m "docs: update README with setup"
+❌ **WRONG (v3.0.0 way)**:
+```typescript
+// Add to .env file manually
+// Update backend/.env, frontend/.env.local, ai_tools/.env
+// Restart each service separately
+// Hope it works
 ```
 
----
-
-## 🌟 Special Considerations
-
-### Next.js App Router
+✅ **CORRECT (v3.1.0 way)**:
 ```typescript
-// ✅ Client Components (with hooks)
-"use client";
-import { useState } from 'react';
-
-// ✅ Server Components (default, no hooks)
-async function ServerComponent() {
-  const data = await fetch(/* ... */);
-  return <div>{/* ... */}</div>;
+// 1. Add to lib/config.ts interface
+export interface AppConfig {
+  myNewSetting: string;
 }
 
-// ✅ Navigation
-import { useRouter } from 'next/navigation'; // NOT 'react-router-dom'
-const router = useRouter();
-router.push('/path');
+// 2. Add to settings UI (frontend/src/app/settings/page.tsx)
+<Input value={settings.myNewSetting} onChange={...} />
 
-// ✅ Search Params
-import { useSearchParams } from 'next/navigation';
-const searchParams = useSearchParams();
-const page = searchParams.get('page');
+// 3. Done! Stored in database, survives restarts
 ```
 
-### Path Aliases (ALWAYS USE)
+### File Organization Rules
+
+**Component Structure** (MANDATORY):
+```
+frontend/src/components/
+├── ui/           # shadcn/ui ONLY (DO NOT EDIT MANUALLY)
+├── features/     # Feature-specific components
+└── layouts/      # Layout components (Header, Sidebar, etc.)
+```
+
+**API Routes** (REST conventions):
+```
+frontend/src/app/api/
+├── properties/route.ts      # GET /api/properties, POST /api/properties
+├── properties/[id]/route.ts # GET/PUT/DELETE /api/properties/:id
+└── setup/
+    ├── complete/route.ts    # POST /api/setup/complete
+    └── test-google-ai/route.ts # POST /api/setup/test-google-ai
+```
+
+**Module Exports**:
+- Each module has a `README.md` explaining its purpose
+- Main functionality exposed via index files
+- Internal utilities kept private
+
+---
+
+## 🔒 Critical Rules (NON-NEGOTIABLE)
+
+### 1. Protect Core Files
+
+**NEVER modify these without explicit user request**:
+- `database/prisma/schema.prisma` - Database schema
+- `frontend/src/app/layout.tsx` - Root layout
+- `frontend/src/app/providers.tsx` - React providers
+- `frontend/src/middleware.ts` - Route protection
+- `package.json` (root) - Main config
+- `docker-compose.yml` - Docker orchestration
+- `CLAUDE.md`, `GEMINI.md` - AI instructions
+
+### 2. Security First
+
+**NEVER commit**:
+- `.env`, `.env.local`, `.env.production`
+- `*.db`, `*.db-journal`
+- API keys, passwords, secrets
+- Real user data
+
+**ALWAYS use**:
+- Git-ignored environment files
+- Fictional seed data only
+- Validation (Zod) on all inputs
+- Parameterized queries (Prisma ORM)
+
+### 3. Configuration Management
+
+**NEVER**:
+- Create multiple `.env` files in different folders
+- Hardcode configuration in code
+- Ask user to manually generate secrets
+- Require manual database setup
+
+**ALWAYS**:
+- Use ONE root `.env` file
+- Auto-generate all secrets
+- Provide GUI for configuration
+- Document precedence order (DB > ENV > Defaults)
+
+### 4. Database Strategy
+
+**Development**:
+- Default: **SQLite** (`file:./database/prisma/dev.db`)
+- No installation required
+- File-based, portable
+- Schema: `provider = "sqlite"` in schema.prisma
+
+**Production (Docker)**:
+- Automatic: **PostgreSQL 16**
+- Managed by Docker Compose
+- Volume-backed persistence
+- Auto-migrations on startup
+
+**Migration Strategy**:
+```bash
+# Development (SQLite)
+npm run prisma:push      # Push schema changes
+
+# Production (PostgreSQL)
+npm run prisma:migrate   # Create versioned migrations
+```
+
+### 5. Error Handling Standards
+
+**Every error MUST**:
+- Have a clear message in Italian (user-facing)
+- Include the action to resolve it
+- Log technical details (developer-facing)
+- Provide fallback behavior when possible
+
+**Example**:
 ```typescript
-// ✅ DO: Use @ alias
-import { Button } from '@/components/ui/button';
-import { prisma } from '@/lib/db';
-import { cn } from '@/lib/utils';
+try {
+  await saveConfig(settings);
+} catch (error) {
+  // User sees
+  setError("Impossibile salvare le impostazioni. Verifica la connessione al database.");
 
-// ❌ DON'T: Use relative paths
-import { Button } from '../../../components/ui/button';
+  // Console logs
+  console.error('[Config] Save failed:', error);
+
+  // Fallback
+  return currentSettings; // Don't lose data
+}
 ```
 
-### SQLite Limitations (BE AWARE)
+---
+
+## 📦 Module Boundaries
+
+### Frontend (UI)
+
+**Location**: `frontend/src/app/`, `frontend/src/components/`
+
+**Responsibilities**:
+- React components and pages
+- Client-side state (React Query)
+- Form handling (react-hook-form + Zod)
+- UI interactions
+
+**Can access**:
+- API routes via `fetch('/api/...')`
+- Client-side utilities
+- Public environment variables (`NEXT_PUBLIC_*`)
+
+**Cannot access**:
+- Database directly (use API)
+- Server-side secrets
+- Python AI tools directly (use API)
+
+### Backend (API)
+
+**Location**: `frontend/src/app/api/`
+
+**Responsibilities**:
+- REST API endpoints
+- Database operations (Prisma)
+- Business logic
+- Input validation (Zod)
+
+**Can access**:
+- Prisma Client (database)
+- All environment variables
+- Server-side utilities
+- External APIs
+
+**Cannot access**:
+- React components
+- Client-side state
+- Browser APIs
+
+### AI Tools
+
+**Location**: `ai_tools/`
+
+**Responsibilities**:
+- AI agents (RAG, Matching, Briefing)
+- Custom tools (database queries, etc.)
+- FastAPI endpoints
+- Vector operations (Qdrant)
+
+**Can access**:
+- Database via SQLAlchemy
+- Google AI (Gemini) API
+- Python utilities
+
+**Cannot access**:
+- Next.js internals
+- Frontend code
+- Prisma Client (use SQLAlchemy)
+
+### Database
+
+**Location**: `database/`
+
+**Responsibilities**:
+- Schema definition (Prisma)
+- Migrations
+- Seed data
+- SQLAlchemy models (Python mirror)
+
+**Accessed by**:
+- Frontend/Backend: Prisma Client
+- AI Tools: SQLAlchemy
+- Scraping: SQLAlchemy
+
+---
+
+## 🎨 UI/UX Principles
+
+### Design System
+
+**Library**: shadcn/ui (Radix UI primitives + Tailwind CSS)
+
+**Component Installation**:
+```bash
+cd frontend
+npx shadcn@latest add button
+npx shadcn@latest add dialog
+# etc.
+```
+
+**Components go to**: `frontend/src/components/ui/`
+
+**⚠️ NEVER edit shadcn/ui components manually**. Always reinstall if broken.
+
+### Accessibility
+
+**Requirements**:
+- All interactive elements keyboard-accessible
+- ARIA labels on all icons
+- Color contrast WCAG AA minimum
+- Focus visible on all inputs
+- Screen reader friendly
+
+### Responsiveness
+
+**Breakpoints** (Tailwind defaults):
+- `sm`: 640px
+- `md`: 768px
+- `lg`: 1024px
+- `xl`: 1280px
+- `2xl`: 1536px
+
+**Mobile-first**: Design for mobile, enhance for desktop
+
+---
+
+## 🤖 AI Features
+
+### Available AI Agents
+
+1. **RAG Assistant** (`ai_tools/app/agents/rag_agent.py`)
+   - Chat with database in natural language
+   - Context-aware responses
+   - Custom tools for data access
+
+2. **Property Matching** (`ai_tools/app/agents/matching_agent.py`)
+   - Match properties to client requests
+   - Scoring algorithm (0-100)
+   - Smart recommendations
+
+3. **Daily Briefing** (`ai_tools/app/agents/briefing_agent.py`)
+   - Morning summary of activities
+   - Suggested actions
+   - Priority alerts
+
+### Adding New AI Features
+
+**Process**:
+1. Create agent in `ai_tools/app/agents/`
+2. Create custom tools in `ai_tools/app/tools/`
+3. Add router in `ai_tools/app/routers/`
+4. Update frontend to call AI endpoint
+5. Add UI for results
+
+**Example**:
+```python
+# ai_tools/app/agents/new_agent.py
+from datapizza import Agent
+
+class NewAgent(Agent):
+    name = "New Feature Agent"
+    description = "Does something cool"
+
+    async def run(self, input: str):
+        # Your logic here
+        return result
+```
+
+---
+
+## 📚 Documentation Standards
+
+### Documentation Structure
+
+**CRITICAL - Only TWO documentation files allowed in repository root**:
+
+1. **[README.md](README.md)** - Project overview and tech stack
+   - What the project does
+   - Features list
+   - Tech stack (frameworks, libraries)
+   - Architecture overview
+   - Quick link to QUICKSTART.md
+
+2. **[QUICKSTART.md](QUICKSTART.md)** - Complete installation guide
+   - **Single unified document** for installation
+   - Step-by-step instructions (Docker + Local)
+   - Troubleshooting section
+   - First-time usage guide
+   - All setup information in ONE place
+
+**FORBIDDEN**:
+- ❌ NO `docs/` folder with scattered documentation
+- ❌ NO separate guides (INSTALL.md, SETUP.md, GUIDE.md, etc.)
+- ❌ NO duplicated information across files
+- ❌ NO module-specific README files (unless for npm packages)
+
+**Rationale**: Reduces confusion, eliminates outdated docs, forces essentiality
+
+### File Headers
+
+**Every code file MUST have**:
 ```typescript
-// ⚠️ No native JSON type → serialize as string
-// ⚠️ No native array type → serialize as string
-// ⚠️ Limited full-text search → use 'contains'
-// ⚠️ No complex aggregations → compute in app
+/**
+ * CRM IMMOBILIARE - [Component/Feature Name]
+ *
+ * [Brief description of what this file does]
+ *
+ * @module [module-name]
+ * @since v3.1.1
+ */
+```
+
+### Comments
+
+**When to comment**:
+- Complex business logic
+- Non-obvious algorithms
+- Workarounds for bugs
+- API integrations
+
+**When NOT to comment**:
+- Obvious code (`// set x to 5`)
+- Self-explanatory functions
+- Standard patterns
+
+**Example**:
+```typescript
+// ✅ GOOD
+// Calculate commission percentage based on property price
+// Properties > 500k have reduced commission
+const commission = price > 500_000 ? 0.025 : 0.03;
+
+// ❌ BAD
+// Set commission
+const commission = 0.03;
 ```
 
 ---
 
-## 📚 Reference Resources
+## 🧪 Testing Strategy
 
-### Documentation Links
-- [Next.js App Router](https://nextjs.org/docs/app)
-- [Prisma with Next.js](https://www.prisma.io/docs/guides/database/next-js)
-- [shadcn/ui Components](https://ui.shadcn.com)
-- [TanStack Query](https://tanstack.com/query/latest)
-- [Zod Validation](https://zod.dev)
+**Current Status**: Basic test structure in place, comprehensive tests pending
 
-### Internal Documentation
-- `CLAUDE.md` - Detailed implementation guide (evolving)
-- `CODEX.md` - Code generation patterns
-- `QODO.md` - Testing and quality guidelines
-- `README.md` - Project overview and setup
-- `MIGRATION_NOTES.md` - Migration from Vite details
+**Test Organization**:
+```
+tests/
+├── unit/               # Unit tests
+│   ├── frontend/       # Jest + React Testing Library
+│   ├── backend/        # Jest (API routes)
+│   └── ai_tools/       # pytest
+│
+├── integration/        # Integration tests
+│   └── api/            # API endpoint tests
+│
+└── e2e/                # End-to-end tests
+    └── scenarios/      # User journey tests
+```
 
----
-
-## 🎯 When In Doubt
-
-1. Check existing code in `src/` for patterns
-2. Look at API routes for endpoint structure
-3. Review components for UI patterns
-4. Consult `CLAUDE.md` for current implementation
-5. **Prioritize**: Clarity > Cleverness
-6. **Remember**: Simple, Scalable, Maintainable
-7. **Ask**: If unclear, request clarification
+**When adding features**:
+1. Write unit tests for business logic
+2. Write integration tests for API endpoints
+3. Add E2E tests for critical user paths
 
 ---
 
-## 📝 Quick Checklist (Before Committing)
+## 🐳 Docker & Deployment
 
-- [ ] TypeScript compiles without errors (`npx tsc --noEmit`)
-- [ ] ESLint passes (`npm run lint`)
-- [ ] No `any` types in code
-- [ ] All imports use `@/` path alias
-- [ ] Italian text for all UI elements
-- [ ] Error handling in place (try/catch)
-- [ ] Loading states implemented
-- [ ] Components < 200 lines
-- [ ] Functions < 50 lines
-- [ ] No console.log left in code
-- [ ] Prisma queries use try/catch
-- [ ] API routes return proper status codes
-- [ ] shadcn/ui components not modified
-- [ ] **No report files in root** - all in `docs/[category]/`
-- [ ] Git commit message follows convention
+### Docker Compose Services
+
+**4 containers** (not 3 as docs claim):
+1. `database` - PostgreSQL 16
+2. `app` - Next.js (UI + API)
+3. `ai-tools` - FastAPI
+4. `watchtower` - Auto-updater
+
+**Auto-update**: Watchtower checks GitHub Container Registry every 5 minutes, pulls latest images, and restarts containers.
+
+**Volumes** (persistent data):
+- `postgres_data` - Database
+- `app_uploads` - User uploads
+- `app_backups` - Backups
+
+### Environment in Docker
+
+**Override mechanism**:
+```yaml
+# docker-compose.yml
+environment:
+  DATABASE_URL: postgresql://user:pass@database:5432/db  # Overrides .env
+```
+
+**Precedence**: docker-compose.yml > .env > defaults
 
 ---
 
-**Version**: 3.0.0 (Reorganization Complete)
-**Last Updated**: 2025-10-17
-**Valid For**: All project phases and future versions
-**Maintained By**: Project architect
+## 🗺️ Roadmap & Future Features
 
-**This file contains PERMANENT principles. Update only for fundamental architectural changes.**
+### v3.1.0 (Current) - Essentiality Update
+- ✅ Unified .env configuration
+- ✅ Setup wizard UI
+- ✅ Auto-generated secrets
+- ✅ One-command startup
+- ✅ SQLite default for dev
+
+### v3.2.0 (Next) - Enhanced Settings
+- [ ] Settings page with connection testing
+- [ ] API key management UI
+- [ ] Theme customization
+- [ ] Backup/restore from UI
+
+### v3.3.0 - Authentication
+- [ ] User login system
+- [ ] JWT auth
+- [ ] Password reset flow
+- [ ] Session management
+
+### v4.0.0 - Multi-tenant
+- [ ] Multiple agencies support
+- [ ] Role-based access control
+- [ ] Agency switcher
+
+---
+
+## 💡 Common Tasks
+
+### Adding a New Page
+
+```bash
+# 1. Create page file
+frontend/src/app/new-feature/page.tsx
+
+# 2. Add navigation link
+frontend/src/components/layouts/Sidebar.tsx
+
+# 3. Create API endpoint (if needed)
+frontend/src/app/api/new-feature/route.ts
+
+# 4. Test
+npm run dev
+# Navigate to /new-feature
+```
+
+### Adding a New Setting
+
+```typescript
+// 1. Update config interface
+// frontend/src/lib/config.ts
+export interface AppConfig {
+  myNewSetting: boolean;
+}
+
+// 2. Add to settings page
+// frontend/src/app/settings/page.tsx
+<Switch checked={settings.myNewSetting} onChange={...} />
+
+// 3. Save to database
+await saveConfig({ myNewSetting: true });
+```
+
+### Adding a New AI Agent
+
+```python
+# 1. Create agent file
+# ai_tools/app/agents/my_agent.py
+from datapizza import Agent
+
+class MyAgent(Agent):
+    name = "My Agent"
+    # ... implementation
+
+# 2. Create router
+# ai_tools/app/routers/my_agent.py
+from fastapi import APIRouter
+router = APIRouter()
+
+@router.post("/")
+async def run_agent(input: str):
+    # ...
+
+# 3. Register router
+# ai_tools/main.py
+app.include_router(my_agent_router, prefix="/my-agent")
+
+# 4. Call from frontend
+const result = await fetch('http://localhost:8000/my-agent', {
+  method: 'POST',
+  body: JSON.stringify({ input: 'test' })
+});
+```
+
+---
+
+## 📞 Getting Help
+
+**Documentation**:
+- [QUICKSTART.md](docs/QUICKSTART.md) - 5-minute setup guide
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture
+- [Module README files](frontend/README.md) - Detailed module docs
+
+**For AI Assistants**:
+- This file (CLAUDE.md) - Development principles
+- [GEMINI.md](GEMINI.md) - Same content, Gemini-optimized
+
+**When stuck**:
+1. Check QUICKSTART.md first
+2. Read module README.md
+3. Search existing code for examples
+4. Ask user for clarification
+
+---
+
+## 🎓 Key Takeaways for AI Assistants
+
+**Remember**:
+1. **ONE command to start**: `npm run dev` (not multiple scripts)
+2. **ONE config file**: `.env` in root (not scattered configs)
+3. **ZERO manual setup**: Everything auto-generated
+4. **Setup wizard FIRST**: No direct code configuration
+5. **SQLite for dev**: No PostgreSQL installation needed
+6. **GUI over CLI**: User configures via web UI, not terminal
+7. **Errors explain solutions**: Every error message is actionable
+8. **Protect core files**: Schema, layout, providers are sacred
+9. **Module boundaries**: Frontend → API → Database (respect layers)
+10. **Essential only**: If it's not essential, don't add it
+
+**Mantra**: *"Would a beginner understand this in 30 seconds?"*
+
+If the answer is no, simplify it.
+
+---
+
+**Made with ❤️ for Italian real estate agents by Luca M. & Claude Code**
+
+**Version**: 3.1.0 (Essentiality Update)
+**Last Updated**: 2025-11-08
+**Status**: ✅ Production Ready | ⚡ Simplified | 🎯 Essential
