@@ -265,7 +265,6 @@ export const updateActivitySchema = createActivitySchema.partial();
 
 export const updateSettingsSchema = z.object({
   googleApiKey: z.string().optional(),
-  openaiApiKey: z.string().optional(),
   smtpHost: z.string().optional(),
   smtpPort: z.coerce.number().int().positive().optional(),
   smtpUser: z.string().optional(),

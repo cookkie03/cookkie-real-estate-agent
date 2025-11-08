@@ -8,6 +8,7 @@ from datapizza.agents import Agent
 from datapizza.clients.google import GoogleClient
 
 from app.config import settings
+from app.utils import retry_with_exponential_backoff
 from app.tools import (
     query_properties_tool,
     query_contacts_tool,
@@ -117,9 +118,14 @@ def run_rag_assistant(messages: List[Dict[str, str]]) -> Dict[str, Any]:
 
     last_message = messages[-1]["content"]
 
+    # Create retry-wrapped execution function
+    @retry_with_exponential_backoff()
+    def _run_with_retry():
+        return agent.run(last_message)
+
     try:
-        # Run agent
-        response = agent.run(last_message)
+        # Run agent with automatic retry on failures
+        response = _run_with_retry()
 
         return {
             "success": True,
@@ -134,7 +140,7 @@ def run_rag_assistant(messages: List[Dict[str, str]]) -> Dict[str, Any]:
     except Exception as e:
         return {
             "success": False,
-            "error": str(e)
+            "error": f"RAG Assistant failed after retries: {str(e)}"
         }
 
 

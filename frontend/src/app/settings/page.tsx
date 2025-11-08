@@ -39,7 +39,6 @@ export default function SettingsPage() {
 
   const [formData, setFormData] = useState({
     googleApiKey: "",
-    openaiApiKey: "",
     fullName: "",
     email: "",
     phone: "",
@@ -117,7 +116,7 @@ export default function SettingsPage() {
             <div className="stat-card">
               <h2 className="section-header">Google AI API</h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Necessaria per le funzionalità AI (matching, chat, briefing).
+                ⚠️ <strong>Richiesta</strong> per tutte le funzionalità AI (RAG Assistant, Matching, Briefing, Ricerca Semantica).
                 Ottieni la tua chiave da{" "}
                 <a
                   href="https://aistudio.google.com/app/apikey"
@@ -127,6 +126,7 @@ export default function SettingsPage() {
                 >
                   Google AI Studio
                 </a>
+                {" "}(gratuita con limiti generosi).
               </p>
 
               <div className="space-y-4">
@@ -157,33 +157,6 @@ export default function SettingsPage() {
                   <TestTube className="h-4 w-4" />
                   Testa Connessione
                 </button>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <h2 className="section-header">OpenAI API (Opzionale)</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Opzionale, se preferisci usare OpenAI invece di Google AI.
-              </p>
-
-              <div>
-                <label className="form-label mb-2 block">
-                  OpenAI API Key
-                </label>
-                <input
-                  type="password"
-                  placeholder="sk-..."
-                  value={formData.openaiApiKey}
-                  onChange={(e) =>
-                    setFormData({ ...formData, openaiApiKey: e.target.value })
-                  }
-                  className="w-full rounded-lg border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                {settings?.openaiApiKey && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    ✓ Chiave configurata: ***{settings.openaiApiKey.slice(-8)}
-                  </p>
-                )}
               </div>
             </div>
 
