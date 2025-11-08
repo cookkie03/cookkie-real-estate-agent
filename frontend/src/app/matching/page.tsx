@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Target, Sparkles, TrendingUp, User, Building2, Phone, Mail, ChevronRight, Star } from "lucide-react";
+import { Target, Sparkles, User, Building2, ChevronRight, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 

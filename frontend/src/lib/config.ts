@@ -151,7 +151,7 @@ export async function loadConfig(useCache: boolean = true): Promise<AppConfig> {
 export async function saveConfig(settings: Partial<UserSettings>): Promise<void> {
   try {
     // Trova o crea UserProfile
-    let userProfile = await prisma.userProfile.findFirst();
+    const userProfile = await prisma.userProfile.findFirst();
 
     if (!userProfile) {
       throw new Error('UserProfile not found. Complete setup first.');

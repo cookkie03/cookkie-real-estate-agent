@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Globe, Play, Pause, Download, Settings, CheckCircle2, AlertCircle } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,7 +46,6 @@ interface SearchCriteria {
 
 export default function ScrapingPage() {
   const [activeTab, setActiveTab] = useState<"config" | "execute" | "results">("config");
-  const queryClient = useQueryClient();
 
   // Sources configuration
   const [sources, setSources] = useState<ScrapingSource[]>([
@@ -311,7 +309,7 @@ export default function ScrapingPage() {
               onClick={() => setActiveTab("execute")}
               disabled={!criteria.city || enabledSourcesCount === 0}
             >
-              Continua all'Esecuzione
+              Continua all&apos;Esecuzione
             </Button>
           </div>
         </TabsContent>

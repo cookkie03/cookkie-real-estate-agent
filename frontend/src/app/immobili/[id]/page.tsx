@@ -27,12 +27,10 @@ import { propertiesApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import {
   PROPERTY_TYPE_LABELS,
   CONTRACT_TYPE_LABELS,
 } from "@/lib/constants";
-import { cn } from "@/lib/utils";
 
 /**
  * CRM IMMOBILIARE - Property Detail Page
@@ -90,7 +88,7 @@ export default function PropertyDetailPage() {
         <Building2 className="mx-auto mb-4 h-16 w-16 text-muted-foreground/40" />
         <h3 className="text-lg font-semibold mb-2">Immobile non trovato</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          L'immobile che stai cercando non esiste o è stato rimosso.
+          L&apos;immobile che stai cercando non esiste o è stato rimosso.
         </p>
         <Button onClick={() => router.push("/immobili")}>
           Torna agli immobili

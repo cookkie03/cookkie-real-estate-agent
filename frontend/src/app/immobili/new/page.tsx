@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/features/ImageUpload";
 import { propertiesApi } from "@/lib/api";
-import { PROPERTY_TYPE, CONTRACT_TYPE } from "@/lib/constants";
 
 /**
  * CRM IMMOBILIARE - New Property Form
@@ -321,7 +320,7 @@ export default function NewPropertyPage() {
           <CardHeader>
             <CardTitle>Immagini</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Carica le foto dell'immobile. La prima immagine sarà utilizzata come principale.
+              Carica le foto dell&apos;immobile. La prima immagine sarà utilizzata come principale.
             </p>
           </CardHeader>
           <CardContent>
