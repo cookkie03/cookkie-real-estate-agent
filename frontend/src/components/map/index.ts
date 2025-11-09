@@ -15,4 +15,6 @@ export { QuickFilters } from './QuickFilters';
 export { ZoneSelector } from './ZoneSelector';
 export { BuildingDetailSheet } from './BuildingDetailSheet';
 export { FilterPanel } from './FilterPanel';
+export { MapSkeleton } from './MapSkeleton';
+export { MapErrorBoundary } from './MapErrorBoundary';
 export type { MapFilters } from './FilterPanel';

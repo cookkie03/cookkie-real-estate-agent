@@ -19,18 +19,17 @@ import { LayerSwitcher } from '@/components/map/LayerSwitcher';
 import { QuickFilters } from '@/components/map/QuickFilters';
 import { BuildingDetailSheet } from '@/components/map/BuildingDetailSheet';
 import { FilterPanel, MapFilters } from '@/components/map/FilterPanel';
+import { MapSkeleton } from '@/components/map/MapSkeleton';
+import { MapErrorBoundary } from '@/components/map/MapErrorBoundary';
 import { Button } from '@/components/ui/button';
+import { trackMapView, trackBuildingClick, trackFilterApplied, trackLayerSwitch } from '@/lib/analytics';
 
 // Dynamic import for InteractiveMap (Leaflet doesn't support SSR)
 const InteractiveMap = dynamic(
   () => import('@/components/map/InteractiveMap').then(mod => mod.InteractiveMap),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-full flex items-center justify-center bg-muted">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    loading: () => <MapSkeleton />
   }
 );
 
@@ -128,6 +127,9 @@ export default function MapPage() {
         }
 
         setBuildings(data.buildings);
+
+        // Track map view
+        trackMapView(data.buildings.length);
       } catch (err) {
         console.error('[MapPage] Fetch error:', err);
         setError(err instanceof Error ? err.message : 'Errore sconosciuto');
@@ -142,6 +144,17 @@ export default function MapPage() {
   // Handle filter changes
   const handleFiltersChange = (newFilters: MapFilters) => {
     setAdvancedFilters(newFilters);
+
+    // Track filter usage
+    if (newFilters.comuni && newFilters.comuni.length > 0) {
+      trackFilterApplied('comuni', newFilters.comuni.join(','));
+    }
+    if (newFilters.contractType) {
+      trackFilterApplied('contractType', newFilters.contractType);
+    }
+    if (newFilters.priceMin || newFilters.priceMax) {
+      trackFilterApplied('priceRange', `${newFilters.priceMin || 0}-${newFilters.priceMax || '∞'}`);
+    }
 
     // Update URL query params for deep linking
     const params = new URLSearchParams();
@@ -172,8 +185,18 @@ export default function MapPage() {
 
   // Handle building click - Open detail sheet
   const handleBuildingClick = (buildingId: string) => {
+    const building = buildings.find(b => b.id === buildingId);
+    if (building) {
+      trackBuildingClick(buildingId, building.code);
+    }
     setSelectedBuildingId(buildingId);
     setIsSheetOpen(true);
+  };
+
+  // Handle layer switch
+  const handleLayerSwitch = (newLayer: 'satellite' | 'streets') => {
+    setLayerType(newLayer);
+    trackLayerSwitch(newLayer);
   };
 
   // Close sheet
@@ -244,7 +267,7 @@ export default function MapPage() {
 
         {/* Map with Controls */}
         {!isLoading && !error && buildings.length > 0 && (
-          <>
+          <MapErrorBoundary>
             {/* Desktop Layout: Floating Controls */}
             <div className="hidden md:block">
               {/* Legend Panel - Top Left */}
@@ -265,7 +288,7 @@ export default function MapPage() {
               {/* Layer Switcher - Top Right */}
               <LayerSwitcher
                 currentLayer={layerType}
-                onLayerChange={setLayerType}
+                onLayerChange={handleLayerSwitch}
                 className="absolute top-4 right-4 z-[1000]"
               />
 
@@ -294,7 +317,7 @@ export default function MapPage() {
                 <div className="flex gap-2">
                   <LayerSwitcher
                     currentLayer={layerType}
-                    onLayerChange={setLayerType}
+                    onLayerChange={handleLayerSwitch}
                     className="flex-1"
                   />
                   <QuickFilters
@@ -316,7 +339,7 @@ export default function MapPage() {
               hideSold={hideSold}
               onBuildingClick={handleBuildingClick}
             />
-          </>
+          </MapErrorBoundary>
         )}
       </div>
 
