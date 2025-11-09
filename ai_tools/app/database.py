@@ -1,44 +1,45 @@
 """
 Database Connection and Models
 SQLAlchemy setup to access shared SQLite database with Prisma
+
+IMPORTANT: This module now uses the shared database configuration and models
+from database/python to eliminate duplication and ensure consistency.
 """
 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+import sys
+import os
+from pathlib import Path
 from typing import Generator
+from sqlalchemy.orm import Session
 from app.config import settings
 
-# Create SQLAlchemy engine
-# Note: check_same_thread=False is needed for SQLite with FastAPI
-engine = create_engine(
-    settings.database_url.replace("file:", ""),
-    connect_args={"check_same_thread": False},
-    echo=settings.environment == "development",  # Log SQL in dev
-    pool_pre_ping=True,  # Verify connections before using
-)
+# Add database/python to path for importing shared models
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root / "database" / "python"))
 
-# Session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Import shared database components from database/python
+from database import engine as shared_engine, SessionLocal as SharedSessionLocal, get_db as shared_get_db
+from models import Base  # Import Base from shared models
 
-# Base class for SQLAlchemy models
-Base = declarative_base()
+# Use shared engine and session factory to ensure consistency
+engine = shared_engine
+SessionLocal = SharedSessionLocal
 
 
 def get_db() -> Generator[Session, None, None]:
     """
     FastAPI dependency for database sessions.
 
+    This now wraps the shared get_db function from database/python
+    to ensure consistency across all Python services.
+
     Usage:
         @app.get("/items")
         def get_items(db: Session = Depends(get_db)):
             return db.query(Property).all()
     """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    # Use shared get_db implementation
+    yield from shared_get_db()
 
 
 # Database initialization (if needed)
@@ -46,15 +47,19 @@ def init_db():
     """
     Initialize database.
     Note: We don't create tables here since Prisma manages the schema.
-    This is just for verification.
+    This function now imports shared models to ensure consistency.
     """
-    # Import all models to ensure they're registered
-    from app import models  # noqa: F401
+    # Import all shared models to ensure they're registered with Base
+    import models  # This imports from database/python/models.py
 
     # Optionally verify connection
     try:
         with engine.connect() as conn:
-            print("Database connection successful")
+            print("✅ Database connection successful (ai_tools using shared DB)")
     except Exception as e:
-        print(f"Database connection failed: {e}")
+        print(f"❌ Database connection failed: {e}")
         raise
+
+
+# Export for compatibility
+__all__ = ["engine", "SessionLocal", "Base", "get_db", "init_db"]

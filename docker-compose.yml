@@ -24,6 +24,21 @@
 # - ai-tools: Python FastAPI AI Agents (porta 8000)
 # - watchtower: Monitor auto-aggiornamento
 #
+# PERSISTENZA DATI (CRITICO):
+# Tutti i dati utente sono salvati ESCLUSIVAMENTE in volumi Docker nominati:
+# - postgres_data: Database PostgreSQL (TUTTI i dati utente)
+# - app_uploads: File caricati (foto, documenti)
+# - app_backups: Backup automatici
+# - app_logs/ai_logs: Log per troubleshooting
+# - ai_cache: Cache AI/RAG (embeddings, vectors)
+# - scraping_profiles: Sessioni browser anti-detection
+# - qdrant_storage: Vector database locale
+#
+# NESSUN dato viene salvato nei filesystem dei container!
+# I volumi sopravvivono a restart, update, e possono essere backuppati con:
+#   docker run --rm -v crm_postgres_data:/data -v $(pwd):/backup \
+#     alpine tar czf /backup/postgres_backup.tar.gz /data
+#
 # ============================================================================
 
 version: '3.9'
@@ -78,8 +93,14 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     volumes:
+      # Uploads (foto immobili, documenti clienti)
       - app_uploads:/app/public/uploads
+      # Backup database e dati
       - app_backups:/app/backups
+      # Logs applicazione (persistenti per troubleshooting)
+      - app_logs:/app/logs
+      # Cache (per performance)
+      - app_cache:/app/.cache
     depends_on:
       database:
         condition: service_healthy
@@ -114,6 +135,15 @@ services:
       PORT: 8000
     ports:
       - "${AI_PORT:-8000}:8000"
+    volumes:
+      # Cache AI (embeddings, RAG vectors, HTTP responses)
+      - ai_cache:/app/.cache
+      # Logs Python services
+      - ai_logs:/app/logs
+      # Browser profiles Playwright (sessioni scraping persistenti)
+      - scraping_profiles:/app/.playwright-profiles
+      # Qdrant vector database (se mode=local)
+      - qdrant_storage:/app/.qdrant
     depends_on:
       database:
         condition: service_healthy
@@ -164,18 +194,55 @@ services:
 # VOLUMI PERSISTENTI
 # ==============================================================================
 # Questi volumi conservano i dati anche quando i container vengono aggiornati
+# CRITICAL: Tutti i dati utente DEVONO essere in questi volumi per garantire
+# persistenza durante aggiornamenti, riavvii e migrazioni.
 volumes:
+  # Database PostgreSQL (produzione)
   postgres_data:
     driver: local
     name: crm_postgres_data
 
+  # App - Frontend/Backend
   app_uploads:
     driver: local
     name: crm_app_uploads
+    # Contiene: foto immobili, documenti clienti, allegati
 
   app_backups:
     driver: local
     name: crm_app_backups
+    # Contiene: backup automatici database, export dati
+
+  app_logs:
+    driver: local
+    name: crm_app_logs
+    # Contiene: log applicazione per troubleshooting
+
+  app_cache:
+    driver: local
+    name: crm_app_cache
+    # Contiene: cache Next.js, zone-stats.json, dati temporanei
+
+  # AI Tools - Python Services
+  ai_cache:
+    driver: local
+    name: crm_ai_cache
+    # Contiene: embeddings, RAG vectors, HTTP cache
+
+  ai_logs:
+    driver: local
+    name: crm_ai_logs
+    # Contiene: log Python services (AI, scraping)
+
+  scraping_profiles:
+    driver: local
+    name: crm_scraping_profiles
+    # Contiene: profili browser Playwright, cookies, sessioni anti-detection
+
+  qdrant_storage:
+    driver: local
+    name: crm_qdrant_storage
+    # Contiene: Qdrant vector database per RAG (se mode=local)
 
 # ==============================================================================
 # NETWORK
