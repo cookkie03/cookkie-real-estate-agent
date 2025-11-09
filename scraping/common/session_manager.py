@@ -54,78 +54,32 @@ class SessionManager:
         """
         try:
             with get_db_context() as db:
-                # Import here to avoid issues if models don't exist yet
+                # Import ScrapingSession model from database
                 try:
-                    from database.python.models import Base
-                    from sqlalchemy import Column, String, Boolean, Integer, DateTime, Float
-                    from sqlalchemy import Index
+                    from database.python.models import ScrapingSession
 
-                    # Define ScrapingSession model inline if not exists
-                    # This allows the code to work even if Prisma schema isn't migrated yet
-                    class ScrapingSession(Base):
-                        __tablename__ = "scraping_sessions"
-
-                        id = Column(String, primary_key=True)
-                        profileName = Column(String, unique=True)
-                        portalName = Column(String)
-                        cookies = Column(String)  # JSON
-                        localStorage = Column(String)  # JSON
-                        sessionStorage = Column(String)  # JSON
-                        userAgent = Column(String)
-                        viewport = Column(String)  # JSON
-                        timezone = Column(String, default="Europe/Rome")
-                        locale = Column(String, default="it-IT")
-                        isAuthenticated = Column(Boolean, default=False)
-                        loginData = Column(String)  # JSON
-                        lastLoginAt = Column(DateTime)
-                        proxyServer = Column(String)
-                        proxyUsername = Column(String)
-                        proxyPassword = Column(String)
-                        isValid = Column(Boolean, default=True)
-                        lastUsedAt = Column(DateTime, default=datetime.utcnow)
-                        expiresAt = Column(DateTime)
-                        createdAt = Column(DateTime, default=datetime.utcnow)
-                        updatedAt = Column(DateTime, default=datetime.utcnow)
-                        useCount = Column(Integer, default=0)
-                        successCount = Column(Integer, default=0)
-                        failureCount = Column(Integer, default=0)
-                        jobId = Column(String)
-
-                        __table_args__ = (
-                            Index('idx_scraping_session_portal_valid', 'portalName', 'isValid'),
-                            Index('idx_scraping_session_profile', 'profileName'),
-                        )
-
-                    # Create table if not exists
-                    Base.metadata.create_all(db.bind, tables=[ScrapingSession.__table__], checkfirst=True)
+                    # Create portal identifier (combine profile + portal)
+                    portal_id = f"{self.profile_name}_{self.portal_name}"
 
                     # Query for existing session
                     session = db.query(ScrapingSession).filter(
-                        ScrapingSession.profileName == self.profile_name,
-                        ScrapingSession.portalName == self.portal_name,
+                        ScrapingSession.portal == portal_id,
                         ScrapingSession.isValid == True,
                     ).first()
 
                     if session:
-                        # Check expiration
-                        if session.expiresAt and session.expiresAt < datetime.utcnow():
-                            logger.info(f"Session expired: {self.profile_name}")
-                            session.isValid = False
-                            db.commit()
-                            return None
-
                         logger.info(f"Loaded existing session: {self.profile_name}")
 
-                        # Parse JSON fields
+                        # Parse JSON fields (cookies are already JSON in Prisma/SQLAlchemy)
                         self.session_data = {
                             "id": session.id,
-                            "cookies": json.loads(session.cookies) if session.cookies else [],
-                            "localStorage": json.loads(session.localStorage) if session.localStorage else {},
-                            "sessionStorage": json.loads(session.sessionStorage) if session.sessionStorage else {},
+                            "cookies": session.cookies if isinstance(session.cookies, list) else [],
+                            "localStorage": session.localStorage if isinstance(session.localStorage, dict) else {},
+                            "sessionStorage": session.sessionStorage if isinstance(session.sessionStorage, dict) else {},
                             "userAgent": session.userAgent,
-                            "viewport": json.loads(session.viewport) if session.viewport else {"width": 1920, "height": 1080},
-                            "timezone": session.timezone,
-                            "locale": session.locale,
+                            "viewport": {"width": session.viewportWidth, "height": session.viewportHeight},
+                            "timezone": "Europe/Rome",  # Default value
+                            "locale": "it-IT",  # Default value
                             "isAuthenticated": session.isAuthenticated,
                         }
 
@@ -232,65 +186,27 @@ class SessionManager:
             # Save to database
             with get_db_context() as db:
                 try:
-                    from database.python.models import Base
-                    from sqlalchemy import Column, String, Boolean, Integer, DateTime
-                    from sqlalchemy import Index
+                    from database.python.models import ScrapingSession
                     import uuid
 
-                    # Define model inline (same as load)
-                    class ScrapingSession(Base):
-                        __tablename__ = "scraping_sessions"
-
-                        id = Column(String, primary_key=True)
-                        profileName = Column(String, unique=True)
-                        portalName = Column(String)
-                        cookies = Column(String)
-                        localStorage = Column(String)
-                        sessionStorage = Column(String)
-                        userAgent = Column(String)
-                        viewport = Column(String)
-                        timezone = Column(String, default="Europe/Rome")
-                        locale = Column(String, default="it-IT")
-                        isAuthenticated = Column(Boolean, default=False)
-                        loginData = Column(String)
-                        lastLoginAt = Column(DateTime)
-                        proxyServer = Column(String)
-                        proxyUsername = Column(String)
-                        proxyPassword = Column(String)
-                        isValid = Column(Boolean, default=True)
-                        lastUsedAt = Column(DateTime, default=datetime.utcnow)
-                        expiresAt = Column(DateTime)
-                        createdAt = Column(DateTime, default=datetime.utcnow)
-                        updatedAt = Column(DateTime, default=datetime.utcnow)
-                        useCount = Column(Integer, default=0)
-                        successCount = Column(Integer, default=0)
-                        failureCount = Column(Integer, default=0)
-                        jobId = Column(String)
-
-                        __table_args__ = (
-                            Index('idx_scraping_session_portal_valid', 'portalName', 'isValid'),
-                            Index('idx_scraping_session_profile', 'profileName'),
-                        )
-
-                    # Create table if not exists
-                    Base.metadata.create_all(db.bind, tables=[ScrapingSession.__table__], checkfirst=True)
+                    # Create portal identifier (combine profile + portal)
+                    portal_id = f"{self.profile_name}_{self.portal_name}"
 
                     # Check if exists
                     existing = db.query(ScrapingSession).filter(
-                        ScrapingSession.profileName == self.profile_name,
-                        ScrapingSession.portalName == self.portal_name,
+                        ScrapingSession.portal == portal_id,
                     ).first()
 
                     if existing:
                         # Update existing
-                        existing.cookies = json.dumps(cookies)
-                        existing.localStorage = json.dumps(local_storage)
-                        existing.sessionStorage = json.dumps(session_storage)
+                        existing.cookies = cookies  # Already JSON in Prisma
+                        existing.localStorage = local_storage or {}
+                        existing.sessionStorage = session_storage or {}
                         existing.userAgent = user_agent
-                        existing.viewport = json.dumps(viewport)
+                        existing.viewportWidth = viewport.get('width', 1920) if viewport else 1920
+                        existing.viewportHeight = viewport.get('height', 1080) if viewport else 1080
                         existing.isAuthenticated = is_authenticated
                         existing.lastUsedAt = datetime.utcnow()
-                        existing.expiresAt = datetime.utcnow() + timedelta(days=expires_in_days)
                         existing.isValid = True
                         existing.successCount += 1
                         existing.updatedAt = datetime.utcnow()
@@ -300,16 +216,15 @@ class SessionManager:
                         # Create new
                         new_session = ScrapingSession(
                             id=str(uuid.uuid4()),
-                            profileName=self.profile_name,
-                            portalName=self.portal_name,
-                            cookies=json.dumps(cookies),
-                            localStorage=json.dumps(local_storage),
-                            sessionStorage=json.dumps(session_storage),
+                            portal=portal_id,
+                            cookies=cookies,  # JSON type in Prisma
+                            localStorage=local_storage or {},
+                            sessionStorage=session_storage or {},
                             userAgent=user_agent,
-                            viewport=json.dumps(viewport),
+                            viewportWidth=viewport.get('width', 1920) if viewport else 1920,
+                            viewportHeight=viewport.get('height', 1080) if viewport else 1080,
                             isAuthenticated=is_authenticated,
                             lastUsedAt=datetime.utcnow(),
-                            expiresAt=datetime.utcnow() + timedelta(days=expires_in_days),
                             useCount=1,
                             successCount=1,
                             createdAt=datetime.utcnow(),

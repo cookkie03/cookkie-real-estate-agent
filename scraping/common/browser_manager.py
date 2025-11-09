@@ -7,7 +7,7 @@ import asyncio
 import logging
 from typing import Optional, Dict, Any
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page, Playwright
-from playwright_stealth import stealth_async
+from playwright_stealth import Stealth
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +148,8 @@ class BrowserManager:
 
         # Apply stealth
         if apply_stealth:
-            await stealth_async(page)
+            stealth_config = Stealth()
+            await stealth_config.apply_stealth_async(page)
             logger.debug("Stealth mode applied to page")
 
         # Add extra headers to appear more human

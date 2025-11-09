@@ -14,7 +14,7 @@ from app.config import settings
 from app.database import init_db
 
 # Import routers
-from app.routers import chat, scoring, scraping
+from app.routers import chat, scoring, scraping, orchestrator
 
 # Configure logging
 logging.basicConfig(
@@ -161,6 +161,7 @@ async def internal_error_handler(request: Request, exc):
 app.include_router(chat.router, prefix="/ai/chat", tags=["Chat"])
 app.include_router(scoring.router, prefix="/api/scoring", tags=["Scoring"])
 app.include_router(scraping.router, prefix="/ai/scraping", tags=["Scraping"])
+app.include_router(orchestrator.router, prefix="/ai/orchestrator", tags=["Orchestrator"])
 
 
 if __name__ == "__main__":

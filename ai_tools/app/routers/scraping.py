@@ -29,8 +29,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-# In-memory job storage (replace with database in production)
-active_jobs: Dict[str, Dict] = {}
+# Job repository for database persistence
+from database.scraping_job_repository import ScrapingJobRepository
+job_repo = ScrapingJobRepository()
 
 
 def run_scraping_job_sync(job_id: str, job_data: ScrapingJobCreate):
@@ -41,10 +42,15 @@ def run_scraping_job_sync(job_id: str, job_data: ScrapingJobCreate):
         job_id: Unique job ID
         job_data: Job configuration
     """
+    start_time = time.time()
+
     try:
-        # Update job status
-        active_jobs[job_id]["status"] = "running"
-        active_jobs[job_id]["started_at"] = datetime.utcnow()
+        # Update job status to running
+        job_repo.update_job_status(
+            job_id=job_id,
+            status="running",
+            started_at=datetime.utcnow()
+        )
 
         # Import scraper
         if job_data.portal == "immobiliare_it":
@@ -59,20 +65,34 @@ def run_scraping_job_sync(job_id: str, job_data: ScrapingJobCreate):
             job_data=job_data,
         ))
 
-        # Update job with results
-        active_jobs[job_id]["status"] = "completed"
-        active_jobs[job_id]["completed_at"] = datetime.utcnow()
-        active_jobs[job_id]["listings_found"] = result["listings_count"]
-        active_jobs[job_id]["listings_saved"] = result["saved_count"]
-        active_jobs[job_id]["result"] = result
+        # Calculate duration
+        duration = int(time.time() - start_time)
 
-        logger.info(f"Job {job_id} completed: {result['listings_count']} listings found")
+        # Update job with results
+        job_repo.update_job_status(
+            job_id=job_id,
+            status="completed",
+            completed_at=datetime.utcnow(),
+            listings_found=result["listings_count"],
+            listings_saved=result["saved_count"],
+            duration=duration
+        )
+
+        logger.info(f"Job {job_id} completed: {result['listings_count']} listings found in {duration}s")
 
     except Exception as e:
         logger.error(f"Job {job_id} failed: {e}", exc_info=True)
-        active_jobs[job_id]["status"] = "failed"
-        active_jobs[job_id]["completed_at"] = datetime.utcnow()
-        active_jobs[job_id]["error"] = str(e)
+
+        # Calculate duration even on failure
+        duration = int(time.time() - start_time)
+
+        job_repo.update_job_status(
+            job_id=job_id,
+            status="failed",
+            completed_at=datetime.utcnow(),
+            errors=[str(e)],
+            duration=duration
+        )
 
 
 async def _run_scraper_async(
@@ -142,26 +162,28 @@ async def create_scraping_job(
         # Generate job ID
         job_id = str(uuid.uuid4())
 
-        # Store job
-        active_jobs[job_id] = {
-            "job_id": job_id,
-            "status": "queued",
-            "portal": job_data.portal,
-            "location": job_data.location,
-            "created_at": datetime.utcnow(),
-            "started_at": None,
-            "completed_at": None,
-            "listings_found": None,
-            "listings_saved": None,
-            "error": None,
-        }
+        # Create job in database
+        job = job_repo.create_job(
+            job_id=job_id,
+            portal=job_data.portal,
+            location=job_data.location,
+            contract_type=job_data.contract_type,
+            property_type=job_data.property_type,
+            price_min=job_data.price_min,
+            price_max=job_data.price_max,
+            sqm_min=job_data.sqm_min,
+            sqm_max=job_data.sqm_max,
+            rooms_min=job_data.rooms_min,
+            rooms_max=job_data.rooms_max,
+            max_pages=job_data.max_pages,
+        )
 
         # Start job in background
         background_tasks.add_task(run_scraping_job_sync, job_id, job_data)
 
         logger.info(f"Created scraping job {job_id}: {job_data.portal} - {job_data.location}")
 
-        return ScrapingJobStatus(**active_jobs[job_id])
+        return ScrapingJobStatus(**job_repo.to_dict(job))
 
     except Exception as e:
         logger.error(f"Error creating job: {e}")
@@ -175,10 +197,12 @@ async def get_job_status(job_id: str):
 
     Returns current status and results if completed.
     """
-    if job_id not in active_jobs:
+    job = job_repo.get_job(job_id)
+
+    if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    return ScrapingJobStatus(**active_jobs[job_id])
+    return ScrapingJobStatus(**job_repo.to_dict(job))
 
 
 @router.get("/jobs/{job_id}/result", response_model=ScrapingJobResult)
@@ -187,22 +211,34 @@ async def get_job_result(job_id: str):
     Get scraping job results
 
     Only available for completed jobs.
+
+    Note: Full results are stored in Property table, not in job.
+    This endpoint returns job metadata only.
     """
-    if job_id not in active_jobs:
+    job = job_repo.get_job(job_id)
+
+    if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    job = active_jobs[job_id]
-
-    if job["status"] != "completed":
+    if job.status != "completed":
         raise HTTPException(
             status_code=400,
-            detail=f"Job not completed yet (status: {job['status']})"
+            detail=f"Job not completed yet (status: {job.status})"
         )
 
-    if "result" not in job:
-        raise HTTPException(status_code=500, detail="Result not available")
-
-    return ScrapingJobResult(**job["result"])
+    # Return basic job result info
+    # Full property data can be fetched via /properties endpoint
+    return ScrapingJobResult(
+        status="success",
+        portal=job.portal,
+        location=job.location,
+        listings_count=job.listingsFound or 0,
+        saved_count=job.listingsSaved or 0,
+        skipped_count=0,  # Not tracked separately
+        error_count=0,
+        listings=[],  # Properties stored in separate table
+        execution_time=job.duration or 0,
+    )
 
 
 @router.get("/jobs", response_model=List[ScrapingJobStatus])
@@ -216,38 +252,25 @@ async def list_jobs(
 
     Filter by status or portal.
     """
-    jobs = list(active_jobs.values())
+    jobs = job_repo.list_jobs(status=status, portal=portal, limit=limit)
 
-    # Filter
-    if status:
-        jobs = [j for j in jobs if j["status"] == status]
-
-    if portal:
-        jobs = [j for j in jobs if j["portal"] == portal]
-
-    # Sort by created_at desc
-    jobs.sort(key=lambda x: x["created_at"], reverse=True)
-
-    # Limit
-    jobs = jobs[:limit]
-
-    return [ScrapingJobStatus(**j) for j in jobs]
+    return [ScrapingJobStatus(**job_repo.to_dict(job)) for job in jobs]
 
 
 @router.delete("/jobs/{job_id}")
 async def cancel_job(job_id: str):
     """
-    Cancel a running job (not implemented yet)
+    Cancel/delete a job
 
-    Currently only removes from active jobs list.
+    Running jobs cannot be cancelled (not implemented).
     """
-    if job_id not in active_jobs:
+    job = job_repo.get_job(job_id)
+
+    if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    job = active_jobs[job_id]
-
-    if job["status"] == "running":
-        # TODO: Implement actual cancellation
+    if job.status == "running":
+        # TODO: Implement actual cancellation of running jobs
         logger.warning(f"Cannot cancel running job {job_id} (not implemented)")
         return {
             "job_id": job_id,
@@ -255,12 +278,12 @@ async def cancel_job(job_id: str):
             "message": "Job is running, cannot cancel yet"
         }
 
-    # Remove from active jobs
-    del active_jobs[job_id]
+    # Delete job from database
+    deleted = job_repo.delete_job(job_id)
 
     return {
         "job_id": job_id,
-        "status": "removed"
+        "status": "deleted" if deleted else "not_found"
     }
 
 
@@ -271,29 +294,9 @@ async def get_scraping_stats():
 
     Returns aggregated statistics about scraping jobs and saved properties.
     """
-    jobs = list(active_jobs.values())
+    stats = job_repo.get_stats()
 
-    total_jobs = len(jobs)
-    successful_jobs = len([j for j in jobs if j["status"] == "completed"])
-    failed_jobs = len([j for j in jobs if j["status"] == "failed"])
-
-    total_listings_scraped = sum(j.get("listings_found", 0) or 0 for j in jobs)
-    total_properties_saved = sum(j.get("listings_saved", 0) or 0 for j in jobs)
-
-    # Count by portal
-    portals = {}
-    for job in jobs:
-        portal = job["portal"]
-        portals[portal] = portals.get(portal, 0) + 1
-
-    return ScrapingStatsResponse(
-        total_jobs=total_jobs,
-        successful_jobs=successful_jobs,
-        failed_jobs=failed_jobs,
-        total_listings_scraped=total_listings_scraped,
-        total_properties_saved=total_properties_saved,
-        portals=portals,
-    )
+    return ScrapingStatsResponse(**stats)
 
 
 @router.get("/properties", response_model=PropertyListResponse)
