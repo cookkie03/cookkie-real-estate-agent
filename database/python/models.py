@@ -424,6 +424,83 @@ class Activity(Base):
     )
 
 
+# ============================================================================
+# 8. CUSTOM FIELD DEFINITION
+# ============================================================================
+class CustomFieldDefinition(Base):
+    __tablename__ = "custom_field_definitions"
+
+    id = Column(String, primary_key=True)
+
+    # Metadata
+    name = Column(String, nullable=False)
+    label = Column(String, nullable=False)
+    entityType = Column(String, nullable=False)
+
+    # Type & Validation
+    fieldType = Column(String, default="text", nullable=False)
+    required = Column(Boolean, default=False)
+
+    # Validation Rules (JSON)
+    validationRules = Column(Text)  # JSON string
+
+    # Options (for select/multiselect)
+    options = Column(Text)  # JSON string
+
+    # UI Positioning
+    section = Column(String)
+    displayOrder = Column(Integer, default=0)
+
+    # Metadata
+    isActive = Column(Boolean, default=True)
+
+    createdAt = Column(DateTime, default=datetime.utcnow)
+    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    values = relationship("CustomFieldValue", back_populates="field", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index('idx_custom_field_def_entity_name', 'entityType', 'name', unique=True),
+        Index('idx_custom_field_def_entity_active', 'entityType', 'isActive'),
+    )
+
+
+# ============================================================================
+# 9. CUSTOM FIELD VALUE
+# ============================================================================
+class CustomFieldValue(Base):
+    __tablename__ = "custom_field_values"
+
+    id = Column(String, primary_key=True)
+
+    # Field Reference
+    fieldId = Column(String, ForeignKey("custom_field_definitions.id", ondelete="CASCADE"), nullable=False)
+
+    # Polymorphic Entity Reference
+    entityType = Column(String, nullable=False)
+    entityId = Column(String, nullable=False)
+
+    # Value Storage (type-specific)
+    valueText = Column(String)
+    valueNumber = Column(Float)
+    valueBoolean = Column(Boolean)
+    valueDate = Column(DateTime)
+    valueJson = Column(Text)  # JSON string
+
+    createdAt = Column(DateTime, default=datetime.utcnow)
+    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    field = relationship("CustomFieldDefinition", back_populates="values")
+
+    __table_args__ = (
+        Index('idx_custom_field_value_unique', 'fieldId', 'entityType', 'entityId', unique=True),
+        Index('idx_custom_field_value_entity', 'entityType', 'entityId'),
+        Index('idx_custom_field_value_field', 'fieldId'),
+    )
+
+
 # Export all models
 __all__ = [
     'Base',
@@ -435,4 +512,6 @@ __all__ = [
     'Request',
     'Match',
     'Activity',
+    'CustomFieldDefinition',
+    'CustomFieldValue',
 ]

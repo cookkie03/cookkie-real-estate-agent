@@ -445,10 +445,6 @@ model Match {
   scoreFeatures Int?
   scoreCondition Int?
 
-  // AI Analysis
-  aiReasoning String?  // why this is a good match
-  aiWarnings  String?  // potential issues
-
   // Status
   status String @default("suggested") // suggested, sent, viewed, visited, interested, rejected, closed
 
@@ -641,6 +637,81 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================================
+// 11. CUSTOM FIELD DEFINITION (User-defined dynamic fields)
+// ============================================================================
+model CustomFieldDefinition {
+  id String @id @default(cuid())
+
+  // Metadata
+  name       String // Slug/key: "numeroProtocollo", "metraggioGiardino"
+  label      String // Display name: "Numero Protocollo", "Metraggio Giardino"
+  entityType String // "Contact", "Property", "Building", "Request", "Activity"
+
+  // Type & Validation
+  fieldType String  @default("text") // text, number, date, boolean, select, multiselect
+  required  Boolean @default(false)
+
+  // Validation Rules (JSON)
+  validationRules Json? // { min: 0, max: 1000, pattern: "regex", etc. }
+
+  // Options (for select/multiselect)
+  options Json? // ["Opzione 1", "Opzione 2", ...]
+
+  // UI Positioning
+  section      String? // "Dati Generali", "Caratteristiche", etc.
+  displayOrder Int     @default(0)
+
+  // Metadata
+  isActive Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  values CustomFieldValue[]
+
+  // Constraints
+  @@unique([entityType, name])
+  @@index([entityType, isActive])
+  @@map("custom_field_definitions")
+}
+
+// ============================================================================
+// 12. CUSTOM FIELD VALUE (Values for user-defined fields)
+// ============================================================================
+model CustomFieldValue {
+  id String @id @default(cuid())
+
+  // Field Reference
+  fieldId String
+
+  // Polymorphic Entity Reference
+  entityType String // "Contact", "Property", "Building", "Request", "Activity"
+  entityId   String
+
+  // Value Storage (type-specific columns)
+  valueText    String?
+  valueNumber  Float?
+  valueBoolean Boolean?
+  valueDate    DateTime?
+  valueJson    Json? // For arrays/complex objects
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  field CustomFieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  // Constraints
+  @@unique([fieldId, entityType, entityId])
+  @@index([entityType, entityId])
+  @@index([fieldId])
+  @@map("custom_field_values")
 }
 
 // ============================================================================
