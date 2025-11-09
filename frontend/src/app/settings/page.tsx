@@ -1,9 +1,10 @@
 "use client";
 
-import { Save, Key, User, Building, Shield, TestTube } from "lucide-react";
+import { Save, Key, User, Building, Shield, TestTube, Settings2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useState } from "react";
+import Link from "next/link";
 
 /**
  * Settings Page
@@ -78,6 +79,26 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">
           Configura il tuo CRM e le API esterne
         </p>
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Link
+          href="/settings/custom-fields"
+          className="group flex items-start gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+        >
+          <div className="rounded-lg bg-primary/10 p-3">
+            <Settings2 className="h-6 w-6 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold group-hover:text-primary">
+              Campi Personalizzati
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Aggiungi campi custom per Immobili, Contatti, Edifici, ecc.
+            </p>
+          </div>
+        </Link>
       </div>
 
       {/* Tabs */}
