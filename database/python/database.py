@@ -5,7 +5,7 @@ SQLAlchemy session management
 ==============================================
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 from contextlib import contextmanager
@@ -103,7 +103,7 @@ def check_db_connection() -> bool:
     try:
         with get_db_context() as db:
             # Simple query to test connection
-            db.execute("SELECT 1")
+            db.execute(text("SELECT 1"))
         return True
     except Exception as e:
         print(f"Database connection failed: {e}")
