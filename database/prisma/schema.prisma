@@ -38,7 +38,7 @@ model UserProfile {
   agencyAddress String?
 
   // Settings (JSON)
-  settings Json @default("{\"commissionPercent\":3.0}")
+  settings Json?  // Default handled in application layer
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -140,12 +140,13 @@ model Building {
   city      String
   province  String
   zip       String?
-  latitude  Float?
-  longitude Float?
+  latitude  Float    // Required for map visualization
+  longitude Float    // Required for map visualization
 
   // Cadastral Data
   cadastralSheet    String?
   cadastralParticle String?
+  cadastralZone     String? // Zona censuaria (A, B, C, etc.) for hierarchical aggregation
 
   // Building Info
   yearBuilt   Int?
@@ -153,6 +154,11 @@ model Building {
   totalUnits  Int?
   hasElevator Boolean @default(false)
   condition   String? // excellent, good, fair, poor, needs_renovation
+
+  // Map Statistics (cached aggregates for performance)
+  activeUnits Int   @default(0) // Count of active properties in building
+  soldUnits   Int   @default(0) // Count of sold/rented properties
+  avgUrgency  Float?             // Average urgency score (0-5) for visualization
 
   // Census
   lastSurveyDate  DateTime?
@@ -180,6 +186,9 @@ model Building {
   @@index([code])
   @@index([city, street, civic])
   @@index([nextSurveyDue])
+  @@index([latitude, longitude])    // For map bbox queries
+  @@index([city, cadastralZone])    // For zone aggregation
+  @@index([avgUrgency])              // For urgency filtering
   @@map("buildings")
 }
 
@@ -289,8 +298,12 @@ model Property {
   visitsCount    Int @default(0)
   daysOnMarket   Int @default(0)
 
+  // Urgency Tracking (for map visualization)
+  urgencyScore   Int      @default(0) // Cached urgency score (0-5): 0=sold, 1=new, 2=optimal, 3=monitor, 4=warning, 5=urgent
+  lastActivityAt DateTime?             // Last activity timestamp (calls, visits, proposals) for urgency calculation
+
   // Notes
-  notes         String? 
+  notes         String?
   internalNotes String?  // private notes, not shown to clients
 
   // Timestamps
@@ -323,6 +336,9 @@ model Property {
   @@index([status, contractType])
   @@index([needsInternalVisit])
   @@index([mandateEndDate])
+  @@index([urgencyScore])              // For urgency filtering on map
+  @@index([lastActivityAt])            // For sorting by last activity
+  @@index([latitude, longitude])       // For map bbox queries
   @@map("properties")
 }
 
@@ -494,7 +510,7 @@ model Activity {
   title       String
   description String? 
   outcome     String?  // what happened
-  details     Json @default("{}") // flexible extra data
+  details     Json? // flexible extra data (default handled in application)
 
   // Location (for visits/meetings)
   locationAddress String?
