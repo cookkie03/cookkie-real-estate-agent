@@ -129,6 +129,7 @@ class Contact(Base):
         Index('idx_contact_fullName', 'fullName'),
         Index('idx_contact_city', 'city'),
         Index('idx_contact_status', 'status'),
+        {'extend_existing': True}
     )
 
 
@@ -264,6 +265,7 @@ class Property(Base):
         Index('idx_property_city', 'city'),
         Index('idx_property_contractType', 'contractType'),
         Index('idx_property_priceSale', 'priceSale'),
+        {'extend_existing': True}
     )
 
 
@@ -320,6 +322,7 @@ class Request(Base):
         Index('idx_request_code', 'code'),
         Index('idx_request_status', 'status'),
         Index('idx_request_contactId', 'contactId'),
+        {'extend_existing': True}
     )
 
 
@@ -371,6 +374,7 @@ class Match(Base):
         Index('idx_match_propertyId', 'propertyId'),
         Index('idx_match_scoreTotal', 'scoreTotal'),
         Index('idx_match_status', 'status'),
+        {'extend_existing': True}
     )
 
 
@@ -421,6 +425,7 @@ class Activity(Base):
         Index('idx_activity_activityType', 'activityType'),
         Index('idx_activity_status', 'status'),
         Index('idx_activity_scheduledAt', 'scheduledAt'),
+        {'extend_existing': True}
     )
 
 
@@ -463,6 +468,7 @@ class CustomFieldDefinition(Base):
     __table_args__ = (
         Index('idx_custom_field_def_entity_name', 'entityType', 'name', unique=True),
         Index('idx_custom_field_def_entity_active', 'entityType', 'isActive'),
+        {'extend_existing': True}
     )
 
 
@@ -498,6 +504,7 @@ class CustomFieldValue(Base):
         Index('idx_custom_field_value_unique', 'fieldId', 'entityType', 'entityId', unique=True),
         Index('idx_custom_field_value_entity', 'entityType', 'entityId'),
         Index('idx_custom_field_value_field', 'fieldId'),
+        {'extend_existing': True}
     )
 
 
@@ -547,6 +554,7 @@ class ScrapingJob(Base):
         Index('idx_scraping_job_status', 'status'),
         Index('idx_scraping_job_portal', 'portal'),
         Index('idx_scraping_job_createdAt', 'createdAt'),
+        {'extend_existing': True}
     )
 
 
@@ -596,6 +604,7 @@ class ScrapingSession(Base):
         Index('idx_scraping_session_portal', 'portal'),
         Index('idx_scraping_session_isAuthenticated', 'isAuthenticated'),
         Index('idx_scraping_session_lastUsedAt', 'lastUsedAt'),
+        {'extend_existing': True}
     )
 
 
@@ -642,6 +651,7 @@ class AgentConversation(Base):
         Index('idx_agent_conversation_status', 'status'),
         Index('idx_agent_conversation_startedAt', 'startedAt'),
         Index('idx_agent_conversation_createdAt', 'createdAt'),
+        {'extend_existing': True}
     )
 
 
@@ -689,6 +699,7 @@ class AgentTask(Base):
         Index('idx_agent_task_status', 'status'),
         Index('idx_agent_task_taskType', 'taskType'),
         Index('idx_agent_task_startedAt', 'startedAt'),
+        {'extend_existing': True}
     )
 
 
@@ -739,6 +750,7 @@ class AgentMemory(Base):
         Index('idx_agent_memory_confidence', 'confidence'),
         Index('idx_agent_memory_usageCount', 'usageCount'),
         Index('idx_agent_memory_lastUsed', 'lastUsed'),
+        {'extend_existing': True}
     )
 
 
@@ -790,6 +802,7 @@ class ScrapingSource(Base):
         Index('idx_scraping_source_name', 'name'),
         Index('idx_scraping_source_sourceType', 'sourceType'),
         Index('idx_scraping_source_isActive', 'isActive'),
+        {'extend_existing': True}
     )
 
 

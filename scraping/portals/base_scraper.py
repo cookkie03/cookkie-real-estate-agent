@@ -187,6 +187,8 @@ class BaseScraper(ABC):
 
         except Exception as e:
             logger.error(f"Error fetching {url} with session: {e}")
+            import traceback
+            traceback.print_exc()
             raise
 
     async def wait_for_content(self, page):

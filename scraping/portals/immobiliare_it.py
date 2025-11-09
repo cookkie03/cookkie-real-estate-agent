@@ -108,6 +108,8 @@ class ImmobiliareItScraper(BaseScraper):
 
             except Exception as e:
                 logger.error(f"Error scraping page {page_num}: {e}")
+                import traceback
+                traceback.print_exc()
                 continue
 
         logger.info(f"Total listings scraped: {len(all_listings)}")
