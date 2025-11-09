@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,8 +30,8 @@ import { cn } from "@/lib/utils";
 interface ScrapingSource {
   id: string;
   name: string;
-  enabled: boolean;
   baseUrl: string;
+  description: string;
   status: "ready" | "running" | "completed" | "error";
 }
 
@@ -48,11 +49,14 @@ export default function ScrapingPage() {
   const [activeTab, setActiveTab] = useState<"config" | "execute" | "results">("config");
 
   // Sources configuration
-  const [sources, setSources] = useState<ScrapingSource[]>([
-    { id: "idealista", name: "Idealista.it", enabled: true, baseUrl: "https://www.idealista.it", status: "ready" },
-    { id: "casait", name: "Casa.it", enabled: true, baseUrl: "https://www.casa.it", status: "ready" },
-    { id: "immobiliare", name: "Immobiliare.it", enabled: false, baseUrl: "https://www.immobiliare.it", status: "ready" },
+  const [sources] = useState<ScrapingSource[]>([
+    { id: "idealista", name: "Idealista.it", baseUrl: "https://www.idealista.it", description: "Portale leader in Spagna e Italia", status: "ready" },
+    { id: "casait", name: "Casa.it", baseUrl: "https://www.casa.it", description: "Annunci immobiliari italiani", status: "ready" },
+    { id: "immobiliare", name: "Immobiliare.it", baseUrl: "https://www.immobiliare.it", description: "Il portale immobiliare più visitato in Italia", status: "ready" },
   ]);
+
+  // Selected source (SINGLE selection only - backend supports one source at a time)
+  const [selectedSource, setSelectedSource] = useState<string>("idealista");
 
   // Search criteria
   const [criteria, setCriteria] = useState<SearchCriteria>({
@@ -62,68 +66,153 @@ export default function ScrapingPage() {
 
   // Scraping state
   const [isRunning, setIsRunning] = useState(false);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [scrapedCount, setScrapedCount] = useState(0);
   const [duplicateCount, setDuplicateCount] = useState(0);
+  const [statusMessage, setStatusMessage] = useState("");
 
-  // Mock results
+  // Results
   const [results, setResults] = useState<any[]>([]);
 
-  // Toggle source
-  const toggleSource = (id: string) => {
-    setSources((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s))
-    );
+  // Map UI source IDs to backend portal names
+  const sourceToPortalMap: Record<string, string> = {
+    idealista: "immobiliare_it",  // Backend only has immobiliare_it for now
+    casait: "casa_it",
+    immobiliare: "immobiliare_it",
   };
 
-  // Start scraping (mock implementation)
-  const handleStartScraping = () => {
+  // Start scraping (real backend integration)
+  const handleStartScraping = async () => {
     setIsRunning(true);
     setProgress(0);
     setScrapedCount(0);
     setDuplicateCount(0);
     setResults([]);
+    setStatusMessage("Avvio scraping...");
 
-    // Mock progress simulation
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
+    try {
+      // Map UI source to backend portal
+      const portalName = sourceToPortalMap[selectedSource];
+      if (!portalName) {
+        throw new Error(`Portal ${selectedSource} not supported`);
+      }
+
+      // Map contract type to Italian
+      const contractType = criteria.contractType === "sale" ? "vendita" :
+                           criteria.contractType === "rent" ? "affitto" : "vendita";
+
+      // Create job request
+      const jobRequest = {
+        portal: portalName,
+        location: criteria.city.toLowerCase(),
+        contract_type: contractType,
+        property_type: criteria.propertyType,
+        price_min: criteria.priceMin ? parseFloat(criteria.priceMin) : undefined,
+        price_max: criteria.priceMax ? parseFloat(criteria.priceMax) : undefined,
+        rooms_min: criteria.roomsMin ? parseInt(criteria.roomsMin) : undefined,
+        max_pages: 3,  // Default to 3 pages
+      };
+
+      // Start job
+      const response = await fetch("http://localhost:8000/scraping/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jobRequest),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to start scraping: ${response.statusText}`);
+      }
+
+      const jobStatus = await response.json();
+      setCurrentJobId(jobStatus.job_id);
+      setStatusMessage(`Job avviato: ${jobStatus.job_id}`);
+
+      // Poll for status
+      pollJobStatus(jobStatus.job_id);
+
+    } catch (error) {
+      console.error("Scraping error:", error);
+      setStatusMessage(`Errore: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsRunning(false);
+    }
+  };
+
+  // Poll job status
+  const pollJobStatus = async (jobId: string) => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/scraping/jobs/${jobId}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch job status");
+        }
+
+        const status = await response.json();
+
+        // Update status message
+        setStatusMessage(`Status: ${status.status}`);
+
+        // Update progress (estimate based on status)
+        if (status.status === "running") {
+          setProgress((prev) => Math.min(prev + 5, 90));
+        } else if (status.status === "completed") {
+          setProgress(100);
+          setScrapedCount(status.listings_found || 0);
+          setDuplicateCount(status.listings_found - status.listings_saved || 0);
+
+          // Fetch results
+          await fetchJobResults(jobId);
+
           clearInterval(interval);
           setIsRunning(false);
-          setScrapedCount(42);
-          setDuplicateCount(8);
           setActiveTab("results");
-
-          // Mock results
-          setResults([
-            {
-              id: "1",
-              title: "Appartamento in vendita - Via Roma 123",
-              price: 250000,
-              rooms: 3,
-              sqm: 85,
-              source: "idealista",
-              url: "https://www.idealista.it/...",
-              isDuplicate: false,
-            },
-            {
-              id: "2",
-              title: "Bilocale zona Centrale",
-              price: 180000,
-              rooms: 2,
-              sqm: 65,
-              source: "casait",
-              url: "https://www.casa.it/...",
-              isDuplicate: true,
-            },
-            // ... more results
-          ]);
-
-          return 100;
+        } else if (status.status === "failed") {
+          setStatusMessage(`Errore: ${status.error || 'Unknown error'}`);
+          clearInterval(interval);
+          setIsRunning(false);
         }
-        return prev + 10;
-      });
-    }, 500);
+
+      } catch (error) {
+        console.error("Poll error:", error);
+        clearInterval(interval);
+        setIsRunning(false);
+      }
+    }, 2000);  // Poll every 2 seconds
+  };
+
+  // Fetch job results
+  const fetchJobResults = async (jobId: string) => {
+    try {
+      // Fetch properties from scraping
+      const response = await fetch(
+        `http://localhost:8000/scraping/properties?source=scraping&page=1&page_size=50`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch results");
+      }
+
+      const data = await response.json();
+
+      // Transform to UI format
+      const transformedResults = data.properties.map((prop: any) => ({
+        id: prop.id,
+        title: prop.title || "Immobile senza titolo",
+        price: prop.price_sale || prop.price_rent || 0,
+        rooms: prop.rooms || 0,
+        sqm: prop.sqm || 0,
+        source: prop.source,
+        url: prop.source_url || "#",
+        isDuplicate: false,  // Backend handles deduplication
+      }));
+
+      setResults(transformedResults);
+
+    } catch (error) {
+      console.error("Error fetching results:", error);
+    }
   };
 
   // Stop scraping
@@ -175,33 +264,47 @@ export default function ScrapingPage() {
           {/* Sources */}
           <Card>
             <CardHeader>
-              <CardTitle>Sorgenti Dati</CardTitle>
+              <CardTitle>Sorgente Dati</CardTitle>
               <CardDescription>
-                Seleziona i portali da cui acquisire i dati
+                Seleziona il portale da cui acquisire i dati (una sorgente alla volta)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {sources.map((source) => (
-                <div
-                  key={source.id}
-                  className="flex items-center justify-between p-4 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3">
-                    <Globe className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{source.name}</p>
-                      <p className="text-xs text-muted-foreground">{source.baseUrl}</p>
+              <RadioGroup value={selectedSource} onValueChange={setSelectedSource}>
+                <div className="space-y-3">
+                  {sources.map((source) => (
+                    <div
+                      key={source.id}
+                      className={cn(
+                        "flex items-start gap-3 p-4 rounded-lg border transition-all cursor-pointer",
+                        selectedSource === source.id
+                          ? "border-primary bg-primary/5"
+                          : "hover:border-muted-foreground/30"
+                      )}
+                      onClick={() => setSelectedSource(source.id)}
+                    >
+                      <RadioGroupItem value={source.id} id={source.id} className="mt-1" />
+                      <div className="flex items-start gap-3 flex-1">
+                        <Globe className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div className="flex-1">
+                          <Label htmlFor={source.id} className="font-medium cursor-pointer">
+                            {source.name}
+                          </Label>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {source.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {source.baseUrl}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <Switch
-                    checked={source.enabled}
-                    onCheckedChange={() => toggleSource(source.id)}
-                  />
+                  ))}
                 </div>
-              ))}
+              </RadioGroup>
 
               <div className="pt-2 text-sm text-muted-foreground">
-                {enabledSourcesCount} {enabledSourcesCount === 1 ? "sorgente selezionata" : "sorgenti selezionate"}
+                Sorgente selezionata: <span className="font-medium">{sources.find(s => s.id === selectedSource)?.name}</span>
               </div>
             </CardContent>
           </Card>
@@ -307,7 +410,7 @@ export default function ScrapingPage() {
             <Button
               size="lg"
               onClick={() => setActiveTab("execute")}
-              disabled={!criteria.city || enabledSourcesCount === 0}
+              disabled={!criteria.city || !selectedSource}
             >
               Continua all&apos;Esecuzione
             </Button>
@@ -328,13 +431,22 @@ export default function ScrapingPage() {
               <div className="p-4 rounded-lg bg-muted space-y-2">
                 <p className="font-medium">Riepilogo Configurazione</p>
                 <div className="text-sm space-y-1">
-                  <p>• Sorgenti: {enabledSourcesCount} attive ({sources.filter((s) => s.enabled).map((s) => s.name).join(", ")})</p>
+                  <p>• Sorgente: {sources.find(s => s.id === selectedSource)?.name || "Nessuna"}</p>
                   <p>• Località: {criteria.city}{criteria.zone && `, ${criteria.zone}`}</p>
                   <p>• Contratto: {criteria.contractType === "sale" ? "Vendita" : criteria.contractType === "rent" ? "Affitto" : "Entrambi"}</p>
                   {criteria.priceMin && <p>• Prezzo min: €{criteria.priceMin}</p>}
                   {criteria.priceMax && <p>• Prezzo max: €{criteria.priceMax}</p>}
                 </div>
               </div>
+
+              {/* Status Message */}
+              {statusMessage && (
+                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    {statusMessage}
+                  </p>
+                </div>
+              )}
 
               {/* Progress */}
               {isRunning && (
