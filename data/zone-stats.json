@@ -1,0 +1,195 @@
+{
+  "totalBuildings": 13,
+  "totalProperties": 27,
+  "activeProperties": 25,
+  "soldProperties": 2,
+  "avgUrgency": 2.9992,
+  "urgencyDistribution": {
+    "2": 4,
+    "3": 3,
+    "4": 4,
+    "5": 2
+  },
+  "comuni": [
+    {
+      "comune": "Albairate",
+      "zones": [
+        {
+          "zone": "B",
+          "stats": {
+            "totalBuildings": 1,
+            "totalProperties": 3,
+            "activeProperties": 2,
+            "soldProperties": 1,
+            "avgUrgency": 3.5,
+            "urgencyDistribution": {
+              "4": 1
+            }
+          }
+        },
+        {
+          "zone": "A",
+          "stats": {
+            "totalBuildings": 1,
+            "totalProperties": 1,
+            "activeProperties": 1,
+            "soldProperties": 0,
+            "avgUrgency": 2,
+            "urgencyDistribution": {
+              "2": 1
+            }
+          }
+        }
+      ],
+      "totalBuildings": 2,
+      "totalProperties": 4,
+      "activeProperties": 3,
+      "soldProperties": 1,
+      "avgUrgency": 3,
+      "urgencyDistribution": {
+        "2": 1,
+        "4": 1
+      }
+    },
+    {
+      "comune": "Cassinetta di Lugagnano",
+      "zones": [
+        {
+          "zone": "A",
+          "stats": {
+            "totalBuildings": 2,
+            "totalProperties": 3,
+            "activeProperties": 3,
+            "soldProperties": 0,
+            "avgUrgency": 3.3333333333333335,
+            "urgencyDistribution": {
+              "3": 1,
+              "5": 1
+            }
+          }
+        }
+      ],
+      "totalBuildings": 2,
+      "totalProperties": 3,
+      "activeProperties": 3,
+      "soldProperties": 0,
+      "avgUrgency": 3.3333333333333335,
+      "urgencyDistribution": {
+        "3": 1,
+        "5": 1
+      }
+    },
+    {
+      "comune": "Cisliano",
+      "zones": [
+        {
+          "zone": "A",
+          "stats": {
+            "totalBuildings": 2,
+            "totalProperties": 4,
+            "activeProperties": 4,
+            "soldProperties": 0,
+            "avgUrgency": 3,
+            "urgencyDistribution": {
+              "2": 1,
+              "5": 1
+            }
+          }
+        }
+      ],
+      "totalBuildings": 2,
+      "totalProperties": 4,
+      "activeProperties": 4,
+      "soldProperties": 0,
+      "avgUrgency": 3,
+      "urgencyDistribution": {
+        "2": 1,
+        "5": 1
+      }
+    },
+    {
+      "comune": "Corbetta",
+      "zones": [
+        {
+          "zone": "A",
+          "stats": {
+            "totalBuildings": 2,
+            "totalProperties": 5,
+            "activeProperties": 5,
+            "soldProperties": 0,
+            "avgUrgency": 2.998,
+            "urgencyDistribution": {
+              "2": 1,
+              "4": 1
+            }
+          }
+        },
+        {
+          "zone": "B",
+          "stats": {
+            "totalBuildings": 2,
+            "totalProperties": 4,
+            "activeProperties": 3,
+            "soldProperties": 1,
+            "avgUrgency": 3,
+            "urgencyDistribution": {
+              "3": 1,
+              "4": 1
+            }
+          }
+        },
+        {
+          "zone": "C",
+          "stats": {
+            "totalBuildings": 1,
+            "totalProperties": 3,
+            "activeProperties": 3,
+            "soldProperties": 0,
+            "avgUrgency": 3.33,
+            "urgencyDistribution": {
+              "3": 1
+            }
+          }
+        }
+      ],
+      "totalBuildings": 5,
+      "totalProperties": 12,
+      "activeProperties": 11,
+      "soldProperties": 1,
+      "avgUrgency": 3.0890909090909093,
+      "urgencyDistribution": {
+        "2": 1,
+        "3": 2,
+        "4": 2
+      }
+    },
+    {
+      "comune": "Vittuone",
+      "zones": [
+        {
+          "zone": "A",
+          "stats": {
+            "totalBuildings": 2,
+            "totalProperties": 4,
+            "activeProperties": 4,
+            "soldProperties": 0,
+            "avgUrgency": 2.5,
+            "urgencyDistribution": {
+              "2": 1,
+              "4": 1
+            }
+          }
+        }
+      ],
+      "totalBuildings": 2,
+      "totalProperties": 4,
+      "activeProperties": 4,
+      "soldProperties": 0,
+      "avgUrgency": 2.5,
+      "urgencyDistribution": {
+        "2": 1,
+        "4": 1
+      }
+    }
+  ]
+}

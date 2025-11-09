@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { MapPreview } from "@/components/map/MapPreview";
 
 /**
  * CRM IMMOBILIARE - Properties List Page
@@ -414,6 +415,15 @@ export default function PropertiesPage() {
           {filteredProperties.length} {filteredProperties.length === 1 ? "immobile trovato" : "immobili trovati"}
         </div>
       </div>
+
+      {/* Map Preview */}
+      {!isLoading && filteredProperties.length > 0 && (
+        <MapPreview
+          filters={{
+            city: advancedFilters.city,
+          }}
+        />
+      )}
 
       {/* Properties List */}
       {isLoading ? (
