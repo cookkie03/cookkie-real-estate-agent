@@ -7,8 +7,8 @@
 // Database: SQLite (development) / PostgreSQL (production in Docker)
 // ORM: Prisma (TypeScript) + SQLAlchemy (Python mirror)
 //
-// Last Updated: 2025-11-08
-// Version: 3.0.0
+// Last Updated: 2025-11-09
+// Version: 3.1.0
 // ============================================================================
 
 generator client {
@@ -98,8 +98,8 @@ model Contact {
   importance String  @default("normal") // low, normal, high, vip
 
   // Budget (if searching for property)
-  budgetMin Float?
-  budgetMax Float?
+  budgetMin Decimal?
+  budgetMax Decimal?
 
   // Status
   status          String    @default("active") // active, inactive, archived, blacklist
@@ -124,6 +124,9 @@ model Contact {
   @@index([status])
   @@index([source])
   @@index([importance])
+  @@index([status, lastContactDate])
+  @@index([city, status])
+  @@index([importance, status])
   @@map("contacts")
 }
 
@@ -259,15 +262,15 @@ model Property {
   yearRenovated Int?
 
   // Prices
-  priceSale          Float?
-  priceRentMonthly   Float?
-  priceMinAcceptable Float? // minimum price owner accepts
-  condominiumFees    Float?
+  priceSale          Decimal?
+  priceRentMonthly   Decimal?
+  priceMinAcceptable Decimal? // minimum price owner accepts
+  condominiumFees    Decimal?
 
   // Estimated Values (AI)
-  estimatedValue       Float?
+  estimatedValue       Decimal?
   estimatedDaysToSell  Int?
-  estimatedRentMonthly Float?
+  estimatedRentMonthly Decimal?
 
   // Mandate (if direct_mandate)
   mandateType      String? // exclusive, simple, verbal
@@ -313,8 +316,8 @@ model Property {
   archivedAt   DateTime?
 
   // Relationships
-  owner      Contact?    @relation("PropertyOwner", fields: [ownerContactId], references: [id])
-  building   Building?   @relation(fields: [buildingId], references: [id])
+  owner      Contact?    @relation("PropertyOwner", fields: [ownerContactId], references: [id], onDelete: SetNull)
+  building   Building?   @relation(fields: [buildingId], references: [id], onDelete: SetNull)
   matches    Match[]
   activities Activity[]
   tags       EntityTag[]
@@ -339,6 +342,10 @@ model Property {
   @@index([urgencyScore])              // For urgency filtering on map
   @@index([lastActivityAt])            // For sorting by last activity
   @@index([latitude, longitude])       // For map bbox queries
+  @@index([status, contractType, city])
+  @@index([contractType, propertyType, city])
+  @@index([city, zone, status])
+  @@index([status, urgencyScore])
   @@map("properties")
 }
 
@@ -369,8 +376,8 @@ model Request {
   centerLongitude  Float?
 
   // Budget
-  priceMin Float?
-  priceMax Float?
+  priceMin Decimal?
+  priceMax Decimal?
 
   // Size Requirements
   sqmMin    Float?
@@ -411,7 +418,7 @@ model Request {
   updatedAt DateTime @updatedAt
 
   // Relationships
-  contact    Contact    @relation(fields: [contactId], references: [id])
+  contact    Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
   matches    Match[]
   activities Activity[]
   tags       EntityTag[]
@@ -423,6 +430,9 @@ model Request {
   @@index([requestType])
   @@index([urgency])
   @@index([expiresAt])
+  @@index([contactId, status])
+  @@index([status, urgency])
+  @@index([requestType, status])
   @@map("requests")
 }
 
@@ -465,9 +475,9 @@ model Match {
   updatedAt DateTime @updatedAt
 
   // Relationships
-  request  Request  @relation(fields: [requestId], references: [id])
-  property Property @relation(fields: [propertyId], references: [id])
-  contact  Contact? @relation(fields: [contactId], references: [id])
+  request  Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  contact  Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   // Indexes
   @@index([requestId])
@@ -476,6 +486,10 @@ model Match {
   @@index([scoreTotal])
   @@index([status])
   @@index([sentDate])
+  @@index([requestId, status])
+  @@index([propertyId, status])
+  @@index([contactId, status])
+  @@index([status, scoreTotal])
   @@map("matches")
 }
 
@@ -504,7 +518,7 @@ model Activity {
 
   // Content
   title       String
-  description String? 
+  description String?
   outcome     String?  // what happened
   details     Json? // flexible extra data (default handled in application)
 
@@ -524,10 +538,10 @@ model Activity {
   updatedAt DateTime @updatedAt
 
   // Relationships
-  contact  Contact?  @relation(fields: [contactId], references: [id])
-  property Property? @relation(fields: [propertyId], references: [id])
-  request  Request?  @relation(fields: [requestId], references: [id])
-  building Building? @relation(fields: [buildingId], references: [id])
+  contact  Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  request  Request?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  building Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
   tags     EntityTag[]
 
   // Indexes
@@ -539,6 +553,10 @@ model Activity {
   @@index([status])
   @@index([scheduledAt])
   @@index([dueDate])
+  @@index([contactId, status])
+  @@index([contactId, activityType])
+  @@index([status, scheduledAt])
+  @@index([activityType, scheduledAt])
   @@map("activities")
 }
 
@@ -588,12 +606,19 @@ model EntityTag {
   createdAt DateTime @default(now())
 
   // Relationships
-  tag      Tag       @relation(fields: [tagId], references: [id])
-  contact  Contact?  @relation(fields: [contactId], references: [id])
-  property Property? @relation(fields: [propertyId], references: [id])
-  request  Request?  @relation(fields: [requestId], references: [id])
-  building Building? @relation(fields: [buildingId], references: [id])
-  activity Activity? @relation(fields: [activityId], references: [id])
+  tag      Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  contact  Contact?  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  request  Request?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  building Building? @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  activity Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  // Unique Constraints
+  @@unique([tagId, contactId], name: "unique_tag_contact")
+  @@unique([tagId, propertyId], name: "unique_tag_property")
+  @@unique([tagId, requestId], name: "unique_tag_request")
+  @@unique([tagId, buildingId], name: "unique_tag_building")
+  @@unique([tagId, activityId], name: "unique_tag_activity")
 
   // Indexes
   @@index([tagId])
@@ -727,8 +752,8 @@ model ScrapingJob {
   propertyType String? // apartment, villa, etc.
 
   // Filters
-  priceMin  Float?
-  priceMax  Float?
+  priceMin  Decimal?
+  priceMax  Decimal?
   sqmMin    Float?
   sqmMax    Float?
   roomsMin  Int?
