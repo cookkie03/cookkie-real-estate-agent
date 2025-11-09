@@ -12,3 +12,5 @@ export { InteractiveMap } from './InteractiveMap';
 export { LegendPanel } from './LegendPanel';
 export { LayerSwitcher } from './LayerSwitcher';
 export { QuickFilters } from './QuickFilters';
+export { ZoneSelector } from './ZoneSelector';
+export { BuildingDetailSheet } from './BuildingDetailSheet';

@@ -17,6 +17,7 @@ import { ArrowLeft, Loader2, Map as MapIcon, AlertCircle } from 'lucide-react';
 import { LegendPanel } from '@/components/map/LegendPanel';
 import { LayerSwitcher } from '@/components/map/LayerSwitcher';
 import { QuickFilters } from '@/components/map/QuickFilters';
+import { BuildingDetailSheet } from '@/components/map/BuildingDetailSheet';
 import { Button } from '@/components/ui/button';
 
 // Dynamic import for InteractiveMap (Leaflet doesn't support SSR)
@@ -65,6 +66,10 @@ export default function MapPage() {
   const [showOnlyUrgent, setShowOnlyUrgent] = useState(false);
   const [hideSold, setHideSold] = useState(false);
 
+  // Building detail sheet state
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
   // Fetch buildings
   useEffect(() => {
     const fetchBuildings = async () => {
@@ -103,9 +108,17 @@ export default function MapPage() {
     return acc;
   }, {} as Record<number, number>);
 
-  // Handle building click
+  // Handle building click - Open detail sheet
   const handleBuildingClick = (buildingId: string) => {
-    router.push(`/immobili?edificio=${buildingId}`);
+    setSelectedBuildingId(buildingId);
+    setIsSheetOpen(true);
+  };
+
+  // Close sheet
+  const handleCloseSheet = () => {
+    setIsSheetOpen(false);
+    // Delay clearing selectedBuildingId to allow sheet closing animation
+    setTimeout(() => setSelectedBuildingId(null), 300);
   };
 
   return (
@@ -231,6 +244,13 @@ export default function MapPage() {
           </>
         )}
       </div>
+
+      {/* Building Detail Sheet */}
+      <BuildingDetailSheet
+        buildingId={selectedBuildingId}
+        isOpen={isSheetOpen}
+        onClose={handleCloseSheet}
+      />
     </div>
   );
 }
