@@ -52,10 +52,10 @@ export const NAV_ITEMS = [
     description: "Acquisizione automatica da web",
   },
   {
-    label: "Matching",
+    label: "Richieste & Matching",
     href: ROUTES.MATCHING,
     icon: "Target",
-    description: "Abbinamenti AI proprietà-cliente",
+    description: "Richieste clienti e abbinamenti AI",
   },
   {
     label: "Agenda",

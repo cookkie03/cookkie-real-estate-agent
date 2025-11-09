@@ -302,9 +302,9 @@ export default function MatchingPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Matching AI</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Richieste & Matching</h1>
         <p className="text-muted-foreground mt-1">
-          Sistema intelligente di abbinamento proprietà-clienti
+          Gestisci le richieste clienti e genera abbinamenti intelligenti
         </p>
       </div>
 
