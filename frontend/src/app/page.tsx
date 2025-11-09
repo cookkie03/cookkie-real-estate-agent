@@ -1,27 +1,38 @@
 "use client";
 
-import { Building2, Users, Search, Target, Activity, TrendingUp } from "lucide-react";
+import { Building2, Users, Search, Target, Activity, TrendingUp, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { formatCurrency, formatRelativeTime } from "@/lib/utils";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 /**
  * Dashboard Page
- * Main landing page with stats, recent activities, and quick actions
+ * Main landing page with AI search, stats, quick actions, and recent activities
  */
 export default function DashboardPage() {
-  // Fetch dashboard stats (placeholder - will be implemented)
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Handle AI search submission
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      router.push(`/ai-assistant?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Fetch dashboard stats from API
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      // Placeholder stats
-      return {
-        properties: { total: 0, available: 0, sold: 0, rented: 0 },
-        contacts: { total: 0, active: 0, leads: 0 },
-        requests: { total: 0, active: 0 },
-        matches: { total: 0, pending: 0, contacted: 0 },
-        activities: { thisWeek: 0, thisMonth: 0 },
-      };
+      const response = await fetch("/api/dashboard/stats");
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard stats");
+      }
+      return response.json();
     },
   });
 
@@ -45,6 +56,43 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">
           Panoramica completa del tuo CRM immobiliare
         </p>
+      </div>
+
+      {/* AI Search Box */}
+      <div className="stat-card bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-primary/20">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="rounded-full bg-primary/10 p-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg">Assistente AI</h3>
+            <p className="text-sm text-muted-foreground">
+              Chiedi qualsiasi cosa sul tuo portfolio immobiliare
+            </p>
+          </div>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder='Es: "Mostrami immobili sotto 300k a Milano" o "Quali clienti cercano appartamenti?"'
+            className="pl-10 pr-24 h-12 text-base"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearch}
+          />
+          <Button
+            size="sm"
+            className="absolute right-2 top-1/2 -translate-y-1/2"
+            onClick={() => {
+              if (searchQuery.trim()) {
+                router.push(`/ai-assistant?q=${encodeURIComponent(searchQuery.trim())}`);
+              }
+            }}
+          >
+            Chiedi
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -90,6 +138,37 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* Quick Actions */}
+      <div className="stat-card">
+        <h2 className="section-header">Azioni Rapide</h2>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <QuickAction
+            href="/immobili"
+            title="Nuovo Immobile"
+            description="Aggiungi proprietà"
+            icon={Building2}
+          />
+          <QuickAction
+            href="/clienti"
+            title="Nuovo Cliente"
+            description="Aggiungi contatto"
+            icon={Users}
+          />
+          <QuickAction
+            href="/richieste"
+            title="Nuova Richiesta"
+            description="Registra richiesta"
+            icon={Search}
+          />
+          <QuickAction
+            href="/matching"
+            title="Richieste & Matching"
+            description="Abbinamenti AI"
+            icon={Target}
+          />
+        </div>
+      </div>
+
       {/* Recent Activities */}
       <div className="stat-card">
         <div className="mb-4 flex items-center justify-between">
@@ -128,37 +207,6 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="stat-card">
-        <h2 className="section-header">Azioni Rapide</h2>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <QuickAction
-            href="/immobili"
-            title="Nuovo Immobile"
-            description="Aggiungi proprietà"
-            icon={Building2}
-          />
-          <QuickAction
-            href="/clienti"
-            title="Nuovo Cliente"
-            description="Aggiungi contatto"
-            icon={Users}
-          />
-          <QuickAction
-            href="/richieste"
-            title="Nuova Richiesta"
-            description="Registra richiesta"
-            icon={Search}
-          />
-          <QuickAction
-            href="/matching"
-            title="Genera Match"
-            description="Matching AI"
-            icon={Target}
-          />
-        </div>
       </div>
     </div>
   );

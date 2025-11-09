@@ -68,69 +68,36 @@ interface PropertyMatch {
 export default function MatchingPage() {
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
 
-  // Fetch client requests (mock data for now)
+  // Fetch client requests from API
   const { data: requestsData, isLoading: requestsLoading } = useQuery({
     queryKey: ["client-requests"],
     queryFn: async () => {
-      // Mock implementation - in production would call API
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return {
-        requests: [
-          {
-            id: "req-1",
-            contactId: "contact-1",
-            contactName: "Mario Rossi",
-            contactEmail: "mario.rossi@email.com",
-            contactPhone: "+39 333 1234567",
-            contractType: "sale",
-            propertyType: "apartment",
-            city: "Milano",
-            zone: "Centro",
-            priceMin: 200000,
-            priceMax: 350000,
-            roomsMin: 2,
-            roomsMax: 3,
-            status: "active",
-            createdAt: "2024-01-15",
-            matchCount: 8,
-            bestMatchScore: 92,
-          },
-          {
-            id: "req-2",
-            contactId: "contact-2",
-            contactName: "Laura Bianchi",
-            contactEmail: "laura.bianchi@email.com",
-            contactPhone: "+39 347 9876543",
-            contractType: "rent",
-            propertyType: "apartment",
-            city: "Milano",
-            priceMin: 800,
-            priceMax: 1200,
-            roomsMin: 1,
-            status: "active",
-            createdAt: "2024-01-20",
-            matchCount: 5,
-            bestMatchScore: 85,
-          },
-          {
-            id: "req-3",
-            contactId: "contact-3",
-            contactName: "Giovanni Verdi",
-            contactEmail: "giovanni.verdi@email.com",
-            contactPhone: "+39 340 5551234",
-            contractType: "sale",
-            propertyType: "villa",
-            city: "Como",
-            priceMin: 500000,
-            priceMax: 800000,
-            roomsMin: 4,
-            status: "active",
-            createdAt: "2024-01-18",
-            matchCount: 3,
-            bestMatchScore: 78,
-          },
-        ] as ClientRequest[],
-      };
+      const response = await fetch("/api/requests?status=active");
+      if (!response.ok) throw new Error("Failed to fetch requests");
+      const data = await response.json();
+
+      // Transform to match interface
+      const transformedRequests = data.requests?.map((req: any) => ({
+        id: req.id,
+        contactId: req.contactId,
+        contactName: req.contact?.fullName || "N/D",
+        contactEmail: req.contact?.primaryEmail,
+        contactPhone: req.contact?.primaryPhone,
+        contractType: req.contractType,
+        propertyType: req.propertyTypes?.[0],
+        city: req.searchCities?.[0] || "N/D",
+        zone: req.searchZones?.[0],
+        priceMin: req.priceMin,
+        priceMax: req.priceMax,
+        roomsMin: req.roomsMin,
+        roomsMax: req.roomsMax,
+        status: req.status,
+        createdAt: req.createdAt,
+        matchCount: req._count?.matches || 0,
+        bestMatchScore: 0, // Will be calculated
+      })) || [];
+
+      return { requests: transformedRequests };
     },
   });
 
@@ -183,82 +150,7 @@ export default function MatchingPage() {
 
       } catch (error) {
         console.error('Error fetching matches:', error);
-        // Return mock data as fallback
-        return {
-          matches: [
-          {
-            id: "match-1",
-            propertyId: "prop-1",
-            requestId: selectedRequest,
-            score: 92,
-            property: {
-              id: "prop-1",
-              title: "Luminoso bilocale in Centro",
-              street: "Via Dante 15",
-              city: "Milano",
-              contractType: "sale",
-              propertyType: "apartment",
-              priceSale: 280000,
-              rooms: 2,
-              sqmCommercial: 65,
-            },
-            matchReasons: [
-              "Prezzo nel range richiesto (€280k vs €200k-€350k)",
-              "Ubicazione: Centro Milano",
-              "Tipologia corretta: Appartamento",
-              "Numero locali: 2 (range richiesto 2-3)",
-            ],
-            proposalStatus: "sent",
-          },
-          {
-            id: "match-2",
-            propertyId: "prop-2",
-            requestId: selectedRequest,
-            score: 88,
-            property: {
-              id: "prop-2",
-              title: "Trilocale moderno zona Porta Venezia",
-              street: "Corso Buenos Aires 42",
-              city: "Milano",
-              contractType: "sale",
-              propertyType: "apartment",
-              priceSale: 320000,
-              rooms: 3,
-              sqmCommercial: 85,
-            },
-            matchReasons: [
-              "Prezzo nel range (€320k vs €200k-€350k)",
-              "3 locali (range 2-3)",
-              "Zona semi-centrale Milano",
-              "Appartamento come richiesto",
-            ],
-            proposalStatus: "none",
-          },
-          {
-            id: "match-3",
-            propertyId: "prop-3",
-            requestId: selectedRequest,
-            score: 75,
-            property: {
-              id: "prop-3",
-              title: "Bilocale ristrutturato zona Navigli",
-              street: "Via Vigevano 8",
-              city: "Milano",
-              contractType: "sale",
-              propertyType: "apartment",
-              priceSale: 250000,
-              rooms: 2,
-              sqmCommercial: 55,
-            },
-            matchReasons: [
-              "Ottimo prezzo (€250k vs €200k-€350k)",
-              "2 locali (nel range)",
-              "Zona trendy: Navigli",
-            ],
-            proposalStatus: "viewed",
-          },
-        ] as PropertyMatch[]
-      };
+        return { matches: [] };
       }
     },
     enabled: !!selectedRequest,
@@ -302,9 +194,9 @@ export default function MatchingPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Matching AI</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Richieste & Matching</h1>
         <p className="text-muted-foreground mt-1">
-          Sistema intelligente di abbinamento proprietà-clienti
+          Gestisci le richieste clienti e genera abbinamenti intelligenti
         </p>
       </div>
 

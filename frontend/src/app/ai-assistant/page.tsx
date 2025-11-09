@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Send, Loader2, Bot, User, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,10 @@ interface TaskUpdate {
 }
 
 export default function AIAssistantPage() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q');
+  const hasInitialized = useRef(false);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -66,6 +71,17 @@ export default function AIAssistantPage() {
       websocket.close();
     };
   }, []);
+
+  // Handle initial query from URL parameter
+  useEffect(() => {
+    if (initialQuery && ws && !hasInitialized.current) {
+      hasInitialized.current = true;
+      // Wait a bit for WebSocket to be fully ready
+      setTimeout(() => {
+        sendMessage(initialQuery);
+      }, 500);
+    }
+  }, [initialQuery, ws]);
 
   const handleWebSocketMessage = (data: any) => {
     switch (data.type) {
@@ -127,13 +143,14 @@ export default function AIAssistantPage() {
     }
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || isProcessing) return;
+  const sendMessage = async (messageText?: string) => {
+    const textToSend = messageText || input;
+    if (!textToSend.trim() || isProcessing) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
-      content: input,
+      content: textToSend,
       timestamp: new Date(),
       status: 'complete'
     };

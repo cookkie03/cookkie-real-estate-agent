@@ -16,7 +16,6 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -24,35 +23,25 @@ async function main() {
   console.log('🌱 Starting database seeding...\n');
 
   // ==========================================================================
-  // 1. CREATE USER & PROFILE
+  // 1. CREATE USER PROFILE
   // ==========================================================================
-  console.log('👤 Creating user and profile...');
+  console.log('👤 Creating user profile...');
 
-  // Hash password for the default user
-  const hashedPassword = await bcrypt.hash('password123', 10);
-
-  const user = await prisma.user.upsert({
-    where: { email: 'agent@example.com' },
+  const userProfile = await prisma.userProfile.upsert({
+    where: { email: 'mario.rossi@example.com' },
     update: {},
     create: {
-      email: 'agent@example.com',
-      password: hashedPassword,
-      name: 'Mario Rossi',
-      profile: {
-        create: {
-          fullName: 'Mario Rossi',
-          email: 'agent@example.com',
-          phone: '+39 333 123 4567',
-          agencyName: 'Agenzia Immobiliare Example',
-          agencyVat: 'IT12345678901',
-          agencyAddress: 'Via Roma 1, 20100 Milano, Italia',
-          settings: JSON.stringify({ commissionPercent: 3.0 }),
-        },
-      },
+      fullName: 'Mario Rossi',
+      email: 'mario.rossi@example.com',
+      phone: '+39 333 123 4567',
+      agencyName: 'Agenzia Immobiliare Rossi & Partners',
+      agencyVat: 'IT12345678901',
+      agencyAddress: 'Via Roma 15, 20100 Milano (MI), Italia',
+      settings: { commissionPercent: 3.0, currency: 'EUR', locale: 'it-IT' },
     },
   });
 
-  console.log('✅ User created:', user.email);
+  console.log('✅ User profile created:', userProfile.email);
 
   // ==========================================================================
   // 2. CREATE CONTACTS (Clients, Owners, Leads)
@@ -404,16 +393,17 @@ async function main() {
   console.log('✅ Database seeding completed successfully!');
   console.log('='.repeat(60));
   console.log('\n📊 Summary:');
-  console.log(`   • 1 user (${user.email})`);
+  console.log(`   • 1 user profile (${userProfile.email})`);
   console.log(`   • ${contacts.length} contacts`);
   console.log(`   • ${buildings.length} buildings`);
   console.log(`   • ${properties.length} properties`);
   console.log(`   • ${requests.length} requests`);
   console.log(`   • ${matches.length} matches`);
   console.log(`   • ${activities.length} activities`);
-  console.log('\n🔑 Default Login:');
-  console.log(`   Email: agent@example.com`);
-  console.log(`   Password: password123`);
+  console.log('\n🎯 Application Ready:');
+  console.log(`   Agency: ${userProfile.agencyName}`);
+  console.log(`   Agent: ${userProfile.fullName}`);
+  console.log(`   Email: ${userProfile.email}`);
   console.log('\n');
 }
 

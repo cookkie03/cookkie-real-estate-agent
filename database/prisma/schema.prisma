@@ -7,8 +7,8 @@
 // Database: SQLite (development) / PostgreSQL (production in Docker)
 // ORM: Prisma (TypeScript) + SQLAlchemy (Python mirror)
 //
-// Last Updated: 2025-11-08
-// Version: 3.0.0
+// Last Updated: 2025-11-09
+// Version: 3.2.0 (Sprint 3: Type Safety + Business Fields)
 // ============================================================================
 
 generator client {
@@ -19,6 +19,51 @@ generator client {
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS - Type Safety for Status Fields
+// ============================================================================
+
+enum ContactStatus {
+  active
+  inactive
+  archived
+  blacklist
+}
+
+enum PropertyStatus {
+  draft
+  available
+  option
+  sold
+  rented
+  suspended
+  archived
+}
+
+enum RequestStatus {
+  active
+  paused
+  satisfied
+  cancelled
+}
+
+enum MatchStatus {
+  suggested
+  sent
+  viewed
+  visited
+  interested
+  rejected
+  closed
+}
+
+enum ActivityStatus {
+  scheduled
+  completed
+  cancelled
+  missed
 }
 
 // ============================================================================
@@ -80,8 +125,8 @@ model Contact {
   longitude Float?
 
   // Fiscal Data
-  taxCode     String?
-  vatNumber   String?
+  taxCode     String?   @unique
+  vatNumber   String?   @unique
   birthDate   DateTime?
   nationality String?
 
@@ -98,11 +143,11 @@ model Contact {
   importance String  @default("normal") // low, normal, high, vip
 
   // Budget (if searching for property)
-  budgetMin Float?
-  budgetMax Float?
+  budgetMin Decimal?
+  budgetMax Decimal?
 
   // Status
-  status          String    @default("active") // active, inactive, archived, blacklist
+  status          ContactStatus @default(active)
   lastContactDate DateTime?
   notes           String?   
 
@@ -124,6 +169,9 @@ model Contact {
   @@index([status])
   @@index([source])
   @@index([importance])
+  @@index([status, lastContactDate])
+  @@index([city, status])
+  @@index([importance, status])
   @@map("contacts")
 }
 
@@ -204,8 +252,8 @@ model Property {
   buildingId     String?
 
   // Status
-  status     String @default("draft") // draft, available, option, sold, rented, suspended, archived
-  visibility String @default("public") // public, private, network, archived
+  status     PropertyStatus @default(draft)
+  visibility String         @default("public") // public, private, network, archived
 
   // Source
   source     String    @default("direct_mandate") // direct_mandate, census, web_scraping, cadastre
@@ -259,15 +307,15 @@ model Property {
   yearRenovated Int?
 
   // Prices
-  priceSale          Float?
-  priceRentMonthly   Float?
-  priceMinAcceptable Float? // minimum price owner accepts
-  condominiumFees    Float?
+  priceSale          Decimal?
+  priceRentMonthly   Decimal?
+  priceMinAcceptable Decimal? // minimum price owner accepts
+  condominiumFees    Decimal?
 
   // Estimated Values (AI)
-  estimatedValue       Float?
+  estimatedValue       Decimal?
   estimatedDaysToSell  Int?
-  estimatedRentMonthly Float?
+  estimatedRentMonthly Decimal?
 
   // Mandate (if direct_mandate)
   mandateType      String? // exclusive, simple, verbal
@@ -306,6 +354,13 @@ model Property {
   notes         String?
   internalNotes String?  // private notes, not shown to clients
 
+  // Closure Tracking (when sold/rented)
+  soldDate    DateTime? // When property was sold
+  rentedDate  DateTime? // When property was rented
+  soldPrice   Decimal?  // Actual sale price (may differ from asking price)
+  rentedPrice Decimal?  // Actual rent price (may differ from asking price)
+  closedBy    String?   // Reason for closing: sold, rented, mandate_expired, owner_withdrawn
+
   // Timestamps
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -313,8 +368,8 @@ model Property {
   archivedAt   DateTime?
 
   // Relationships
-  owner      Contact?    @relation("PropertyOwner", fields: [ownerContactId], references: [id])
-  building   Building?   @relation(fields: [buildingId], references: [id])
+  owner      Contact?    @relation("PropertyOwner", fields: [ownerContactId], references: [id], onDelete: SetNull)
+  building   Building?   @relation(fields: [buildingId], references: [id], onDelete: SetNull)
   matches    Match[]
   activities Activity[]
   tags       EntityTag[]
@@ -339,6 +394,10 @@ model Property {
   @@index([urgencyScore])              // For urgency filtering on map
   @@index([lastActivityAt])            // For sorting by last activity
   @@index([latitude, longitude])       // For map bbox queries
+  @@index([status, contractType, city])
+  @@index([contractType, propertyType, city])
+  @@index([city, zone, status])
+  @@index([status, urgencyScore])
   @@map("properties")
 }
 
@@ -353,9 +412,9 @@ model Request {
   contactId String
 
   // Type & Status
-  requestType String @default("search_buy") // search_buy, search_rent, valuation
-  status      String @default("active") // active, paused, satisfied, cancelled
-  urgency     String @default("medium") // low, medium, high
+  requestType String        @default("search_buy") // search_buy, search_rent, valuation
+  status      RequestStatus @default(active)
+  urgency     String        @default("medium") // low, medium, high
 
   // Search Criteria
   contractType  String? // sale, rent
@@ -369,8 +428,8 @@ model Request {
   centerLongitude  Float?
 
   // Budget
-  priceMin Float?
-  priceMax Float?
+  priceMin Decimal?
+  priceMax Decimal?
 
   // Size Requirements
   sqmMin    Float?
@@ -404,14 +463,18 @@ model Request {
   moveDate   DateTime? // when client needs to move
   expiresAt  DateTime? // when this request expires
 
-  notes String? 
+  notes String?
+
+  // Satisfaction Tracking
+  satisfiedByMatchId String?   // ID of the Match that satisfied this request
+  satisfiedDate      DateTime? // When this request was satisfied
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relationships
-  contact    Contact    @relation(fields: [contactId], references: [id])
+  contact    Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
   matches    Match[]
   activities Activity[]
   tags       EntityTag[]
@@ -423,6 +486,9 @@ model Request {
   @@index([requestType])
   @@index([urgency])
   @@index([expiresAt])
+  @@index([contactId, status])
+  @@index([status, urgency])
+  @@index([requestType, status])
   @@map("requests")
 }
 
@@ -446,28 +512,32 @@ model Match {
   scoreCondition Int?
 
   // Status
-  status String @default("suggested") // suggested, sent, viewed, visited, interested, rejected, closed
+  status MatchStatus @default(suggested)
 
   // Feedback
   clientReaction String? // interested, neutral, not_interested
   rejectionReason String? // too_expensive, wrong_location, too_small, etc.
-  clientNotes     String? 
+  clientNotes     String?
 
   // Actions
   sentDate    DateTime?
   viewedDate  DateTime?
   visitedDate DateTime?
 
-  agentNotes String? 
+  agentNotes String?
+
+  // Closure Tracking
+  closedDate   DateTime? // When this match was closed
+  closedReason String?   // Why closed: client_bought, property_sold, client_lost_interest, etc. 
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relationships
-  request  Request  @relation(fields: [requestId], references: [id])
-  property Property @relation(fields: [propertyId], references: [id])
-  contact  Contact? @relation(fields: [contactId], references: [id])
+  request  Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  contact  Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   // Indexes
   @@index([requestId])
@@ -476,6 +546,10 @@ model Match {
   @@index([scoreTotal])
   @@index([status])
   @@index([sentDate])
+  @@index([requestId, status])
+  @@index([propertyId, status])
+  @@index([contactId, status])
+  @@index([status, scoreTotal])
   @@map("matches")
 }
 
@@ -492,9 +566,9 @@ model Activity {
   buildingId String?
 
   // Type & Status
-  activityType String // call, email, meeting, visit, census, photo_shoot, valuation, etc.
-  status       String @default("scheduled") // scheduled, completed, cancelled, missed
-  priority     String @default("normal") // low, normal, high, urgent
+  activityType String         // call, email, meeting, visit, census, photo_shoot, valuation, etc.
+  status       ActivityStatus @default(scheduled)
+  priority     String         @default("normal") // low, normal, high, urgent
 
   // Timing
   scheduledAt DateTime?
@@ -504,7 +578,7 @@ model Activity {
 
   // Content
   title       String
-  description String? 
+  description String?
   outcome     String?  // what happened
   details     Json? // flexible extra data (default handled in application)
 
@@ -524,10 +598,10 @@ model Activity {
   updatedAt DateTime @updatedAt
 
   // Relationships
-  contact  Contact?  @relation(fields: [contactId], references: [id])
-  property Property? @relation(fields: [propertyId], references: [id])
-  request  Request?  @relation(fields: [requestId], references: [id])
-  building Building? @relation(fields: [buildingId], references: [id])
+  contact  Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  request  Request?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  building Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
   tags     EntityTag[]
 
   // Indexes
@@ -539,6 +613,10 @@ model Activity {
   @@index([status])
   @@index([scheduledAt])
   @@index([dueDate])
+  @@index([contactId, status])
+  @@index([contactId, activityType])
+  @@index([status, scheduledAt])
+  @@index([activityType, scheduledAt])
   @@map("activities")
 }
 
@@ -588,12 +666,19 @@ model EntityTag {
   createdAt DateTime @default(now())
 
   // Relationships
-  tag      Tag       @relation(fields: [tagId], references: [id])
-  contact  Contact?  @relation(fields: [contactId], references: [id])
-  property Property? @relation(fields: [propertyId], references: [id])
-  request  Request?  @relation(fields: [requestId], references: [id])
-  building Building? @relation(fields: [buildingId], references: [id])
-  activity Activity? @relation(fields: [activityId], references: [id])
+  tag      Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  contact  Contact?  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  request  Request?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  building Building? @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  activity Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  // Unique Constraints
+  @@unique([tagId, contactId], name: "unique_tag_contact")
+  @@unique([tagId, propertyId], name: "unique_tag_property")
+  @@unique([tagId, requestId], name: "unique_tag_request")
+  @@unique([tagId, buildingId], name: "unique_tag_building")
+  @@unique([tagId, activityId], name: "unique_tag_activity")
 
   // Indexes
   @@index([tagId])
@@ -727,8 +812,8 @@ model ScrapingJob {
   propertyType String? // apartment, villa, etc.
 
   // Filters
-  priceMin  Float?
-  priceMax  Float?
+  priceMin  Decimal?
+  priceMax  Decimal?
   sqmMin    Float?
   sqmMax    Float?
   roomsMin  Int?
@@ -1024,4 +1109,46 @@ model ScrapingSource {
 //    - Add composite indexes for common queries
 //    - Use @@index for frequently filtered fields
 //    - Monitor query performance with Prisma Studio
+//
+// 5. Full-Text Search (PostgreSQL Production Only):
+//    Run these SQL commands after deploying to PostgreSQL:
+//
+//    -- Contact full-text search
+//    ALTER TABLE contacts ADD COLUMN search_vector tsvector
+//      GENERATED ALWAYS AS (
+//        to_tsvector('italian',
+//          coalesce(full_name, '') || ' ' ||
+//          coalesce(primary_email, '') || ' ' ||
+//          coalesce(primary_phone, '') || ' ' ||
+//          coalesce(notes, ''))
+//      ) STORED;
+//    CREATE INDEX contacts_search_idx ON contacts USING GIN(search_vector);
+//
+//    -- Property full-text search
+//    ALTER TABLE properties ADD COLUMN search_vector tsvector
+//      GENERATED ALWAYS AS (
+//        to_tsvector('italian',
+//          coalesce(title, '') || ' ' ||
+//          coalesce(description, '') || ' ' ||
+//          coalesce(street, '') || ' ' ||
+//          coalesce(city, '') || ' ' ||
+//          coalesce(zone, ''))
+//      ) STORED;
+//    CREATE INDEX properties_search_idx ON properties USING GIN(search_vector);
+//
+//    -- Building full-text search
+//    ALTER TABLE buildings ADD COLUMN search_vector tsvector
+//      GENERATED ALWAYS AS (
+//        to_tsvector('italian',
+//          coalesce(street, '') || ' ' ||
+//          coalesce(civic, '') || ' ' ||
+//          coalesce(city, '') || ' ' ||
+//          coalesce(notes, ''))
+//      ) STORED;
+//    CREATE INDEX buildings_search_idx ON buildings USING GIN(search_vector);
+//
+//    Usage example:
+//    SELECT * FROM contacts
+//    WHERE search_vector @@ to_tsquery('italian', 'mario & rossi')
+//    ORDER BY ts_rank(search_vector, to_tsquery('italian', 'mario & rossi')) DESC;
 // ============================================================================
