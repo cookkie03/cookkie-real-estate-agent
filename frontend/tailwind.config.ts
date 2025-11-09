@@ -95,6 +95,14 @@ export default {
   				medium: 'hsl(var(--match-medium))',
   				low: 'hsl(var(--match-low))'
   			},
+  			urgency: {
+  				urgent: 'hsl(var(--urgency-urgent))',
+  				warning: 'hsl(var(--urgency-warning))',
+  				monitor: 'hsl(var(--urgency-monitor))',
+  				optimal: 'hsl(var(--urgency-optimal))',
+  				new: 'hsl(var(--urgency-new))',
+  				sold: 'hsl(var(--urgency-sold))'
+  			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

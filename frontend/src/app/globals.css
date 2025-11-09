@@ -29,6 +29,14 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    /* Urgency Map Colors - Interactive Property Map */
+    --urgency-urgent: 0 84.2% 60.2%;     /* 🔴 Red - URGENT (5) */
+    --urgency-warning: 25 95% 53%;       /* 🟠 Orange - WARNING (4) */
+    --urgency-monitor: 45 93% 47%;       /* 🟡 Yellow - MONITOR (3) */
+    --urgency-optimal: 142 71% 45%;      /* 🟢 Green - OPTIMAL (2) */
+    --urgency-new: 199 89% 48%;          /* 🔵 Cyan - NEW (1) */
+    --urgency-sold: 0 0% 42%;            /* ⚫ Gray - SOLD (0) */
   }
 
   .dark {
@@ -56,6 +64,14 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Urgency Map Colors - Dark Mode */
+    --urgency-urgent: 0 72% 51%;         /* 🔴 Red - slightly dimmer */
+    --urgency-warning: 25 85% 48%;       /* 🟠 Orange - slightly dimmer */
+    --urgency-monitor: 45 83% 42%;       /* 🟡 Yellow - slightly dimmer */
+    --urgency-optimal: 142 61% 40%;      /* 🟢 Green - slightly dimmer */
+    --urgency-new: 199 79% 43%;          /* 🔵 Cyan - slightly dimmer */
+    --urgency-sold: 0 0% 55%;            /* ⚫ Gray - lighter for dark bg */
   }
 }
 
