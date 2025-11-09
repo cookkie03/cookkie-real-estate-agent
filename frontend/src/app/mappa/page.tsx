@@ -18,6 +18,7 @@ import { LegendPanel } from '@/components/map/LegendPanel';
 import { LayerSwitcher } from '@/components/map/LayerSwitcher';
 import { QuickFilters } from '@/components/map/QuickFilters';
 import { BuildingDetailSheet } from '@/components/map/BuildingDetailSheet';
+import { FilterPanel, MapFilters } from '@/components/map/FilterPanel';
 import { Button } from '@/components/ui/button';
 
 // Dynamic import for InteractiveMap (Leaflet doesn't support SSR)
@@ -66,9 +67,45 @@ export default function MapPage() {
   const [showOnlyUrgent, setShowOnlyUrgent] = useState(false);
   const [hideSold, setHideSold] = useState(false);
 
+  // Advanced filters state
+  const [advancedFilters, setAdvancedFilters] = useState<MapFilters>({});
+
   // Building detail sheet state
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  // Get unique comuni from buildings for filter options
+  const availableComuni = Array.from(new Set(buildings.map(b => b.city))).sort();
+
+  // Build fetch URL with filters
+  const buildFetchUrl = () => {
+    const params = new URLSearchParams();
+
+    if (advancedFilters.comuni && advancedFilters.comuni.length > 0) {
+      params.append('comuni', advancedFilters.comuni.join(','));
+    }
+    if (advancedFilters.propertyTypes && advancedFilters.propertyTypes.length > 0) {
+      params.append('propertyTypes', advancedFilters.propertyTypes.join(','));
+    }
+    if (advancedFilters.contractType) {
+      params.append('contractType', advancedFilters.contractType);
+    }
+    if (advancedFilters.priceMin !== undefined) {
+      params.append('priceMin', advancedFilters.priceMin.toString());
+    }
+    if (advancedFilters.priceMax !== undefined) {
+      params.append('priceMax', advancedFilters.priceMax.toString());
+    }
+    if (advancedFilters.roomsMin !== undefined) {
+      params.append('roomsMin', advancedFilters.roomsMin.toString());
+    }
+    if (advancedFilters.roomsMax !== undefined) {
+      params.append('roomsMax', advancedFilters.roomsMax.toString());
+    }
+
+    const queryString = params.toString();
+    return queryString ? `/api/buildings/geo?${queryString}` : '/api/buildings/geo';
+  };
 
   // Fetch buildings
   useEffect(() => {
@@ -77,7 +114,8 @@ export default function MapPage() {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch('/api/buildings/geo');
+        const url = buildFetchUrl();
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error('Errore nel caricamento dei dati');
@@ -99,7 +137,31 @@ export default function MapPage() {
     };
 
     fetchBuildings();
-  }, []);
+  }, [advancedFilters]); // Re-fetch when filters change
+
+  // Handle filter changes
+  const handleFiltersChange = (newFilters: MapFilters) => {
+    setAdvancedFilters(newFilters);
+
+    // Update URL query params for deep linking
+    const params = new URLSearchParams();
+    if (newFilters.comuni && newFilters.comuni.length > 0) {
+      params.append('comuni', newFilters.comuni.join(','));
+    }
+    if (newFilters.propertyTypes && newFilters.propertyTypes.length > 0) {
+      params.append('propertyTypes', newFilters.propertyTypes.join(','));
+    }
+    if (newFilters.contractType) {
+      params.append('contractType', newFilters.contractType);
+    }
+    if (newFilters.priceMin) params.append('priceMin', newFilters.priceMin.toString());
+    if (newFilters.priceMax) params.append('priceMax', newFilters.priceMax.toString());
+    if (newFilters.roomsMin) params.append('roomsMin', newFilters.roomsMin.toString());
+    if (newFilters.roomsMax) params.append('roomsMax', newFilters.roomsMax.toString());
+
+    const queryString = params.toString();
+    router.push(queryString ? `/mappa?${queryString}` : '/mappa', { scroll: false });
+  };
 
   // Calculate urgency distribution for legend
   const urgencyDistribution = buildings.reduce((acc, building) => {
@@ -192,6 +254,14 @@ export default function MapPage() {
                 className="absolute top-4 left-4 z-[1000] max-w-xs"
               />
 
+              {/* Filter Panel - Below Legend */}
+              <FilterPanel
+                availableComuni={availableComuni}
+                filters={advancedFilters}
+                onFiltersChange={handleFiltersChange}
+                className="absolute top-[calc(4rem+theme(spacing.4)+12rem)] left-4 z-[1000] max-w-xs"
+              />
+
               {/* Layer Switcher - Top Right */}
               <LayerSwitcher
                 currentLayer={layerType}
@@ -215,6 +285,11 @@ export default function MapPage() {
                 <LegendPanel
                   distribution={urgencyDistribution}
                   total={buildings.length}
+                />
+                <FilterPanel
+                  availableComuni={availableComuni}
+                  filters={advancedFilters}
+                  onFiltersChange={handleFiltersChange}
                 />
                 <div className="flex gap-2">
                   <LayerSwitcher

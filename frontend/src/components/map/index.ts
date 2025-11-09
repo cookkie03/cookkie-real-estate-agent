@@ -14,3 +14,5 @@ export { LayerSwitcher } from './LayerSwitcher';
 export { QuickFilters } from './QuickFilters';
 export { ZoneSelector } from './ZoneSelector';
 export { BuildingDetailSheet } from './BuildingDetailSheet';
+export { FilterPanel } from './FilterPanel';
+export type { MapFilters } from './FilterPanel';

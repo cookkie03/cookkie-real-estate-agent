@@ -8,8 +8,15 @@
  *
  * Query params:
  * - bbox: Bounding box filter (minLat,minLng,maxLat,maxLng)
- * - city: Filter by city
+ * - city: Filter by city (single)
+ * - comuni: Filter by multiple cities (comma-separated)
  * - minUrgency: Minimum urgency score (0-5)
+ * - propertyTypes: Filter by property types (comma-separated)
+ * - contractType: Filter by contract type (sale, rent)
+ * - priceMin: Minimum price
+ * - priceMax: Maximum price
+ * - roomsMin: Minimum rooms
+ * - roomsMax: Maximum rooms
  *
  * @module api/buildings/geo
  * @since v3.2.0
@@ -20,6 +27,8 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -27,9 +36,16 @@ export async function GET(request: Request) {
     // Parse filters
     const bbox = searchParams.get('bbox');
     const city = searchParams.get('city');
+    const comuni = searchParams.get('comuni');
     const minUrgency = searchParams.get('minUrgency');
+    const propertyTypes = searchParams.get('propertyTypes');
+    const contractType = searchParams.get('contractType');
+    const priceMin = searchParams.get('priceMin');
+    const priceMax = searchParams.get('priceMax');
+    const roomsMin = searchParams.get('roomsMin');
+    const roomsMax = searchParams.get('roomsMax');
 
-    // Build where clause
+    // Build where clause for buildings
     const where: any = {};
 
     // Bounding box filter (for viewport)
@@ -39,14 +55,60 @@ export async function GET(request: Request) {
       where.longitude = { gte: minLng, lte: maxLng };
     }
 
-    // City filter
+    // City filters
     if (city) {
       where.city = city;
+    } else if (comuni) {
+      where.city = { in: comuni.split(',') };
     }
 
     // Urgency filter
     if (minUrgency) {
       where.avgUrgency = { gte: Number(minUrgency) };
+    }
+
+    // Property filters (applied to properties within buildings)
+    const propertyWhere: any = {
+      status: { in: ['draft', 'available', 'option'] } // Only active properties
+    };
+
+    if (propertyTypes) {
+      propertyWhere.propertyType = { in: propertyTypes.split(',') };
+    }
+
+    if (contractType) {
+      propertyWhere.contractType = contractType;
+    }
+
+    if (priceMin || priceMax) {
+      const priceField = contractType === 'rent' ? 'priceRentMonthly' : 'priceSale';
+      if (priceMin) {
+        propertyWhere[priceField] = { gte: Number(priceMin) };
+      }
+      if (priceMax) {
+        propertyWhere[priceField] = {
+          ...propertyWhere[priceField],
+          lte: Number(priceMax)
+        };
+      }
+    }
+
+    if (roomsMin) {
+      propertyWhere.rooms = { gte: Number(roomsMin) };
+    }
+    if (roomsMax) {
+      propertyWhere.rooms = {
+        ...propertyWhere.rooms,
+        lte: Number(roomsMax)
+      };
+    }
+
+    // If property filters are applied, filter buildings that have matching properties
+    const hasPropertyFilters = propertyTypes || contractType || priceMin || priceMax || roomsMin || roomsMax;
+    if (hasPropertyFilters) {
+      where.properties = {
+        some: propertyWhere
+      };
     }
 
     // Fetch buildings with minimal fields for performance
