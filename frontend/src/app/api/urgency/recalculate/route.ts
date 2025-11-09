@@ -53,7 +53,7 @@ function calculateUrgencyScore(property: {
   // Count visits in last 30 days
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const visitCount30d = property.activities.filter(
-    a => a.type === 'visit' && a.createdAt >= thirtyDaysAgo
+    a => a.activityType === 'visit' && a.createdAt >= thirtyDaysAgo
   ).length;
 
   // Count high-score pending matches (score >= 85)
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         where: { id: propertyId },
         include: {
           activities: {
-            select: { createdAt: true, type: true },
+            select: { createdAt: true, activityType: true },
             orderBy: { createdAt: 'desc' },
           },
           matches: {
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
         where: { buildingId },
         include: {
           activities: {
-            select: { createdAt: true, type: true },
+            select: { createdAt: true, activityType: true },
             orderBy: { createdAt: 'desc' },
           },
           matches: {
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     const allProperties = await prisma.property.findMany({
       include: {
         activities: {
-          select: { createdAt: true, type: true },
+          select: { createdAt: true, activityType: true },
           orderBy: { createdAt: 'desc' },
         },
         matches: {
