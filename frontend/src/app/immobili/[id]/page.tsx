@@ -27,6 +27,7 @@ import { propertiesApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CustomFieldsDisplay } from "@/components/custom-fields/dynamic-custom-fields";
 import {
   PROPERTY_TYPE_LABELS,
   CONTRACT_TYPE_LABELS,
@@ -312,6 +313,11 @@ export default function PropertyDetailPage() {
               <DetailRow label="Foglio" value="—" />
               <DetailRow label="Particella" value="—" />
             </div>
+          </div>
+
+          {/* Custom Fields */}
+          <div className="rounded-lg border bg-card p-4">
+            <CustomFieldsDisplay entityType="Property" entityId={property.id} />
           </div>
         </TabsContent>
 
