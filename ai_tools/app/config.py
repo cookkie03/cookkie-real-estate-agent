@@ -32,9 +32,9 @@ class Settings(BaseSettings):
         description="Google AI Studio API Key"
     )
     google_model: str = Field(
-        default="gemini-1.5-pro",
+        default="gemini-2.0-flash-exp",
         alias="GOOGLE_MODEL",
-        description="Default Google Gemini model"
+        description="Default Google Gemini model (optimized for tool calling)"
     )
 
     # Qdrant Vector Store
@@ -110,16 +110,18 @@ class Settings(BaseSettings):
         alias="SERVICE_NAME"
     )
 
-    # AI Configuration
+    # AI Configuration (optimized for Gemini 2.0 Flash + tool calling)
     ai_temperature: float = Field(
-        default=0.7,
+        default=0.3,
         alias="AI_TEMPERATURE",
         ge=0.0,
-        le=1.0
+        le=1.0,
+        description="Lower temperature for more deterministic tool calling"
     )
     ai_max_tokens: int = Field(
-        default=2048,
-        alias="AI_MAX_TOKENS"
+        default=8192,
+        alias="AI_MAX_TOKENS",
+        description="Gemini 2.0 Flash supports up to 8192 tokens"
     )
     ai_timeout: int = Field(
         default=60,

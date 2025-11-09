@@ -14,9 +14,7 @@ from app.config import settings
 from app.database import init_db
 
 # Import routers
-# from app.routers import chat  # Temporarily disabled - datapizza import issue
-# from app.routers import matching, briefing  # Temporarily disabled - datapizza import issue
-from app.routers import scraping
+from app.routers import chat, scoring, scraping
 
 # Configure logging
 logging.basicConfig(
@@ -127,10 +125,8 @@ async def ai_status():
         "google_model": settings.google_model,
         "qdrant_mode": settings.qdrant_mode,
         "agents": {
-            "rag_assistant": "ready",
-            "matching_agent": "ready",
-            "briefing_agent": "ready",
-            "document_agent": "ready"
+            "crm_chatbot": "ready",
+            "semantic_extractor": "ready"
         },
         "tracing_enabled": settings.enable_tracing
     }
@@ -162,11 +158,9 @@ async def internal_error_handler(request: Request, exc):
 
 
 # Include routers
-# app.include_router(chat.router, prefix="/ai/chat", tags=["Chat"])  # Temporarily disabled
-# app.include_router(matching.router, prefix="/ai/matching", tags=["Matching"])  # Temporarily disabled
-# app.include_router(briefing.router, prefix="/ai/briefing", tags=["Briefing"])  # Temporarily disabled
+app.include_router(chat.router, prefix="/ai/chat", tags=["Chat"])
+app.include_router(scoring.router, prefix="/api/scoring", tags=["Scoring"])
 app.include_router(scraping.router, prefix="/ai/scraping", tags=["Scraping"])
-# app.include_router(documents.router, prefix="/ai/documents", tags=["Documents"])  # TODO: Future feature
 
 
 if __name__ == "__main__":

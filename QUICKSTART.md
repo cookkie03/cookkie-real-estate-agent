@@ -31,23 +31,29 @@ docker-compose up -d
 
 ### Opzione 2: Sviluppo Locale
 
-**Prerequisiti**: Node.js 18+, Python 3.11+
+**Prerequisiti**:
+- **Node.js 18+** (per frontend Next.js)
+- **Python 3.11+** (per backend AI)
+- **pip** (gestore pacchetti Python)
 
 ```bash
 # 1. Clona il repository
 git clone https://github.com/cookkie03/cookkie-real-estate-agent.git
 cd cookkie-real-estate-agent
 
-# 2. Installa dipendenze
+# 2. Installa dipendenze JavaScript (automatico per tutti i workspace)
 npm install
 
-# 3. Setup automatico (genera .env con secrets)
+# 3. Installa dipendenze Python per backend AI
+cd ai_tools && pip install -r requirements.txt && cd ..
+
+# 4. Setup automatico (genera .env con secrets)
 npm run setup
 
-# 4. Avvia tutto con UN solo comando
+# 5. Avvia tutto con UN solo comando
 npm run dev
 
-# 5. Apri il browser
+# 6. Apri il browser
 # http://localhost:3000
 ```
 
@@ -78,9 +84,10 @@ Al primo avvio si apre automaticamente il **Setup Wizard**:
 - Percentuale commissione (default: 3%)
 
 **Step 3 - API Keys (opzionale):**
-- Google AI (Gemini) - **GRATUITA** 🎉
+- Google AI (Gemini 2.0 Flash) - **GRATUITA** 🎉
   - Ottieni su: https://aistudio.google.com/app/apikey
-  - Abilita: RAG Assistant, Matching, Briefing, Ricerca Semantica
+  - Abilita: AI Chatbot (11 tools), Semantic Search, Market Insights
+  - **NOTA**: Property Matching è gratis (usa algoritmo deterministico)
 - Testa la connessione direttamente dal wizard
 
 **Step 4 - Riepilogo:**
@@ -114,20 +121,24 @@ Dopo il setup accedi alla **Dashboard** con:
 - Budget e preferenze
 - Notifiche automatiche su nuovi match
 
-**Property Matching AI** (`/matching`)
-- Algoritmo AI che abbina proprietà a richieste
-- Score di compatibilità 0-100
-- Suggerimenti intelligenti
+**Property Matching Deterministico** (`/matching`)
+- Algoritmo di scoring a 7 componenti (location, price, type, size, rooms, features, condition)
+- Score di compatibilità 0-100 preciso e veloce
+- **Completamente gratuito** (nessun costo AI!)
+- Suggerimenti intelligenti con ragioni dettagliate
 
 **Mappa Interattiva** (`/mappa`)
 - Visualizzazione geografica di tutte le proprietà
 - Filtri in tempo reale
 - Heatmap prezzi per zona
 
-**RAG Assistant** (Sidebar)
-- Chat AI contestuale
-- Interroga il tuo database in linguaggio naturale
-- Genera report automatici
+**AI Chatbot** (Floating Button - Bottom Right)
+- Chat AI con **11 tools specializzati**:
+  - 7 tools database (ricerca immobili, clienti, richieste, dettagli)
+  - 4 tools business intelligence (scoring, portfolio analysis, urgent actions, market insights)
+- Query suggerite contestuali (cambiano in base alla pagina)
+- Interroga il database in linguaggio naturale
+- Analizza portfolio e genera insights
 
 ---
 
@@ -141,17 +152,18 @@ Puoi aggiungere o modificare le API keys in qualsiasi momento:
 4. Clicca **Test Connessione**
 5. Salva
 
-### Google AI (Gemini) - GRATUITA
+### Google AI (Gemini 2.0 Flash) - GRATUITA
 
 1. Vai su https://aistudio.google.com/app/apikey
 2. Clicca "Create API Key"
 3. Copia la chiave (inizia con `AIza...`)
 4. Incollala nelle Impostazioni
 5. **Funzionalità sbloccate**:
-   - 🤖 RAG Assistant (chat intelligente)
-   - 🎯 Property Matching (abbinamenti automatici)
-   - 📊 Daily Briefing (riepilogo giornaliero)
-   - 🔍 Semantic Search (ricerca avanzata)
+   - 🤖 **AI Chatbot** - 11 tools specializzati (database + business intelligence)
+   - 💬 **Suggested Queries** - Query contestuali intelligenti
+   - 🔍 **Semantic Search** - Ricerca avanzata in linguaggio naturale
+   - 📊 **Market Insights** - Analisi mercato AI-powered
+   - ⚡ **BONUS**: Property Matching è GRATIS (algoritmo deterministico, no AI)
 
 ---
 
@@ -337,11 +349,11 @@ docker-compose up -d
 - Avvia ricerca automatica
 - Le proprietà vengono importate nel tuo database
 
-**3. Daily Briefing**
-- Ogni mattina l'AI genera un riepilogo
-- Nuove opportunità
-- Azioni prioritarie
-- Match recenti
+**3. AI Chatbot**
+- Click sul bottone floating (bottom-right) su qualsiasi pagina
+- Query suggerite cambiano in base al contesto
+- Chiedi "Come sta andando il portfolio?" o "Calcola match per REQ-001"
+- 11 tools specializzati rispondono a domande complesse
 
 **4. Backup Automatico**
 - Docker: volumi persistenti

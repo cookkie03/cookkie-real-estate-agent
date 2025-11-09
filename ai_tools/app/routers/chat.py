@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import logging
 
-from app.agents.rag_assistant import run_rag_assistant
+from app.agents.crm_chatbot import run_crm_chatbot
+from app.services import generate_suggested_queries
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class Message(BaseModel):
 class ChatRequest(BaseModel):
     """Chat request payload"""
     messages: List[Message] = Field(..., description="Conversation messages")
+    context: Optional[Dict[str, Any]] = Field(default=None, description="Optional context (page, filters, etc.)")
 
 
 class ChatResponse(BaseModel):
@@ -57,8 +59,8 @@ async def chat(request: ChatRequest):
         # Convert Pydantic models to dicts
         messages_dict = [{"role": msg.role, "content": msg.content} for msg in request.messages]
 
-        # Run RAG assistant
-        result = run_rag_assistant(messages_dict)
+        # Run CRM Chatbot
+        result = run_crm_chatbot(messages_dict, context=request.context)
 
         if not result.get("success"):
             raise HTTPException(
@@ -78,17 +80,68 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/suggested-queries")
+async def get_suggested_queries(
+    current_page: Optional[str] = None,
+    entity_type: Optional[str] = None,
+    entity_id: Optional[str] = None
+):
+    """
+    Get contextual suggested queries for the chatbot.
+
+    Args:
+        current_page: Current page path (e.g., "/requests", "/properties")
+        entity_type: Optional entity type (property, contact, request)
+        entity_id: Optional entity ID for specific queries
+
+    Returns:
+        List of suggested query strings
+
+    **Example:**
+    GET /ai/chat/suggested-queries?current_page=/requests
+    """
+    try:
+        context = {}
+        if current_page:
+            context["current_page"] = current_page
+
+        queries = generate_suggested_queries(context)
+
+        return {
+            "success": True,
+            "queries": queries,
+            "context": context
+        }
+
+    except Exception as e:
+        logger.error(f"Error generating suggested queries: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "queries": [
+                "Come sta andando il mio portfolio?",
+                "Quali sono le opportunità di oggi?",
+                "Mostrami i migliori match disponibili"
+            ]
+        }
+
+
 @router.get("/status")
 async def chat_status():
     """Check chat agent status"""
     return {
         "status": "ready",
-        "agent": "rag_assistant",
+        "agent": "crm_chatbot",
+        "model": "gemini-2.0-flash-exp",
+        "tools_count": 11,
         "capabilities": [
-            "Property search",
-            "Contact search",
+            "Property search (database + semantic)",
+            "Contact search and profiling",
             "Request analysis",
-            "Match queries",
-            "Database insights"
+            "Match calculation (deterministic scoring)",
+            "Portfolio analysis",
+            "Market insights",
+            "Urgent actions tracking",
+            "Business intelligence"
         ]
     }
