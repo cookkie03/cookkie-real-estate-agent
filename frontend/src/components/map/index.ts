@@ -8,3 +8,7 @@
  */
 
 export { MapPreview } from './MapPreview';
+export { InteractiveMap } from './InteractiveMap';
+export { LegendPanel } from './LegendPanel';
+export { LayerSwitcher } from './LayerSwitcher';
+export { QuickFilters } from './QuickFilters';
