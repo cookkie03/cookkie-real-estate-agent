@@ -8,7 +8,7 @@
 // ORM: Prisma (TypeScript) + SQLAlchemy (Python mirror)
 //
 // Last Updated: 2025-11-09
-// Version: 3.1.0
+// Version: 3.2.0 (Sprint 3: Type Safety + Business Fields)
 // ============================================================================
 
 generator client {
@@ -19,6 +19,51 @@ generator client {
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS - Type Safety for Status Fields
+// ============================================================================
+
+enum ContactStatus {
+  active
+  inactive
+  archived
+  blacklist
+}
+
+enum PropertyStatus {
+  draft
+  available
+  option
+  sold
+  rented
+  suspended
+  archived
+}
+
+enum RequestStatus {
+  active
+  paused
+  satisfied
+  cancelled
+}
+
+enum MatchStatus {
+  suggested
+  sent
+  viewed
+  visited
+  interested
+  rejected
+  closed
+}
+
+enum ActivityStatus {
+  scheduled
+  completed
+  cancelled
+  missed
 }
 
 // ============================================================================
@@ -80,8 +125,8 @@ model Contact {
   longitude Float?
 
   // Fiscal Data
-  taxCode     String?
-  vatNumber   String?
+  taxCode     String?   @unique
+  vatNumber   String?   @unique
   birthDate   DateTime?
   nationality String?
 
@@ -102,7 +147,7 @@ model Contact {
   budgetMax Decimal?
 
   // Status
-  status          String    @default("active") // active, inactive, archived, blacklist
+  status          ContactStatus @default(active)
   lastContactDate DateTime?
   notes           String?   
 
@@ -207,8 +252,8 @@ model Property {
   buildingId     String?
 
   // Status
-  status     String @default("draft") // draft, available, option, sold, rented, suspended, archived
-  visibility String @default("public") // public, private, network, archived
+  status     PropertyStatus @default(draft)
+  visibility String         @default("public") // public, private, network, archived
 
   // Source
   source     String    @default("direct_mandate") // direct_mandate, census, web_scraping, cadastre
@@ -309,6 +354,13 @@ model Property {
   notes         String?
   internalNotes String?  // private notes, not shown to clients
 
+  // Closure Tracking (when sold/rented)
+  soldDate    DateTime? // When property was sold
+  rentedDate  DateTime? // When property was rented
+  soldPrice   Decimal?  // Actual sale price (may differ from asking price)
+  rentedPrice Decimal?  // Actual rent price (may differ from asking price)
+  closedBy    String?   // Reason for closing: sold, rented, mandate_expired, owner_withdrawn
+
   // Timestamps
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -360,9 +412,9 @@ model Request {
   contactId String
 
   // Type & Status
-  requestType String @default("search_buy") // search_buy, search_rent, valuation
-  status      String @default("active") // active, paused, satisfied, cancelled
-  urgency     String @default("medium") // low, medium, high
+  requestType String        @default("search_buy") // search_buy, search_rent, valuation
+  status      RequestStatus @default(active)
+  urgency     String        @default("medium") // low, medium, high
 
   // Search Criteria
   contractType  String? // sale, rent
@@ -411,7 +463,11 @@ model Request {
   moveDate   DateTime? // when client needs to move
   expiresAt  DateTime? // when this request expires
 
-  notes String? 
+  notes String?
+
+  // Satisfaction Tracking
+  satisfiedByMatchId String?   // ID of the Match that satisfied this request
+  satisfiedDate      DateTime? // When this request was satisfied
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -456,19 +512,23 @@ model Match {
   scoreCondition Int?
 
   // Status
-  status String @default("suggested") // suggested, sent, viewed, visited, interested, rejected, closed
+  status MatchStatus @default(suggested)
 
   // Feedback
   clientReaction String? // interested, neutral, not_interested
   rejectionReason String? // too_expensive, wrong_location, too_small, etc.
-  clientNotes     String? 
+  clientNotes     String?
 
   // Actions
   sentDate    DateTime?
   viewedDate  DateTime?
   visitedDate DateTime?
 
-  agentNotes String? 
+  agentNotes String?
+
+  // Closure Tracking
+  closedDate   DateTime? // When this match was closed
+  closedReason String?   // Why closed: client_bought, property_sold, client_lost_interest, etc. 
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -506,9 +566,9 @@ model Activity {
   buildingId String?
 
   // Type & Status
-  activityType String // call, email, meeting, visit, census, photo_shoot, valuation, etc.
-  status       String @default("scheduled") // scheduled, completed, cancelled, missed
-  priority     String @default("normal") // low, normal, high, urgent
+  activityType String         // call, email, meeting, visit, census, photo_shoot, valuation, etc.
+  status       ActivityStatus @default(scheduled)
+  priority     String         @default("normal") // low, normal, high, urgent
 
   // Timing
   scheduledAt DateTime?
@@ -1049,4 +1109,46 @@ model ScrapingSource {
 //    - Add composite indexes for common queries
 //    - Use @@index for frequently filtered fields
 //    - Monitor query performance with Prisma Studio
+//
+// 5. Full-Text Search (PostgreSQL Production Only):
+//    Run these SQL commands after deploying to PostgreSQL:
+//
+//    -- Contact full-text search
+//    ALTER TABLE contacts ADD COLUMN search_vector tsvector
+//      GENERATED ALWAYS AS (
+//        to_tsvector('italian',
+//          coalesce(full_name, '') || ' ' ||
+//          coalesce(primary_email, '') || ' ' ||
+//          coalesce(primary_phone, '') || ' ' ||
+//          coalesce(notes, ''))
+//      ) STORED;
+//    CREATE INDEX contacts_search_idx ON contacts USING GIN(search_vector);
+//
+//    -- Property full-text search
+//    ALTER TABLE properties ADD COLUMN search_vector tsvector
+//      GENERATED ALWAYS AS (
+//        to_tsvector('italian',
+//          coalesce(title, '') || ' ' ||
+//          coalesce(description, '') || ' ' ||
+//          coalesce(street, '') || ' ' ||
+//          coalesce(city, '') || ' ' ||
+//          coalesce(zone, ''))
+//      ) STORED;
+//    CREATE INDEX properties_search_idx ON properties USING GIN(search_vector);
+//
+//    -- Building full-text search
+//    ALTER TABLE buildings ADD COLUMN search_vector tsvector
+//      GENERATED ALWAYS AS (
+//        to_tsvector('italian',
+//          coalesce(street, '') || ' ' ||
+//          coalesce(civic, '') || ' ' ||
+//          coalesce(city, '') || ' ' ||
+//          coalesce(notes, ''))
+//      ) STORED;
+//    CREATE INDEX buildings_search_idx ON buildings USING GIN(search_vector);
+//
+//    Usage example:
+//    SELECT * FROM contacts
+//    WHERE search_vector @@ to_tsquery('italian', 'mario & rossi')
+//    ORDER BY ts_rank(search_vector, to_tsquery('italian', 'mario & rossi')) DESC;
 // ============================================================================
