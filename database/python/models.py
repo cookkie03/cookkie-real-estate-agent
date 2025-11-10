@@ -1,828 +1,679 @@
-"""
-==============================================
-SQLAlchemy Models - Mirror of Prisma Schema
-CRM Immobiliare Database Models for Python
-==============================================
+# ==============================================================================
+# AUTO-GENERATED SQLAlchemy Models from Prisma Schema
+# ==============================================================================
+# ⚠️  DO NOT EDIT MANUALLY!
+#
+# Generated on: 2025-11-10T21:33:43.523Z
+# Source: database/prisma/schema.prisma
+# Generator: scripts/generate-sqlalchemy-models.ts
+#
+# To regenerate: npm run generate:sqlalchemy
+# ==============================================================================
 
-This file mirrors the Prisma schema for Python access to the database.
-Keep in sync with database/prisma/schema.prisma
-
-Database: PostgreSQL
-"""
-
-from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, DateTime, ForeignKey, Text, Index
-)
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, JSON, ForeignKey, Enum as SQLEnum, DECIMAL, BigInteger
 from sqlalchemy.orm import relationship
+from .database import Base
 from datetime import datetime
+from typing import Optional
+import enum
 
-Base = declarative_base()
+# ==============================================================================
+# ENUMS
+# ==============================================================================
 
+class ContactStatus(str, enum.Enum):
+    """ContactStatus enum"""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    ARCHIVED = "archived"
+    BLACKLIST = "blacklist"
 
-# ============================================================================
-# 1. USER & AUTHENTICATION
-# ============================================================================
-class User(Base):
-    __tablename__ = "users"
+class PropertyStatus(str, enum.Enum):
+    """PropertyStatus enum"""
+    DRAFT = "draft"
+    AVAILABLE = "available"
+    OPTION = "option"
+    SOLD = "sold"
+    RENTED = "rented"
+    SUSPENDED = "suspended"
+    ARCHIVED = "archived"
 
-    id = Column(String, primary_key=True)
-    email = Column(String, unique=True, nullable=False)
-    password = Column(String, nullable=False)  # bcrypt hashed
-    name = Column(String, nullable=False)
-    createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+class RequestStatus(str, enum.Enum):
+    """RequestStatus enum"""
+    ACTIVE = "active"
+    PAUSED = "paused"
+    SATISFIED = "satisfied"
+    CANCELLED = "cancelled"
 
-    # Relationships
-    profile = relationship("UserProfile", back_populates="user", uselist=False)
+class MatchStatus(str, enum.Enum):
+    """MatchStatus enum"""
+    SUGGESTED = "suggested"
+    SENT = "sent"
+    VIEWED = "viewed"
+    VISITED = "visited"
+    INTERESTED = "interested"
+    REJECTED = "rejected"
+    CLOSED = "closed"
 
+class ActivityStatus(str, enum.Enum):
+    """ActivityStatus enum"""
+    SCHEDULED = "scheduled"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+    MISSED = "missed"
+
+# ==============================================================================
+# MODELS
+# ==============================================================================
 
 class UserProfile(Base):
+    """UserProfile model"""
     __tablename__ = "user_profile"
 
     id = Column(String, primary_key=True)
-    userId = Column(String, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
-    fullName = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
-    phone = Column(String)
-    agencyName = Column(String)
-    agencyVat = Column(String)
-    agencyAddress = Column(String)
-    settings = Column(Text, default='{"commissionPercent":3.0}')
+    fullName = Column(String)
+    email = Column(String, unique=True)
+    phone = Column(String, nullable=True)  # Optional
+    agencyName = Column(String, nullable=True)  # Optional
+    agencyVat = Column(String, nullable=True)  # Optional
+    agencyAddress = Column(String, nullable=True)  # Optional
+    settings = Column(JSON, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
-    # Relationships
-    user = relationship("User", back_populates="profile")
+    def __repr__(self):
+        return f"<UserProfile(id={self.id})>"
 
-
-# ============================================================================
-# 2. CONTACTS
-# ============================================================================
 class Contact(Base):
+    """Contact model"""
     __tablename__ = "contacts"
 
     id = Column(String, primary_key=True)
-    code = Column(String, unique=True, nullable=False)
-    entityType = Column(String, default="person")
+    code = Column(String, unique=True)
+    entityType = Column(String)
+    fullName = Column(String)
+    firstName = Column(String, nullable=True)  # Optional
+    lastName = Column(String, nullable=True)  # Optional
+    companyName = Column(String, nullable=True)  # Optional
+    primaryPhone = Column(String, nullable=True)  # Optional
+    secondaryPhone = Column(String, nullable=True)  # Optional
+    primaryEmail = Column(String, nullable=True)  # Optional
+    secondaryEmail = Column(String, nullable=True)  # Optional
+    street = Column(String, nullable=True)  # Optional
+    civic = Column(String, nullable=True)  # Optional
+    city = Column(String, nullable=True)  # Optional
+    province = Column(String, nullable=True)  # Optional
+    zip = Column(String, nullable=True)  # Optional
+    country = Column(String, nullable=True)  # Optional
+    latitude = Column(Float, nullable=True)  # Optional
+    longitude = Column(Float, nullable=True)  # Optional
+    taxCode = Column(String, nullable=True, unique=True)  # Optional
+    vatNumber = Column(String, nullable=True, unique=True)  # Optional
+    birthDate = Column(DateTime, nullable=True)  # Optional
+    nationality = Column(String, nullable=True)  # Optional
+    privacyFirstContact = Column(Boolean)
+    privacyFirstContactDate = Column(DateTime, nullable=True)  # Optional
+    privacyExtended = Column(Boolean)
+    privacyExtendedDate = Column(DateTime, nullable=True)  # Optional
+    privacyMarketing = Column(Boolean)
+    source = Column(String, nullable=True)  # Optional
+    leadScore = Column(Integer, nullable=True)  # Optional
+    importance = Column(String)
+    budgetMin = Column(Numeric, nullable=True)  # Optional
+    budgetMax = Column(Numeric, nullable=True)  # Optional
+    status = Column(ContactStatus)
+    lastContactDate = Column(DateTime, nullable=True)  # Optional
+    notes = Column(String, nullable=True)  # Optional
+    createdAt = Column(DateTime, default=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
-    # Anagrafica
-    fullName = Column(String, nullable=False)
-    firstName = Column(String)
-    lastName = Column(String)
-    companyName = Column(String)
+    # Relationships
+    ownedProperties = relationship("Property")  # TODO: Configure relationship
+    requests = relationship("Request")  # TODO: Configure relationship
+    matches = relationship("Match")  # TODO: Configure relationship
+    activities = relationship("Activity")  # TODO: Configure relationship
+    tags = relationship("EntityTag")  # TODO: Configure relationship
 
-    # Contatti
-    primaryPhone = Column(String)
-    secondaryPhone = Column(String)
-    primaryEmail = Column(String)
-    secondaryEmail = Column(String)
+    def __repr__(self):
+        return f"<Contact(id={self.id})>"
 
-    # Indirizzo
+class Building(Base):
+    """Building model"""
+    __tablename__ = "buildings"
+
+    id = Column(String, primary_key=True)
+    code = Column(String, unique=True)
     street = Column(String)
     civic = Column(String)
     city = Column(String)
     province = Column(String)
-    zip = Column(String)
-    country = Column(String, default="Italia")
+    zip = Column(String, nullable=True)  # Optional
     latitude = Column(Float)
     longitude = Column(Float)
-
-    # Dati Fiscali
-    taxCode = Column(String)
-    vatNumber = Column(String)
-    birthDate = Column(DateTime)
-    nationality = Column(String)
-
-    # Privacy (GDPR)
-    privacyFirstContact = Column(Boolean, default=False)
-    privacyFirstContactDate = Column(DateTime)
-    privacyExtended = Column(Boolean, default=False)
-    privacyExtendedDate = Column(DateTime)
-    privacyMarketing = Column(Boolean, default=False)
-
-    # Profilazione
-    source = Column(String)
-    leadScore = Column(Integer)
-    importance = Column(String, default="normal")
-
-    # Budget
-    budgetMin = Column(Float)
-    budgetMax = Column(Float)
-
-    # Status
-    status = Column(String, default="active")
-    lastContactDate = Column(DateTime)
-    notes = Column(Text)
-
+    cadastralSheet = Column(String, nullable=True)  # Optional
+    cadastralParticle = Column(String, nullable=True)  # Optional
+    cadastralZone = Column(String, nullable=True)  # Optional
+    yearBuilt = Column(Integer, nullable=True)  # Optional
+    totalFloors = Column(Integer, nullable=True)  # Optional
+    totalUnits = Column(Integer, nullable=True)  # Optional
+    hasElevator = Column(Boolean)
+    condition = Column(String, nullable=True)  # Optional
+    activeUnits = Column(Integer)
+    soldUnits = Column(Integer)
+    avgUrgency = Column(Float, nullable=True)  # Optional
+    lastSurveyDate = Column(DateTime, nullable=True)  # Optional
+    nextSurveyDue = Column(DateTime, nullable=True)  # Optional
+    unitsSurveyed = Column(Integer)
+    unitsInterested = Column(Integer)
+    administratorName = Column(String, nullable=True)  # Optional
+    administratorPhone = Column(String, nullable=True)  # Optional
+    administratorEmail = Column(String, nullable=True)  # Optional
+    notes = Column(String, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
     # Relationships
-    owned_properties = relationship("Property", back_populates="owner", foreign_keys="[Property.ownerContactId]")
-    requests = relationship("Request", back_populates="contact")
-    activities = relationship("Activity", back_populates="contact")
-    matches = relationship("Match", back_populates="contact")
+    properties = relationship("Property")  # TODO: Configure relationship
+    activities = relationship("Activity")  # TODO: Configure relationship
+    tags = relationship("EntityTag")  # TODO: Configure relationship
 
-    __table_args__ = (
-        Index('idx_contact_code', 'code'),
-        Index('idx_contact_fullName', 'fullName'),
-        Index('idx_contact_city', 'city'),
-        Index('idx_contact_status', 'status'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<Building(id={self.id})>"
 
-
-# ============================================================================
-# 3. BUILDINGS
-# ============================================================================
-class Building(Base):
-    __tablename__ = "buildings"
-
-    id = Column(String, primary_key=True)
-    code = Column(String, unique=True, nullable=False)
-
-    # Indirizzo
-    street = Column(String, nullable=False)
-    civic = Column(String, nullable=False)
-    city = Column(String, nullable=False)
-    province = Column(String, nullable=False)
-    zip = Column(String)
-    latitude = Column(Float)
-    longitude = Column(Float)
-
-    # Info Edificio
-    yearBuilt = Column(Integer)
-    totalFloors = Column(Integer)
-    totalUnits = Column(Integer)
-    hasElevator = Column(Boolean, default=False)
-    condition = Column(String)
-
-    # Censimento
-    lastSurveyDate = Column(DateTime)
-    nextSurveyDue = Column(DateTime)
-    unitsSurveyed = Column(Integer, default=0)
-    unitsInterested = Column(Integer, default=0)
-
-    notes = Column(Text)
-
-    createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Relationships
-    properties = relationship("Property", back_populates="building")
-    activities = relationship("Activity", back_populates="building")
-
-
-# ============================================================================
-# 4. PROPERTIES
-# ============================================================================
 class Property(Base):
+    """Property model"""
     __tablename__ = "properties"
 
     id = Column(String, primary_key=True)
-    code = Column(String, unique=True, nullable=False)
-
-    # Relations
-    ownerContactId = Column(String, ForeignKey("contacts.id"))
-    buildingId = Column(String, ForeignKey("buildings.id"))
-
-    # Status
-    status = Column(String, default="draft")
-    visibility = Column(String, default="public")
-
-    # Fonte
-    source = Column(String, nullable=False)
-    sourceUrl = Column(String)
-    importDate = Column(DateTime)
-    verified = Column(Boolean, default=False)
-
-    # Indirizzo
-    street = Column(String, nullable=False)
-    civic = Column(String)
-    internal = Column(String)
-    floor = Column(String)
-    city = Column(String, nullable=False)
-    province = Column(String, nullable=False)
-    zone = Column(String)
-    zip = Column(String)
-    latitude = Column(Float, nullable=False)
-    longitude = Column(Float, nullable=False)
-
-    # Tipo
-    contractType = Column(String, nullable=False)
-    propertyType = Column(String, nullable=False)
-    propertyCategory = Column(String)
-
-    # Dimensioni
-    sqmCommercial = Column(Float)
-    sqmLivable = Column(Float)
-    rooms = Column(Integer)
-    bedrooms = Column(Integer)
-    bathrooms = Column(Integer)
-
-    # Features
-    hasElevator = Column(Boolean, default=False)
-    hasParking = Column(Boolean, default=False)
-    hasGarage = Column(Boolean, default=False)
-    hasGarden = Column(Boolean, default=False)
-    hasTerrace = Column(Boolean, default=False)
-
-    # Caratteristiche
-    condition = Column(String)
-    heatingType = Column(String)
-    energyClass = Column(String)
-    yearBuilt = Column(Integer)
-
-    # Prezzi
-    priceSale = Column(Float)
-    priceRentMonthly = Column(Float)
-
-    # Marketing
-    title = Column(String)
-    description = Column(Text)
-
-    # Statistiche
-    viewsCount = Column(Integer, default=0)
-    inquiriesCount = Column(Integer, default=0)
-    visitsCount = Column(Integer, default=0)
-
-    notes = Column(Text)
-    internalNotes = Column(Text)
-
+    code = Column(String, unique=True)
+    ownerContactId = Column(String, nullable=True)  # Optional
+    buildingId = Column(String, nullable=True)  # Optional
+    status = Column(PropertyStatus)
+    visibility = Column(String)
+    source = Column(String)
+    sourceUrl = Column(String, nullable=True)  # Optional
+    importDate = Column(DateTime, nullable=True)  # Optional
+    verified = Column(Boolean)
+    street = Column(String)
+    civic = Column(String, nullable=True)  # Optional
+    internal = Column(String, nullable=True)  # Optional
+    floor = Column(String, nullable=True)  # Optional
+    city = Column(String)
+    province = Column(String)
+    zone = Column(String, nullable=True)  # Optional
+    zip = Column(String, nullable=True)  # Optional
+    latitude = Column(Float)
+    longitude = Column(Float)
+    contractType = Column(String)
+    propertyType = Column(String)
+    propertyCategory = Column(String, nullable=True)  # Optional
+    sqmCommercial = Column(Float, nullable=True)  # Optional
+    sqmLivable = Column(Float, nullable=True)  # Optional
+    rooms = Column(Integer, nullable=True)  # Optional
+    bedrooms = Column(Integer, nullable=True)  # Optional
+    bathrooms = Column(Integer, nullable=True)  # Optional
+    hasElevator = Column(Boolean)
+    hasParking = Column(Boolean)
+    hasGarage = Column(Boolean)
+    hasGarden = Column(Boolean)
+    hasTerrace = Column(Boolean)
+    hasBalcony = Column(Boolean)
+    hasCellar = Column(Boolean)
+    hasAttic = Column(Boolean)
+    hasSwimmingPool = Column(Boolean)
+    hasFireplace = Column(Boolean)
+    hasAlarm = Column(Boolean)
+    hasAirConditioning = Column(Boolean)
+    condition = Column(String, nullable=True)  # Optional
+    heatingType = Column(String, nullable=True)  # Optional
+    energyClass = Column(String, nullable=True)  # Optional
+    yearBuilt = Column(Integer, nullable=True)  # Optional
+    yearRenovated = Column(Integer, nullable=True)  # Optional
+    priceSale = Column(Numeric, nullable=True)  # Optional
+    priceRentMonthly = Column(Numeric, nullable=True)  # Optional
+    priceMinAcceptable = Column(Numeric, nullable=True)  # Optional
+    condominiumFees = Column(Numeric, nullable=True)  # Optional
+    estimatedValue = Column(Numeric, nullable=True)  # Optional
+    estimatedDaysToSell = Column(Integer, nullable=True)  # Optional
+    estimatedRentMonthly = Column(Numeric, nullable=True)  # Optional
+    mandateType = Column(String, nullable=True)  # Optional
+    mandateStartDate = Column(DateTime, nullable=True)  # Optional
+    mandateEndDate = Column(DateTime, nullable=True)  # Optional
+    mandateNumber = Column(String, nullable=True)  # Optional
+    needsInternalVisit = Column(Boolean)
+    needsPhotos = Column(Boolean)
+    needsValuation = Column(Boolean)
+    ownerToContact = Column(Boolean)
+    title = Column(String, nullable=True)  # Optional
+    description = Column(String, nullable=True)  # Optional
+    photosCount = Column(Integer)
+    hasProfessionalPhotos = Column(Boolean)
+    hasVirtualTour = Column(Boolean)
+    has3DModel = Column(Boolean)
+    hasFloorPlan = Column(Boolean)
+    viewsCount = Column(Integer)
+    inquiriesCount = Column(Integer)
+    visitsCount = Column(Integer)
+    daysOnMarket = Column(Integer)
+    urgencyScore = Column(Integer)
+    lastActivityAt = Column(DateTime, nullable=True)  # Optional
+    notes = Column(String, nullable=True)  # Optional
+    internalNotes = Column(String, nullable=True)  # Optional
+    soldDate = Column(DateTime, nullable=True)  # Optional
+    rentedDate = Column(DateTime, nullable=True)  # Optional
+    soldPrice = Column(Numeric, nullable=True)  # Optional
+    rentedPrice = Column(Numeric, nullable=True)  # Optional
+    closedBy = Column(String, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
+    publishedAt = Column(DateTime, nullable=True)  # Optional
+    archivedAt = Column(DateTime, nullable=True)  # Optional
 
     # Relationships
-    owner = relationship("Contact", back_populates="owned_properties", foreign_keys=[ownerContactId])
-    building = relationship("Building", back_populates="properties")
-    matches = relationship("Match", back_populates="property")
-    activities = relationship("Activity", back_populates="property")
+    owner = relationship("Contact")  # TODO: Configure relationship
+    building = relationship("Building")  # TODO: Configure relationship
+    matches = relationship("Match")  # TODO: Configure relationship
+    activities = relationship("Activity")  # TODO: Configure relationship
+    tags = relationship("EntityTag")  # TODO: Configure relationship
 
-    __table_args__ = (
-        Index('idx_property_code', 'code'),
-        Index('idx_property_status', 'status'),
-        Index('idx_property_city', 'city'),
-        Index('idx_property_contractType', 'contractType'),
-        Index('idx_property_priceSale', 'priceSale'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<Property(id={self.id})>"
 
-
-# ============================================================================
-# 5. REQUESTS
-# ============================================================================
 class Request(Base):
+    """Request model"""
     __tablename__ = "requests"
 
     id = Column(String, primary_key=True)
-    code = Column(String, unique=True, nullable=False)
-
-    # Relations
-    contactId = Column(String, ForeignKey("contacts.id"), nullable=False)
-
-    # Tipo & Stato
-    requestType = Column(String, default="search_buy")
-    status = Column(String, default="active")
-    urgency = Column(String, default="medium")
-
-    # Criteri
-    contractType = Column(String)
-    searchCities = Column(Text)  # JSON array
-    searchZones = Column(Text)   # JSON array
-    propertyTypes = Column(Text) # JSON array
-
-    # Budget
-    priceMin = Column(Float)
-    priceMax = Column(Float)
-
-    # Dimensioni
-    sqmMin = Column(Float)
-    sqmMax = Column(Float)
-    roomsMin = Column(Integer)
-    roomsMax = Column(Integer)
-
-    # Features Richieste
-    requiresElevator = Column(Boolean, default=False)
-    requiresParking = Column(Boolean, default=False)
-    requiresGarden = Column(Boolean, default=False)
-
-    notes = Column(Text)
-
+    code = Column(String, unique=True)
+    contactId = Column(String)
+    requestType = Column(String)
+    status = Column(RequestStatus)
+    urgency = Column(String)
+    contractType = Column(String, nullable=True)  # Optional
+    searchCities = Column(JSON, nullable=True)  # Optional
+    searchZones = Column(JSON, nullable=True)  # Optional
+    propertyTypes = Column(JSON, nullable=True)  # Optional
+    searchRadiusKm = Column(Float, nullable=True)  # Optional
+    centerLatitude = Column(Float, nullable=True)  # Optional
+    centerLongitude = Column(Float, nullable=True)  # Optional
+    priceMin = Column(Numeric, nullable=True)  # Optional
+    priceMax = Column(Numeric, nullable=True)  # Optional
+    sqmMin = Column(Float, nullable=True)  # Optional
+    sqmMax = Column(Float, nullable=True)  # Optional
+    roomsMin = Column(Integer, nullable=True)  # Optional
+    roomsMax = Column(Integer, nullable=True)  # Optional
+    bedroomsMin = Column(Integer, nullable=True)  # Optional
+    bedroomsMax = Column(Integer, nullable=True)  # Optional
+    bathroomsMin = Column(Integer, nullable=True)  # Optional
+    requiresElevator = Column(Boolean)
+    requiresParking = Column(Boolean)
+    requiresGarage = Column(Boolean)
+    requiresGarden = Column(Boolean)
+    requiresTerrace = Column(Boolean)
+    requiresBalcony = Column(Boolean)
+    excludeGroundFloor = Column(Boolean)
+    excludeTopFloorNoElevator = Column(Boolean)
+    excludeBasement = Column(Boolean)
+    excludeNorthFacing = Column(Boolean)
+    minCondition = Column(String, nullable=True)  # Optional
+    minEnergyClass = Column(String, nullable=True)  # Optional
+    maxYearBuilt = Column(Integer, nullable=True)  # Optional
+    moveDate = Column(DateTime, nullable=True)  # Optional
+    expiresAt = Column(DateTime, nullable=True)  # Optional
+    notes = Column(String, nullable=True)  # Optional
+    satisfiedByMatchId = Column(String, nullable=True)  # Optional
+    satisfiedDate = Column(DateTime, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    expiresAt = Column(DateTime)
+    updatedAt = Column(DateTime)
 
     # Relationships
-    contact = relationship("Contact", back_populates="requests")
-    matches = relationship("Match", back_populates="request")
-    activities = relationship("Activity", back_populates="request")
+    contact = relationship("Contact")  # TODO: Configure relationship
+    matches = relationship("Match")  # TODO: Configure relationship
+    activities = relationship("Activity")  # TODO: Configure relationship
+    tags = relationship("EntityTag")  # TODO: Configure relationship
 
-    __table_args__ = (
-        Index('idx_request_code', 'code'),
-        Index('idx_request_status', 'status'),
-        Index('idx_request_contactId', 'contactId'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<Request(id={self.id})>"
 
-
-# ============================================================================
-# 6. MATCHES
-# ============================================================================
 class Match(Base):
+    """Match model"""
     __tablename__ = "matches"
 
     id = Column(String, primary_key=True)
-
-    # Relations
-    requestId = Column(String, ForeignKey("requests.id"), nullable=False)
-    propertyId = Column(String, ForeignKey("properties.id"), nullable=False)
-    contactId = Column(String, ForeignKey("contacts.id"))
-
-    # Scoring
-    scoreTotal = Column(Integer, nullable=False)
-    scoreLocation = Column(Integer)
-    scorePrice = Column(Integer)
-    scoreSize = Column(Integer)
-    scoreFeatures = Column(Integer)
-
-    # Stato
-    status = Column(String, default="suggested")
-
-    # Feedback
-    clientReaction = Column(String)
-    rejectionReason = Column(String)
-    clientNotes = Column(Text)
-
-    # Azioni
-    sentDate = Column(DateTime)
-    viewedDate = Column(DateTime)
-    visitedDate = Column(DateTime)
-
-    agentNotes = Column(Text)
-
+    requestId = Column(String)
+    propertyId = Column(String)
+    contactId = Column(String, nullable=True)  # Optional
+    scoreTotal = Column(Integer)
+    scoreLocation = Column(Integer, nullable=True)  # Optional
+    scorePrice = Column(Integer, nullable=True)  # Optional
+    scoreSize = Column(Integer, nullable=True)  # Optional
+    scoreFeatures = Column(Integer, nullable=True)  # Optional
+    scoreCondition = Column(Integer, nullable=True)  # Optional
+    status = Column(MatchStatus)
+    clientReaction = Column(String, nullable=True)  # Optional
+    rejectionReason = Column(String, nullable=True)  # Optional
+    clientNotes = Column(String, nullable=True)  # Optional
+    sentDate = Column(DateTime, nullable=True)  # Optional
+    viewedDate = Column(DateTime, nullable=True)  # Optional
+    visitedDate = Column(DateTime, nullable=True)  # Optional
+    agentNotes = Column(String, nullable=True)  # Optional
+    closedDate = Column(DateTime, nullable=True)  # Optional
+    closedReason = Column(String, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
     # Relationships
-    request = relationship("Request", back_populates="matches")
-    property = relationship("Property", back_populates="matches")
-    contact = relationship("Contact", back_populates="matches")
+    request = relationship("Request")  # TODO: Configure relationship
+    property = relationship("Property")  # TODO: Configure relationship
+    contact = relationship("Contact")  # TODO: Configure relationship
 
-    __table_args__ = (
-        Index('idx_match_requestId', 'requestId'),
-        Index('idx_match_propertyId', 'propertyId'),
-        Index('idx_match_scoreTotal', 'scoreTotal'),
-        Index('idx_match_status', 'status'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<Match(id={self.id})>"
 
-
-# ============================================================================
-# 7. ACTIVITIES
-# ============================================================================
 class Activity(Base):
+    """Activity model"""
     __tablename__ = "activities"
 
     id = Column(String, primary_key=True)
-
-    # Polymorphic Relations
-    contactId = Column(String, ForeignKey("contacts.id"))
-    propertyId = Column(String, ForeignKey("properties.id"))
-    requestId = Column(String, ForeignKey("requests.id"))
-    buildingId = Column(String, ForeignKey("buildings.id"))
-
-    # Tipo & Stato
-    activityType = Column(String, nullable=False)
-    status = Column(String, default="scheduled")
-    priority = Column(String, default="normal")
-
-    # Temporizzazione
-    scheduledAt = Column(DateTime)
-    completedAt = Column(DateTime)
-    dueDate = Column(DateTime)
-
-    # Contenuto
-    title = Column(String, nullable=False)
-    description = Column(Text)
-    outcome = Column(Text)
-    details = Column(Text, default="{}")
-
-    notes = Column(Text)
-
+    contactId = Column(String, nullable=True)  # Optional
+    propertyId = Column(String, nullable=True)  # Optional
+    requestId = Column(String, nullable=True)  # Optional
+    buildingId = Column(String, nullable=True)  # Optional
+    activityType = Column(String)
+    status = Column(ActivityStatus)
+    priority = Column(String)
+    scheduledAt = Column(DateTime, nullable=True)  # Optional
+    completedAt = Column(DateTime, nullable=True)  # Optional
+    dueDate = Column(DateTime, nullable=True)  # Optional
+    duration = Column(Integer, nullable=True)  # Optional
+    title = Column(String)
+    description = Column(String, nullable=True)  # Optional
+    outcome = Column(String, nullable=True)  # Optional
+    details = Column(JSON, nullable=True)  # Optional
+    locationAddress = Column(String, nullable=True)  # Optional
+    locationCity = Column(String, nullable=True)  # Optional
+    locationNotes = Column(String, nullable=True)  # Optional
+    reminderSent = Column(Boolean)
+    reminderDate = Column(DateTime, nullable=True)  # Optional
+    notes = Column(String, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
     # Relationships
-    contact = relationship("Contact", back_populates="activities")
-    property = relationship("Property", back_populates="activities")
-    request = relationship("Request", back_populates="activities")
-    building = relationship("Building", back_populates="activities")
+    contact = relationship("Contact")  # TODO: Configure relationship
+    property = relationship("Property")  # TODO: Configure relationship
+    request = relationship("Request")  # TODO: Configure relationship
+    building = relationship("Building")  # TODO: Configure relationship
+    tags = relationship("EntityTag")  # TODO: Configure relationship
 
-    __table_args__ = (
-        Index('idx_activity_contactId', 'contactId'),
-        Index('idx_activity_propertyId', 'propertyId'),
-        Index('idx_activity_activityType', 'activityType'),
-        Index('idx_activity_status', 'status'),
-        Index('idx_activity_scheduledAt', 'scheduledAt'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<Activity(id={self.id})>"
 
+class Tag(Base):
+    """Tag model"""
+    __tablename__ = "tags"
 
-# ============================================================================
-# 8. CUSTOM FIELD DEFINITION
-# ============================================================================
+    id = Column(String, primary_key=True)
+    name = Column(String, unique=True)
+    category = Column(String, nullable=True)  # Optional
+    color = Column(String, nullable=True)  # Optional
+    usageCount = Column(Integer)
+    createdAt = Column(DateTime, default=datetime.utcnow)
+    updatedAt = Column(DateTime)
+
+    # Relationships
+    entities = relationship("EntityTag")  # TODO: Configure relationship
+
+    def __repr__(self):
+        return f"<Tag(id={self.id})>"
+
+class EntityTag(Base):
+    """EntityTag model"""
+    __tablename__ = "entity_tags"
+
+    id = Column(String, primary_key=True)
+    tagId = Column(String)
+    contactId = Column(String, nullable=True)  # Optional
+    propertyId = Column(String, nullable=True)  # Optional
+    requestId = Column(String, nullable=True)  # Optional
+    buildingId = Column(String, nullable=True)  # Optional
+    activityId = Column(String, nullable=True)  # Optional
+    createdAt = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    tag = relationship("Tag")  # TODO: Configure relationship
+    contact = relationship("Contact")  # TODO: Configure relationship
+    property = relationship("Property")  # TODO: Configure relationship
+    request = relationship("Request")  # TODO: Configure relationship
+    building = relationship("Building")  # TODO: Configure relationship
+    activity = relationship("Activity")  # TODO: Configure relationship
+
+    def __repr__(self):
+        return f"<EntityTag(id={self.id})>"
+
+class AuditLog(Base):
+    """AuditLog model"""
+    __tablename__ = "audit_logs"
+
+    id = Column(String, primary_key=True)
+    entityType = Column(String)
+    entityId = Column(String)
+    action = Column(String)
+    oldValues = Column(JSON, nullable=True)  # Optional
+    newValues = Column(JSON, nullable=True)  # Optional
+    userId = Column(String, nullable=True)  # Optional
+    ipAddress = Column(String, nullable=True)  # Optional
+    userAgent = Column(String, nullable=True)  # Optional
+    createdAt = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<AuditLog(id={self.id})>"
+
 class CustomFieldDefinition(Base):
+    """CustomFieldDefinition model"""
     __tablename__ = "custom_field_definitions"
 
     id = Column(String, primary_key=True)
-
-    # Metadata
-    name = Column(String, nullable=False)
-    label = Column(String, nullable=False)
-    entityType = Column(String, nullable=False)
-
-    # Type & Validation
-    fieldType = Column(String, default="text", nullable=False)
-    required = Column(Boolean, default=False)
-
-    # Validation Rules (JSON)
-    validationRules = Column(Text)  # JSON string
-
-    # Options (for select/multiselect)
-    options = Column(Text)  # JSON string
-
-    # UI Positioning
-    section = Column(String)
-    displayOrder = Column(Integer, default=0)
-
-    # Metadata
-    isActive = Column(Boolean, default=True)
-
+    name = Column(String)
+    label = Column(String)
+    entityType = Column(String)
+    fieldType = Column(String)
+    required = Column(Boolean)
+    validationRules = Column(JSON, nullable=True)  # Optional
+    options = Column(JSON, nullable=True)  # Optional
+    section = Column(String, nullable=True)  # Optional
+    displayOrder = Column(Integer)
+    isActive = Column(Boolean)
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
     # Relationships
-    values = relationship("CustomFieldValue", back_populates="field", cascade="all, delete-orphan")
+    values = relationship("CustomFieldValue")  # TODO: Configure relationship
 
-    __table_args__ = (
-        Index('idx_custom_field_def_entity_name', 'entityType', 'name', unique=True),
-        Index('idx_custom_field_def_entity_active', 'entityType', 'isActive'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<CustomFieldDefinition(id={self.id})>"
 
-
-# ============================================================================
-# 9. CUSTOM FIELD VALUE
-# ============================================================================
 class CustomFieldValue(Base):
+    """CustomFieldValue model"""
     __tablename__ = "custom_field_values"
 
     id = Column(String, primary_key=True)
-
-    # Field Reference
-    fieldId = Column(String, ForeignKey("custom_field_definitions.id", ondelete="CASCADE"), nullable=False)
-
-    # Polymorphic Entity Reference
-    entityType = Column(String, nullable=False)
-    entityId = Column(String, nullable=False)
-
-    # Value Storage (type-specific)
-    valueText = Column(String)
-    valueNumber = Column(Float)
-    valueBoolean = Column(Boolean)
-    valueDate = Column(DateTime)
-    valueJson = Column(Text)  # JSON string
-
+    fieldId = Column(String)
+    entityType = Column(String)
+    entityId = Column(String)
+    valueText = Column(String, nullable=True)  # Optional
+    valueNumber = Column(Float, nullable=True)  # Optional
+    valueBoolean = Column(Boolean, nullable=True)  # Optional
+    valueDate = Column(DateTime, nullable=True)  # Optional
+    valueJson = Column(JSON, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
     # Relationships
-    field = relationship("CustomFieldDefinition", back_populates="values")
+    field = relationship("CustomFieldDefinition")  # TODO: Configure relationship
 
-    __table_args__ = (
-        Index('idx_custom_field_value_unique', 'fieldId', 'entityType', 'entityId', unique=True),
-        Index('idx_custom_field_value_entity', 'entityType', 'entityId'),
-        Index('idx_custom_field_value_field', 'fieldId'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<CustomFieldValue(id={self.id})>"
 
-
-# ============================================================================
-# 10. SCRAPING JOB
-# ============================================================================
 class ScrapingJob(Base):
+    """ScrapingJob model"""
     __tablename__ = "scraping_jobs"
 
     id = Column(String, primary_key=True)
-
-    # Configuration
-    portal = Column(String, nullable=False)
-    location = Column(String)
-    contractType = Column(String)
-    propertyType = Column(String)
-
-    # Filters
-    priceMin = Column(Float)
-    priceMax = Column(Float)
-    sqmMin = Column(Float)
-    sqmMax = Column(Float)
-    roomsMin = Column(Integer)
-    roomsMax = Column(Integer)
-    maxPages = Column(Integer, default=5)
-
-    # Status
-    status = Column(String, default="queued")
-
-    # Results
-    listingsFound = Column(Integer, default=0)
-    listingsSaved = Column(Integer, default=0)
-    errors = Column(Text)  # JSON array of error messages
-
-    # Timing
-    startedAt = Column(DateTime)
-    completedAt = Column(DateTime)
-    duration = Column(Integer)  # seconds
-
-    # Metadata
-    createdBy = Column(String, default="user")
-
+    portal = Column(String)
+    location = Column(String, nullable=True)  # Optional
+    contractType = Column(String, nullable=True)  # Optional
+    propertyType = Column(String, nullable=True)  # Optional
+    priceMin = Column(Numeric, nullable=True)  # Optional
+    priceMax = Column(Numeric, nullable=True)  # Optional
+    sqmMin = Column(Float, nullable=True)  # Optional
+    sqmMax = Column(Float, nullable=True)  # Optional
+    roomsMin = Column(Integer, nullable=True)  # Optional
+    roomsMax = Column(Integer, nullable=True)  # Optional
+    maxPages = Column(Integer)
+    status = Column(String)
+    listingsFound = Column(Integer)
+    listingsSaved = Column(Integer)
+    errors = Column(JSON, nullable=True)  # Optional
+    startedAt = Column(DateTime, nullable=True)  # Optional
+    completedAt = Column(DateTime, nullable=True)  # Optional
+    duration = Column(Integer, nullable=True)  # Optional
+    createdBy = Column(String)
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
-    __table_args__ = (
-        Index('idx_scraping_job_status', 'status'),
-        Index('idx_scraping_job_portal', 'portal'),
-        Index('idx_scraping_job_createdAt', 'createdAt'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<ScrapingJob(id={self.id})>"
 
-
-# ============================================================================
-# 11. SCRAPING SESSION
-# ============================================================================
 class ScrapingSession(Base):
+    """ScrapingSession model"""
     __tablename__ = "scraping_sessions"
 
     id = Column(String, primary_key=True)
-
-    # Identity
-    portal = Column(String, unique=True, nullable=False)
-    userAgent = Column(String, nullable=False)
-
-    # Session Data
-    cookies = Column(Text, nullable=False)  # JSON
-    localStorage = Column(Text)  # JSON
-    sessionStorage = Column(Text)  # JSON
-
-    # Viewport
-    viewportWidth = Column(Integer, default=1920)
-    viewportHeight = Column(Integer, default=1080)
-
-    # Authentication
-    isAuthenticated = Column(Boolean, default=False)
-    username = Column(String)
-
-    # Proxy
-    proxyUrl = Column(String)
-    proxyUsername = Column(String)
-
-    # Metrics
-    useCount = Column(Integer, default=0)
-    successCount = Column(Integer, default=0)
-    failureCount = Column(Integer, default=0)
-
-    # Validity
+    portal = Column(String, unique=True)
+    userAgent = Column(String)
+    cookies = Column(JSON)
+    localStorage = Column(JSON, nullable=True)  # Optional
+    sessionStorage = Column(JSON, nullable=True)  # Optional
+    viewportWidth = Column(Integer)
+    viewportHeight = Column(Integer)
+    isAuthenticated = Column(Boolean)
+    username = Column(String, nullable=True)  # Optional
+    proxyUrl = Column(String, nullable=True)  # Optional
+    proxyUsername = Column(String, nullable=True)  # Optional
+    useCount = Column(Integer)
+    successCount = Column(Integer)
+    failureCount = Column(Integer)
     lastUsedAt = Column(DateTime, default=datetime.utcnow)
-    lastSuccess = Column(DateTime)
-    isValid = Column(Boolean, default=True)
-
+    lastSuccess = Column(DateTime, nullable=True)  # Optional
+    isValid = Column(Boolean)
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
-    __table_args__ = (
-        Index('idx_scraping_session_portal', 'portal'),
-        Index('idx_scraping_session_isAuthenticated', 'isAuthenticated'),
-        Index('idx_scraping_session_lastUsedAt', 'lastUsedAt'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<ScrapingSession(id={self.id})>"
 
-
-# ============================================================================
-# 12. AGENT CONVERSATION
-# ============================================================================
 class AgentConversation(Base):
+    """AgentConversation model"""
     __tablename__ = "agent_conversations"
 
     id = Column(String, primary_key=True)
-
-    # User Request
-    userPrompt = Column(Text, nullable=False)
-
-    # AI Planning
-    agentPlan = Column(Text)  # JSON
-
-    # Results
-    results = Column(Text)  # JSON
-    summary = Column(Text)
-
-    # Status
-    status = Column(String, default="pending")
-
-    # Timing
+    userPrompt = Column(String)
+    agentPlan = Column(JSON, nullable=True)  # Optional
+    results = Column(JSON, nullable=True)  # Optional
+    summary = Column(String, nullable=True)  # Optional
+    status = Column(String)
     startedAt = Column(DateTime, default=datetime.utcnow)
-    completedAt = Column(DateTime)
-    executionTime = Column(Integer)  # milliseconds
-
-    # Sources involved
-    sourcesUsed = Column(Text)  # JSON array
-
-    # Learning
-    userFeedback = Column(String)
-    confidence = Column(Float)
-
+    completedAt = Column(DateTime, nullable=True)  # Optional
+    executionTime = Column(Integer, nullable=True)  # Optional
+    sourcesUsed = Column(JSON, nullable=True)  # Optional
+    userFeedback = Column(String, nullable=True)  # Optional
+    confidence = Column(Float, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
     # Relationships
-    tasks = relationship("AgentTask", back_populates="conversation", cascade="all, delete-orphan")
+    tasks = relationship("AgentTask")  # TODO: Configure relationship
 
-    __table_args__ = (
-        Index('idx_agent_conversation_status', 'status'),
-        Index('idx_agent_conversation_startedAt', 'startedAt'),
-        Index('idx_agent_conversation_createdAt', 'createdAt'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<AgentConversation(id={self.id})>"
 
-
-# ============================================================================
-# 13. AGENT TASK
-# ============================================================================
 class AgentTask(Base):
+    """AgentTask model"""
     __tablename__ = "agent_tasks"
 
     id = Column(String, primary_key=True)
-    conversationId = Column(String, ForeignKey("agent_conversations.id", ondelete="CASCADE"), nullable=False)
-
-    # Task Details
-    taskType = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    parameters = Column(Text, nullable=False)  # JSON
-
-    # Source
-    sourceName = Column(String)
-
-    # Status
-    status = Column(String, default="pending")
-
-    # Results
-    result = Column(Text)  # JSON
-    error = Column(String)
-
-    # Timing
-    startedAt = Column(DateTime)
-    completedAt = Column(DateTime)
-    duration = Column(Integer)  # milliseconds
-
-    # Dependencies
-    dependsOn = Column(Text)  # JSON array of task IDs
-    priority = Column(Integer, default=0)
-
+    conversationId = Column(String)
+    taskType = Column(String)
+    description = Column(String)
+    parameters = Column(JSON)
+    sourceName = Column(String, nullable=True)  # Optional
+    status = Column(String)
+    result = Column(JSON, nullable=True)  # Optional
+    error = Column(String, nullable=True)  # Optional
+    startedAt = Column(DateTime, nullable=True)  # Optional
+    completedAt = Column(DateTime, nullable=True)  # Optional
+    duration = Column(Integer, nullable=True)  # Optional
+    dependsOn = Column(JSON, nullable=True)  # Optional
+    priority = Column(Integer)
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
     # Relationships
-    conversation = relationship("AgentConversation", back_populates="tasks")
+    conversation = relationship("AgentConversation")  # TODO: Configure relationship
 
-    __table_args__ = (
-        Index('idx_agent_task_conversationId', 'conversationId'),
-        Index('idx_agent_task_status', 'status'),
-        Index('idx_agent_task_taskType', 'taskType'),
-        Index('idx_agent_task_startedAt', 'startedAt'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<AgentTask(id={self.id})>"
 
-
-# ============================================================================
-# 14. AGENT MEMORY
-# ============================================================================
 class AgentMemory(Base):
+    """AgentMemory model"""
     __tablename__ = "agent_memories"
 
     id = Column(String, primary_key=True)
-
-    # Memory Type
-    memoryType = Column(String, nullable=False)
-
-    # Key-Value Storage
-    key = Column(String, unique=True, nullable=False)
-    value = Column(Text, nullable=False)  # JSON
-
-    # Context
-    scope = Column(String)
-    context = Column(Text)  # JSON
-
-    # Confidence & Learning
-    confidence = Column(Float, default=0.5)
-
-    # Usage Tracking
-    usageCount = Column(Integer, default=0)
-    lastUsed = Column(DateTime)
-
-    # Success Metrics
-    successCount = Column(Integer, default=0)
-    failureCount = Column(Integer, default=0)
-
-    # Metadata
-    source = Column(String)
-    description = Column(String)
-
-    # Validity
-    isActive = Column(Boolean, default=True)
-    expiresAt = Column(DateTime)
-
+    memoryType = Column(String)
+    key = Column(String, unique=True)
+    value = Column(JSON)
+    scope = Column(String, nullable=True)  # Optional
+    context = Column(JSON, nullable=True)  # Optional
+    confidence = Column(Float)
+    usageCount = Column(Integer)
+    lastUsed = Column(DateTime, nullable=True)  # Optional
+    successCount = Column(Integer)
+    failureCount = Column(Integer)
+    source = Column(String, nullable=True)  # Optional
+    description = Column(String, nullable=True)  # Optional
+    isActive = Column(Boolean)
+    expiresAt = Column(DateTime, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
-    __table_args__ = (
-        Index('idx_agent_memory_memoryType', 'memoryType'),
-        Index('idx_agent_memory_scope', 'scope'),
-        Index('idx_agent_memory_confidence', 'confidence'),
-        Index('idx_agent_memory_usageCount', 'usageCount'),
-        Index('idx_agent_memory_lastUsed', 'lastUsed'),
-        {'extend_existing': True}
-    )
+    def __repr__(self):
+        return f"<AgentMemory(id={self.id})>"
 
-
-# ============================================================================
-# 15. SCRAPING SOURCE
-# ============================================================================
 class ScrapingSource(Base):
+    """ScrapingSource model"""
     __tablename__ = "scraping_sources"
 
     id = Column(String, primary_key=True)
-
-    # Identity
-    name = Column(String, unique=True, nullable=False)
-    baseUrl = Column(String, nullable=False)
-
-    # Type
-    sourceType = Column(String, default="portal")
-
-    # Status
-    isActive = Column(Boolean, default=True)
-    requiresAuth = Column(Boolean, default=False)
-
-    # AI Knowledge
-    aiKnowledge = Column(Text)  # JSON
-    lastLearning = Column(DateTime)
-
-    # Credentials (encrypted in application layer)
-    credentials = Column(Text)  # JSON
-
-    # Performance Metrics
-    successRate = Column(Float, default=0.0)
-    avgResponseTime = Column(Integer, default=0)  # milliseconds
-    totalJobs = Column(Integer, default=0)
-    successfulJobs = Column(Integer, default=0)
-    failedJobs = Column(Integer, default=0)
-
-    # Rate Limiting
-    rateLimit = Column(Float)
-    lastRequestAt = Column(DateTime)
-
-    # Metadata
-    description = Column(String)
-    notes = Column(Text)
-
+    name = Column(String, unique=True)
+    baseUrl = Column(String)
+    sourceType = Column(String)
+    isActive = Column(Boolean)
+    requiresAuth = Column(Boolean)
+    aiKnowledge = Column(JSON, nullable=True)  # Optional
+    lastLearning = Column(DateTime, nullable=True)  # Optional
+    credentials = Column(JSON, nullable=True)  # Optional
+    successRate = Column(Float)
+    avgResponseTime = Column(Integer)
+    totalJobs = Column(Integer)
+    successfulJobs = Column(Integer)
+    failedJobs = Column(Integer)
+    rateLimit = Column(Float, nullable=True)  # Optional
+    lastRequestAt = Column(DateTime, nullable=True)  # Optional
+    description = Column(String, nullable=True)  # Optional
+    notes = Column(String, nullable=True)  # Optional
     createdAt = Column(DateTime, default=datetime.utcnow)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updatedAt = Column(DateTime)
 
-    __table_args__ = (
-        Index('idx_scraping_source_name', 'name'),
-        Index('idx_scraping_source_sourceType', 'sourceType'),
-        Index('idx_scraping_source_isActive', 'isActive'),
-        {'extend_existing': True}
-    )
-
-
-# Export all models
-__all__ = [
-    'Base',
-    'User',
-    'UserProfile',
-    'Contact',
-    'Building',
-    'Property',
-    'Request',
-    'Match',
-    'Activity',
-    'CustomFieldDefinition',
-    'CustomFieldValue',
-    'ScrapingJob',
-    'ScrapingSession',
-    'AgentConversation',
-    'AgentTask',
-    'AgentMemory',
-    'ScrapingSource',
-]
+    def __repr__(self):
+        return f"<ScrapingSource(id={self.id})>"

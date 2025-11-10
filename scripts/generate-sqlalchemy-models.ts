@@ -31,7 +31,11 @@ async function generateModels() {
   console.log('📝 Generating SQLAlchemy models from Prisma schema...\n');
 
   // Load Prisma schema
-  const dmmf = await getDMMF({ datamodelPath: SCHEMA_PATH });
+  const schemaContent = await fs.readFile(SCHEMA_PATH, 'utf-8');
+
+  const dmmf = await getDMMF({
+    datamodel: schemaContent,
+  });
 
   // Generate enums
   const enumsCode = dmmf.datamodel.enums.map(generateEnum).join('\n\n');
