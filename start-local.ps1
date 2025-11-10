@@ -116,7 +116,7 @@ Write-Host ""
 Write-Host "  Terminal 1 - Backend AI (FastAPI):" -ForegroundColor Cyan
 Write-Host "    cd ai_tools" -ForegroundColor White
 Write-Host "    .\.venv\Scripts\Activate.ps1" -ForegroundColor White
-Write-Host "    python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000" -ForegroundColor White
+Write-Host "    python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000" -ForegroundColor White
 Write-Host ""
 Write-Host "  Terminal 2 - Frontend (Next.js):" -ForegroundColor Cyan
 Write-Host "    cd frontend" -ForegroundColor White

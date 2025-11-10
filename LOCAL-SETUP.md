@@ -120,7 +120,7 @@ Oppure manualmente:
 ```powershell
 cd ai_tools
 .\.venv\Scripts\Activate.ps1
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ### Terminal 2: Frontend (Next.js)
@@ -211,10 +211,10 @@ cd ai_tools
 .\.venv\Scripts\Activate.ps1
 
 # Sviluppo con auto-reload
-python -m uvicorn app.main:app --reload
+python -m uvicorn main:app --reload
 
 # Produzione
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
 
 # Test
 pytest
