@@ -32,9 +32,9 @@ class Settings(BaseSettings):
         description="Google AI Studio API Key (fallback if not in database)"
     )
     google_model: str = Field(
-        default="gemini-2.0-flash-exp",
+        default="gemini-2.5-flash",
         alias="GOOGLE_MODEL",
-        description="Default Google Gemini model (fallback if not in database). Latest: gemini-2.0-flash-exp"
+        description="Default Google Gemini model (fallback if not in database). Stable: gemini-2.5-flash"
     )
 
     # Qdrant Vector Store

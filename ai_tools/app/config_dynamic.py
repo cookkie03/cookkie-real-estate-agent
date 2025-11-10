@@ -140,7 +140,7 @@ class DynamicConfig:
         Get Google AI model name with priority:
         1. Database (UserProfile.settings.googleAiModel)
         2. Environment variable (GOOGLE_MODEL)
-        3. Default ("gemini-2.0-flash-exp")
+        3. Default ("gemini-2.5-flash")
 
         Args:
             force_reload: If True, bypass cache and reload from DB
@@ -168,7 +168,7 @@ class DynamicConfig:
             return env_model
 
         # Default model
-        default_model = "gemini-2.0-flash-exp"
+        default_model = "gemini-2.5-flash"
         logger.info(f"ℹ️  Using default Google AI model: {default_model}")
         self._google_model_cache = default_model
         self._cache_valid = True
@@ -219,7 +219,7 @@ def get_google_model(force_reload: bool = False) -> str:
         force_reload: Force reload from database (use after updating settings)
 
     Returns:
-        Google AI model name (e.g., "gemini-2.0-flash-exp")
+        Google AI model name (e.g., "gemini-2.5-flash")
     """
     return dynamic_config.get_google_model(force_reload=force_reload)
 

@@ -11,21 +11,15 @@ import { prisma } from '@/lib/db';
 // Available Google Gemini models
 export const AVAILABLE_MODELS = [
   {
-    id: 'gemini-2.0-flash-exp',
-    name: 'Gemini 2.0 Flash (Experimental)',
-    description: 'Latest experimental model - Fast, optimized for tool calling',
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    description: 'Latest stable model - Fast, optimized for tool calling',
     recommended: true,
   },
   {
-    id: 'gemini-2.0-flash-thinking-exp-1219',
-    name: 'Gemini 2.0 Flash Thinking',
-    description: 'With internal reasoning - Better for complex tasks',
-    recommended: false,
-  },
-  {
     id: 'gemini-1.5-flash-latest',
-    name: 'Gemini 1.5 Flash (Stable)',
-    description: 'Production-ready, stable version',
+    name: 'Gemini 1.5 Flash (Legacy)',
+    description: 'Previous stable version',
     recommended: false,
   },
   {
@@ -59,7 +53,7 @@ export async function GET() {
     }
 
     const settings = userProfile.settings as any || {};
-    const currentModel = settings.googleAiModel || 'gemini-2.0-flash-exp';
+    const currentModel = settings.googleAiModel || 'gemini-2.5-flash';
 
     return NextResponse.json({
       success: true,
