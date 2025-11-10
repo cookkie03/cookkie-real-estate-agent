@@ -47,6 +47,10 @@ if (-not (Test-Path ".env")) {
 if (-not (Test-Path "database/prisma/dev.db")) {
     Write-Host ""
     Write-Host "🗄️  Setup database SQLite..." -ForegroundColor Cyan
+
+    # Imposta DATABASE_URL per Prisma
+    $env:DATABASE_URL = "file:./dev.db"
+
     Set-Location "database/prisma"
 
     Write-Host "  📦 Installazione dipendenze..." -ForegroundColor Yellow

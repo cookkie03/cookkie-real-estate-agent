@@ -5,6 +5,14 @@
 Write-Host "🌱 Popolamento database con dati demo..." -ForegroundColor Cyan
 Write-Host ""
 
+# Salva directory corrente
+$rootDir = Get-Location
+
+# Imposta DATABASE_URL per Prisma
+$env:DATABASE_URL = "file:./dev.db"
+Write-Host "📝 DATABASE_URL impostata: $env:DATABASE_URL" -ForegroundColor Gray
+Write-Host ""
+
 # Vai nella cartella prisma
 Set-Location "database\prisma"
 
