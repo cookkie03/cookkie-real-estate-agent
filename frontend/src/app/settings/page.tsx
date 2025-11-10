@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useState } from "react";
 import Link from "next/link";
 import { ApiKeyManager } from "@/components/settings/ApiKeyManager";
+import { ModelSelector } from "@/components/settings/ModelSelector";
 
 /**
  * Settings Page
@@ -134,7 +135,10 @@ export default function SettingsPage() {
       <div className="space-y-6">
         {/* API KEYS TAB */}
         {activeTab === "api-keys" && (
-          <ApiKeyManager />
+          <div className="space-y-6">
+            <ApiKeyManager />
+            <ModelSelector />
+          </div>
         )}
 
         {/* PROFILE TAB */}

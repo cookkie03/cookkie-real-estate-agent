@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     google_model: str = Field(
         default="gemini-2.0-flash-exp",
         alias="GOOGLE_MODEL",
-        description="Default Google Gemini model (optimized for tool calling)"
+        description="Default Google Gemini model (fallback if not in database). Latest: gemini-2.0-flash-exp"
     )
 
     # Qdrant Vector Store
