@@ -1,0 +1,64 @@
+# ============================================================================
+# Docker Compose - Development Override
+# Usa build locale invece di pull da registry
+# ============================================================================
+#
+# UTILIZZO:
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+#
+# Oppure imposta COMPOSE_FILE nel .env:
+# COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml
+#
+# ============================================================================
+
+
+services:
+  # ==============================================================================
+  # APP - Build locale invece di pull da ghcr.io
+  # ==============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=development
+    image: crm-immobiliare-app:local
+    pull_policy: never
+    environment:
+      NODE_ENV: development
+    volumes:
+      # In dev, monta anche node_modules per hot reload
+      - ./frontend/.next:/app/.next
+      - app_uploads:/app/public/uploads
+      - app_backups:/app/backups
+      - app_logs:/app/logs
+      - app_cache:/app/.cache
+
+  # ==============================================================================
+  # AI TOOLS - Build locale invece di pull da ghcr.io
+  # ==============================================================================
+  ai-tools:
+    build:
+      context: ./ai_tools
+      dockerfile: Dockerfile
+    image: crm-immobiliare-ai:local
+    pull_policy: never
+    environment:
+      ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+    volumes:
+      # Cache AI (embeddings, RAG vectors, HTTP responses)
+      - ai_cache:/app/.cache
+      # Logs Python services
+      - ai_logs:/app/logs
+      # Browser profiles Playwright (sessioni scraping persistenti)
+      - scraping_profiles:/app/.playwright-profiles
+      # Qdrant vector database (se mode=local)
+      - qdrant_storage:/app/.qdrant
+
+  # ==============================================================================
+  # WATCHTOWER - Disabilitato in dev (non serve auto-update)
+  # ==============================================================================
+  watchtower:
+    # Disabilita watchtower in dev per evitare auto-update
+    entrypoint: ["sh", "-c", "echo 'Watchtower disabled in development mode' && sleep infinity"]
