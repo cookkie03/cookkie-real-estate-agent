@@ -9,7 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { prisma } from '@/lib/db';
+// import { prisma } from '@/lib/db'; // Disabled - Prisma doesn't work in Edge Runtime
 
 // Routes che non richiedono setup completato
 const PUBLIC_ROUTES = [
@@ -33,6 +33,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // TEMPORARY FIX: Prisma doesn't work in Edge Runtime middleware
+  // TODO: Move setup check to API route or use alternative approach
+  // For now, allow all requests
+  return NextResponse.next();
+
+  /* DISABLED - Prisma Edge Runtime incompatibility
   try {
     // Check if setup is completed (UserProfile exists)
     const userProfile = await prisma.userProfile.findFirst({
@@ -59,6 +65,7 @@ export async function middleware(request: NextRequest) {
     // On error, allow access (fail-open to avoid blocking the app)
     return NextResponse.next();
   }
+  */
 }
 
 // Configure matcher to run middleware on specific routes
