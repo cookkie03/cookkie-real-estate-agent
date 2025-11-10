@@ -27,9 +27,9 @@ class Settings(BaseSettings):
 
     # Google AI
     google_api_key: str = Field(
-        ...,
+        default="",
         alias="GOOGLE_API_KEY",
-        description="Google AI Studio API Key"
+        description="Google AI Studio API Key (fallback if not in database)"
     )
     google_model: str = Field(
         default="gemini-2.0-flash-exp",
