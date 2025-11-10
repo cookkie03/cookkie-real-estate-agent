@@ -74,9 +74,9 @@ next-env.d.ts
 database/**/*.db
 database/**/*.db-journal
 
-# Migrations (generated)
-/prisma/migrations
-/database/prisma/migrations
+# Migrations (MUST be versioned - do NOT ignore!)
+# /prisma/migrations  ❌ REMOVED - migrations must be in git
+# /database/prisma/migrations  ❌ REMOVED - migrations must be in git
 
 # ============================================================================
 # CACHE & TEMPORARY FILES
