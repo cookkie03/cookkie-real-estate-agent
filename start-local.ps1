@@ -51,10 +51,14 @@ if (-not (Test-Path "database/prisma/dev.db")) {
     # Imposta DATABASE_URL per Prisma
     $env:DATABASE_URL = "file:./dev.db"
 
-    Set-Location "database/prisma"
-
-    Write-Host "  📦 Installazione dipendenze..." -ForegroundColor Yellow
+    # Installa dipendenze database
+    Write-Host "  📦 Installazione dipendenze database..." -ForegroundColor Yellow
+    Set-Location "database"
     npm install
+    Set-Location ".."
+
+    # Vai in prisma per i comandi
+    Set-Location "database/prisma"
 
     Write-Host "  🔄 Generazione Prisma Client..." -ForegroundColor Yellow
     npx prisma generate

@@ -13,15 +13,17 @@ $env:DATABASE_URL = "file:./dev.db"
 Write-Host "📝 DATABASE_URL impostata: $env:DATABASE_URL" -ForegroundColor Gray
 Write-Host ""
 
-# Vai nella cartella prisma
-Set-Location "database\prisma"
-
-# Verifica node_modules
-if (-not (Test-Path "node_modules")) {
-    Write-Host "📦 Installazione dipendenze Prisma..." -ForegroundColor Yellow
+# Installa dipendenze nella directory database (non database/prisma)
+if (-not (Test-Path "database\node_modules")) {
+    Write-Host "📦 Installazione dipendenze database..." -ForegroundColor Yellow
+    Set-Location "database"
     npm install
+    Set-Location ".."
     Write-Host ""
 }
+
+# Vai nella cartella prisma
+Set-Location "database\prisma"
 
 # Genera Prisma Client
 Write-Host "🔄 Generazione Prisma Client..." -ForegroundColor Yellow
