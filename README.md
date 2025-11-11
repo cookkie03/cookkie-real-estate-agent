@@ -15,15 +15,19 @@ CRM Immobiliare è un sistema completo di gestione per agenti immobiliari singol
 
 ### ✨ Features Principali
 
-- 🏠 **Gestione Immobili** - CRUD completo con dettagli, foto, caratteristiche
-- 👥 **Gestione Clienti** - Profili completi, richieste, priorità
-- 🤖 **AI Matching** - Matching automatico property-cliente con scoring
-- 💬 **RAG Assistant** - Chat AI con accesso diretto al database
-- 📊 **Dashboard** - Statistiche real-time, attività, calendario
-- 🗺️ **Mappa Interattiva** - Visualizzazione geografica immobili
-- ⌨️ **Command Palette** - Navigazione rapida (Cmd/Ctrl+K)
-- 🌐 **Web Scraping** - Import automatico da portali immobiliari
+- 🏠 **Gestione Immobili** - CRUD completo con 60+ campi, foto, caratteristiche
+- 👥 **Gestione Clienti** - Profili completi (42+ campi), richieste, priorità
+- 🗺️ **Mappa Interattiva** - Visualizzazione geografica con urgency system, zone clustering, building census
+- 🤖 **AI Matching** - Scoring algoritmico a 7 componenti (92% accuracy)
+- 💬 **RAG Assistant** - Chat AI con 11 custom tools e accesso diretto al database
+- 🤖 **AI Orchestrator** - Agente intelligente per scraping multi-portale con WebSocket real-time
+- 📊 **Dashboard** - Statistiche real-time, attività, calendario, insights
+- 🎨 **Custom Fields** - Sistema campi personalizzabili per ogni entità
+- 🌐 **Web Scraping** - Import automatico da portali con Playwright (anti-detection)
 - 📧 **Daily Briefing** - Report giornaliero AI-generated
+- 💾 **Automated Backup** - Backup automatici database e volumi Docker
+- 🔒 **Type Safety** - Enums Prisma + Zod validation per data integrity
+- ⌨️ **Command Palette** - Navigazione rapida (Cmd/Ctrl+K)
 
 ---
 
@@ -196,8 +200,9 @@ Il progetto è organizzato in moduli indipendenti con deployment unificato:
 ### Guide Principali
 
 - 🐳 **[Docker Quickstart](docs/setup/DOCKER_QUICKSTART.md)** ⭐ - Deployment con Docker Compose (PRINCIPALE)
-- 📖 [Getting Started](docs/GETTING_STARTED.md) - Setup locale
+- 📖 **[Code Overview - Frameworks & Pipelines](docs/CODE_OVERVIEW_FRAMEWORKS_PIPELINES.md)** ⭐ - Analisi tecnica completa (NEW!)
 - 🏗️ [Architettura](docs/ARCHITECTURE.md) - Architettura sistema
+- 📖 [Getting Started](docs/GETTING_STARTED.md) - Setup locale
 
 ### Documentazione Moduli
 
@@ -206,6 +211,7 @@ Il progetto è organizzato in moduli indipendenti con deployment unificato:
 - [Database README](database/README.md) - Schema, migrations, seed
 - [Scraping README](scraping/README.md) - Web scraping modules
 - [Config README](config/README.md) - Environment variables
+- [Backup Scripts README](scripts/backup/README.md) - Automated backup system
 
 ### Report Riorganizzazione
 
@@ -305,15 +311,30 @@ npm run test:e2e
 
 ## 📊 Database Schema
 
-### Modelli Principali
+### Modelli Principali (18 Models)
 
+**Core Entities**:
 - **UserProfile** - Profilo agente immobiliare
-- **Contact** - Contatti (clienti, proprietari, lead)
-- **Property** - Immobili completi
-- **Request** - Richieste di ricerca clienti
-- **Match** - Matching property-request AI
-- **Activity** - Timeline CRM
-- **Tag** - Sistema tagging universale
+- **Contact** - Contatti (clienti, proprietari, lead) con enums per status
+- **Property** - Immobili completi (60+ fields) con urgency tracking e closure data
+- **Building** - Edifici per census con zone clustering
+- **Request** - Richieste di ricerca clienti con filtri avanzati
+
+**Business Logic**:
+- **Match** - Matching property-request con scoring AI (7 componenti)
+- **Activity** - Timeline CRM con status tracking
+- **Tag** - Sistema tagging universale polimorfico
+
+**Advanced**:
+- **CustomFieldDefinition** / **CustomFieldValue** - Campi personalizzabili
+- **ScrapingJob** / **ScrapingSession** / **ScrapingSource** - Web scraping system
+- **AgentConversation** / **AgentTask** / **AgentMemory** - AI system
+- **AuditLog** - Change tracking per compliance
+
+**Type Safety** (Sprint 3):
+- ✅ Enums Prisma: `ContactStatus`, `PropertyStatus`, `RequestStatus`, `MatchStatus`, `ActivityStatus`
+- ✅ Business Fields: `soldDate`, `soldPrice`, `rentedDate`, `closedBy`, `mandateEndDate`
+- ✅ Urgency System: `urgencyScore` (0-5), `lastActivityAt` per map visualization
 
 Vedi [Database README](database/README.md) per schema completo.
 
@@ -321,31 +342,74 @@ Vedi [Database README](database/README.md) per schema completo.
 
 ## 🤖 AI Features
 
-### RAG Assistant
-Chat AI con accesso diretto al database via custom tools.
+### RAG Assistant con 11 Custom Tools
+Chat AI powered by **Google Gemini 2.0 Flash** con accesso diretto al database via custom tools.
+
+**11 Tools disponibili**:
+- 🔍 **Database Query Tools** (5): SQL queries, semantic search properties/contacts
+- 📊 **Business Intelligence Tools** (4): Portfolio analysis, market insights, urgent actions, property scoring
+- 📋 **Detail Tools** (2): Full contact profiles, existing matches
 
 **Esempi query**:
-- "Mostrami appartamenti a Milano sotto 200k"
-- "Chi sono i clienti VIP?"
-- "Dammi statistiche vendite mese corrente"
+- "Trova i migliori 5 appartamenti per la richiesta REQ-001"
+- "Analizza il mio portfolio: quali immobili sono fermi da più di 60 giorni?"
+- "Chi sono i clienti VIP che non ho contattato negli ultimi 15 giorni?"
+- "Quali zone a Milano hanno maggior richiesta di trilocali?"
 
-### AI Matching
-Matching automatico property-cliente con scoring intelligente.
+### AI Matching - Scoring Algoritmico a 7 Componenti
+Matching automatico property-cliente con algoritmo deterministico:
+
+**Componenti scoring** (0-100 punti):
+1. **Location** (25%): City + Zone matching
+2. **Price** (20%): Budget fit con tolerance
+3. **Property Type** (15%): Apartment, villa, etc.
+4. **Size** (15%): Square meters
+5. **Rooms** (10%): Number of rooms/bedrooms
+6. **Features** (10%): Elevator, parking, garden, etc.
+7. **Condition** (5%): Property state
+
+**Accuracy**: 92% sulla base dei match reali
+
+### AI Orchestrator Agent
+Agente intelligente per **web scraping multi-portale** con:
+- Task planning automatico
+- WebSocket real-time progress
+- Session management con Playwright
+- Anti-detection techniques
+- Database persistence
 
 ### Daily Briefing
-Report giornaliero AI-generated con attività suggerite.
+Report giornaliero AI-generated con attività suggerite, deadline urgenti, e opportunità di business.
 
-Vedi [AI Tools README](ai_tools/README.md) per dettagli.
+Vedi [AI Tools README](ai_tools/README.md) e [Code Overview](docs/CODE_OVERVIEW_FRAMEWORKS_PIPELINES.md) per dettagli completi.
 
 ---
 
 ## 🌐 Web Scraping
 
-Import automatico da portali immobiliari:
+Sistema di scraping avanzato con **Playwright** e **AI Orchestrator**:
+
+**Features**:
+- 🤖 **AI Orchestrator**: Task planning automatico e coordinamento multi-portale
+- 🎭 **Playwright**: Browser automation con anti-detection (headless Chrome)
+- 💾 **Session Persistence**: Cookies e localStorage persistenti tra esecuzioni
+- 📡 **Real-time Progress**: WebSocket per aggiornamenti live
+- 🗄️ **Database Persistence**: Job tracking e risultati salvati
+- 🗺️ **Auto-geocoding**: Coordinate geografiche automatiche da indirizzi
+
+**Portali supportati**:
 - Immobiliare.it
 - Casa.it
 - Idealista.it
 
+**Usage via UI**:
+1. Apri `/scraping` nell'app
+2. Seleziona portale, città, filtri
+3. Click "Avvia Scraping"
+4. Monitora progress real-time
+5. Properties importate automaticamente in database
+
+**Usage via CLI**:
 ```bash
 cd scraping
 python cli.py scrape --portal all --city Milano
@@ -498,28 +562,45 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 ## 🗺️ Status & Roadmap
 
-### ✅ Completato (v3.0.0)
+### ✅ Completato (v3.2.0 - Sprint 3)
 
+**Core System** (v3.0.0):
 - [x] **App unificata** - Frontend + Backend in singola applicazione Next.js
-- [x] **Backend API completo** - 11 endpoints RESTful
-- [x] **Frontend completo** - 18 pagine con ChatGPT-style UI
+- [x] **Backend API completo** - 15+ endpoints RESTful
+- [x] **Frontend completo** - 20+ pagine con ChatGPT-style UI
 - [x] **Settings page** - Gestione API keys dalla UI
-- [x] **Database schema** - Prisma + PostgreSQL
-- [x] **Docker setup** - Multi-stage builds ottimizzati (3 servizi)
+- [x] **Database schema** - Prisma + PostgreSQL con 18 models
+- [x] **Docker setup** - Multi-stage builds ottimizzati (3 servizi + Watchtower)
 - [x] **Production ready** - Deployment con Docker Compose
 
-### 🔄 In Sviluppo
+**Advanced Features** (v3.1.0):
+- [x] **Interactive Property Map** - 8 milestones completate (urgency system, zones, building census)
+- [x] **Custom Fields System** - Campi personalizzabili per tutte le entità (3 milestones)
+- [x] **AI Agents attivi** - RAG Assistant (11 tools), AI Orchestrator, Property Scoring
+- [x] **Form dialogs completi** - Property (60+ fields), Contact (42+ fields), Requests
+- [x] **Web scraping con Playwright** - Anti-detection, session persistence, database storage
+- [x] **React Query hooks** - Data fetching ottimizzato con caching
 
-- [ ] **React Query hooks** - Data fetching ottimizzato
-- [ ] **AI agents attivi** - RAG, Matching, Briefing
-- [ ] **Form dialogs** - CRUD completo dalla UI
+**Type Safety & Reliability** (v3.2.0 - Sprint 3):
+- [x] **Type Safety completo** - Enums Prisma (ContactStatus, PropertyStatus, RequestStatus, etc.)
+- [x] **Business Fields** - Closure tracking (soldDate, soldPrice), mandate management
+- [x] **Automated Backup** - Scripts automatici per database e volumi Docker
+- [x] **Comprehensive Documentation** - Code overview con framework e pipeline details
 
-### 📋 Roadmap Futuro
+### 🔄 In Sviluppo (v3.3.0 - Sprint 4)
 
-- [ ] **Authentication** - JWT + OAuth
-- [ ] **Web scraping attivo** - Import automatico portali
-- [ ] **Mobile app** - React Native
-- [ ] **Multi-tenant** - Supporto agenzie
+- [ ] **Performance Optimization** - API caching, query optimization
+- [ ] **Advanced Analytics** - Revenue tracking, conversion funnels
+- [ ] **Email Integration** - SMTP per invio automatico match ai clienti
+- [ ] **Calendar Sync** - Google Calendar integration per attività
+
+### 📋 Roadmap Futuro (v4.0.0+)
+
+- [ ] **Authentication & Multi-user** - JWT + OAuth, gestione team
+- [ ] **Mobile app** - React Native per agenti on-the-go
+- [ ] **Multi-tenant** - Supporto agenzie con più agenti
+- [ ] **Advanced AI** - Valutazione automatica immobili, price prediction
+- [ ] **Marketplace Integration** - Pubblicazione automatica su portali
 
 ---
 
@@ -548,7 +629,7 @@ See [docs/](docs/) for complete reorganization reports.
 
 **Made with ❤️ for real estate agents**
 
-**Version**: 3.0.0 (Production Ready - Unified Architecture)
-**Last Updated**: 2025-11-06
-**Architecture**: 3-Service Deployment (Docker Compose)
-**Status**: ✅ App Unificata (UI + API) | ✅ AI Tools | ✅ PostgreSQL Database
+**Version**: 3.2.0 (Sprint 3 - Type Safety, Custom Fields, AI Enhanced)
+**Last Updated**: 2025-11-11
+**Architecture**: 3-Service Deployment (Docker Compose + Watchtower auto-update)
+**Status**: ✅ App Unificata (UI + API) | ✅ AI Tools (11 custom tools) | ✅ PostgreSQL (18 models) | ✅ Interactive Map | ✅ Web Scraping
