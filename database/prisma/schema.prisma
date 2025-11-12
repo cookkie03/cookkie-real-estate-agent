@@ -149,7 +149,13 @@ model Contact {
   // Status
   status          ContactStatus @default(active)
   lastContactDate DateTime?
-  notes           String?   
+  notes           String?
+
+  // Communication tracking
+  lastEmailDate     DateTime?
+  lastWhatsAppDate  DateTime?
+  emailThreadId     String? // ID thread Gmail principale
+  whatsappThreadId  String? // ID chat WhatsApp
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -161,6 +167,7 @@ model Contact {
   matches         Match[]
   activities      Activity[]
   tags            EntityTag[]
+  messages        MessageLog[]
 
   // Indexes
   @@index([code])
@@ -172,6 +179,8 @@ model Contact {
   @@index([status, lastContactDate])
   @@index([city, status])
   @@index([importance, status])
+  @@index([lastEmailDate])
+  @@index([lastWhatsAppDate])
   @@map("contacts")
 }
 
@@ -591,7 +600,14 @@ model Activity {
   reminderSent Boolean @default(false)
   reminderDate DateTime?
 
-  notes String? 
+  // Google Calendar Integration
+  googleEventId    String? // ID evento su Google Calendar
+  googleCalendarId String? // ID calendario Google
+  googleEventUrl   String? // Link all'evento
+  syncedToGoogle   Boolean @default(false)
+  lastSyncedAt     DateTime?
+
+  notes String?
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -617,6 +633,7 @@ model Activity {
   @@index([contactId, activityType])
   @@index([status, scheduledAt])
   @@index([activityType, scheduledAt])
+  @@index([googleEventId])
   @@map("activities")
 }
 
@@ -1083,6 +1100,205 @@ model ScrapingSource {
   @@index([sourceType])
   @@index([isActive])
   @@map("scraping_sources")
+}
+
+// ============================================================================
+// 19. INTEGRATION AUTH (OAuth credentials for external services)
+// ============================================================================
+model IntegrationAuth {
+  id       String @id @default(cuid())
+
+  // Provider info
+  provider String  // "google_calendar", "gmail", "whatsapp"
+  isActive Boolean @default(true)
+
+  // OAuth2 tokens
+  accessToken  String   @db.Text
+  refreshToken String?  @db.Text
+  tokenType    String?  @default("Bearer")
+  expiresAt    DateTime?
+
+  // Scopes
+  scope String?  // Requested scopes
+
+  // Account info
+  email         String? // Email dell'account Google
+  accountId     String? // ID account esterno
+  accountName   String? // Nome visualizzato
+
+  // Sync settings
+  syncEnabled   Boolean  @default(true)
+  syncInterval  Int      @default(300) // secondi
+  lastSyncAt    DateTime?
+  nextSyncAt    DateTime?
+
+  // Error handling
+  lastError     String?  @db.Text
+  errorCount    Int      @default(0)
+  lastErrorAt   DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, email])
+  @@index([provider, isActive])
+  @@index([nextSyncAt])
+  @@map("integration_auth")
+}
+
+// ============================================================================
+// 20. MESSAGE LOG (Email and WhatsApp messages)
+// ============================================================================
+model MessageLog {
+  id String @id @default(cuid())
+
+  // Provider info
+  provider   String   // "gmail", "whatsapp"
+  messageId  String   // ID esterno del messaggio
+  threadId   String?  // ID thread/conversazione
+
+  // Contact relation
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  // Direction
+  direction String   // "inbound", "outbound"
+  status    String   @default("received") // received, sent, failed, delivered, read
+
+  // Content
+  subject     String?     @db.Text
+  body        String      @db.Text
+  bodyHtml    String?     @db.Text
+  snippet     String?     // Preview del contenuto (primi 200 caratteri)
+
+  // Metadata
+  fromEmail   String?
+  fromPhone   String?
+  fromName    String?
+  toEmail     String?
+  toPhone     String?
+  toName      String?
+  cc          Json?       // Array di email in CC
+  bcc         Json?       // Array di email in BCC
+
+  // Attachments
+  hasAttachments  Boolean @default(false)
+  attachments     Json?   // Array di: { name, mimeType, size, url }
+
+  // Timing
+  sentAt      DateTime
+  receivedAt  DateTime?
+  readAt      DateTime?
+
+  // Processing
+  isProcessed      Boolean   @default(false)
+  processedAt      DateTime?
+  processingError  String?   @db.Text
+
+  // AI Analysis
+  aiCategory      String?   // "property_inquiry", "appointment_request", "general", etc.
+  aiSentiment     String?   // "positive", "neutral", "negative"
+  aiPriority      String?   // "low", "normal", "high", "urgent"
+  aiExtractedData Json?     // Dati estratti dall'AI
+  aiSummary       String?   @db.Text
+
+  // Relations created
+  activityCreated  Boolean @default(false)
+  activityId       String?
+  propertyMentioned String? // ID proprietà menzionata
+  requestMentioned  String? // ID richiesta menzionata
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, messageId])
+  @@index([contactId])
+  @@index([provider, direction])
+  @@index([sentAt])
+  @@index([isProcessed])
+  @@index([aiCategory])
+  @@index([aiPriority])
+  @@index([threadId])
+  @@map("message_logs")
+}
+
+// ============================================================================
+// 21. CALENDAR SYNC (Google Calendar sync state)
+// ============================================================================
+model CalendarSync {
+  id String @id @default(cuid())
+
+  // Calendar info
+  calendarId   String  // ID calendario Google
+  calendarName String?
+  isPrimary    Boolean @default(false)
+
+  // Sync settings
+  isActive       Boolean @default(true)
+  syncDirection  String  @default("bidirectional") // "pull", "push", "bidirectional"
+
+  // Sync state
+  lastSyncToken String?  @db.Text // Token per sync incrementale
+  lastSyncAt    DateTime?
+  nextSyncAt    DateTime?
+
+  // Statistics
+  eventsSynced  Int @default(0)
+  eventsCreated Int @default(0)
+  eventsUpdated Int @default(0)
+  eventsDeleted Int @default(0)
+
+  // Error handling
+  lastError   String?  @db.Text
+  errorCount  Int      @default(0)
+  lastErrorAt DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([calendarId])
+  @@index([isActive])
+  @@index([nextSyncAt])
+  @@map("calendar_sync")
+}
+
+// ============================================================================
+// 22. MESSAGE PROCESSING (Async processing queue)
+// ============================================================================
+model MessageProcessing {
+  id String @id @default(cuid())
+
+  // Reference
+  messageLogId String
+
+  // Processing state
+  status   String @default("pending") // pending, processing, completed, failed
+  priority Int    @default(0) // 0=normal, 1=high, 2=urgent
+
+  // Retry logic
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
+  lastAttemptAt DateTime?
+  nextRetryAt   DateTime?
+
+  // Processing details
+  processorType String? // "message_analyzer", "contact_matcher", "appointment_extractor"
+  result        Json?
+  error         String?  @db.Text
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, priority])
+  @@index([nextRetryAt])
+  @@index([messageLogId])
+  @@map("message_processing")
 }
 
 // ============================================================================

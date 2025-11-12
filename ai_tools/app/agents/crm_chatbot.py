@@ -24,7 +24,9 @@ from app.tools import (
     query_matches_tool,
     property_search_tool,
     contact_search_tool,
-    get_contact_details_tool
+    get_contact_details_tool,
+    analyze_message_tool,
+    create_activity_from_message_tool
 )
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,8 @@ Hai accesso completo al database del CRM e puoi:
 4. GENERARE statistiche, insights e report di mercato
 5. IDENTIFICARE opportunità di business nascoste
 6. OTTIMIZZARE il workflow dell'agente immobiliare
+7. ANALIZZARE messaggi email e WhatsApp per estrarre informazioni
+8. CREARE automaticamente attività basate su messaggi ricevuti
 
 **Competenze principali:**
 - Ricerca avanzata con filtri complessi
@@ -47,6 +51,9 @@ Hai accesso completo al database del CRM e puoi:
 - Analisi portfolio e performance
 - Suggerimenti strategici data-driven
 - Identificazione pattern e trend
+- Analisi intelligente messaggi (email/WhatsApp) con categorizzazione, sentiment, priorità
+- Estrazione dati strutturati da messaggi (date, orari, telefoni, codici immobili, prezzi)
+- Creazione automatica attività di follow-up
 
 **Strumenti a disposizione:**
 DATABASE QUERY:
@@ -436,6 +443,9 @@ def create_crm_chatbot() -> Agent:
             analyze_portfolio_tool,
             get_urgent_actions_tool,
             get_market_insights_tool,
+            # Message processing tools
+            analyze_message_tool,
+            create_activity_from_message_tool,
         ],
     )
 
