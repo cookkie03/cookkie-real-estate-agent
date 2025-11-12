@@ -52,6 +52,12 @@ export const NAV_ITEMS = [
     description: "Acquisizione automatica da web",
   },
   {
+    label: "Mappa",
+    href: ROUTES.MAP,
+    icon: "Map",
+    description: "Visualizzazione geografica immobili",
+  },
+  {
     label: "Richieste & Matching",
     href: ROUTES.MATCHING,
     icon: "Target",

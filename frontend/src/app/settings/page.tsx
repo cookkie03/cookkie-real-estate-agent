@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useState } from "react";
 import Link from "next/link";
+import { ApiKeyManager } from "@/components/settings/ApiKeyManager";
+import { ModelSelector } from "@/components/settings/ModelSelector";
 
 /**
  * Settings Page
@@ -133,63 +135,10 @@ export default function SettingsPage() {
       <div className="space-y-6">
         {/* API KEYS TAB */}
         {activeTab === "api-keys" && (
-          <>
-            <div className="stat-card">
-              <h2 className="section-header">Google AI API</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                ⚠️ <strong>Richiesta</strong> per tutte le funzionalità AI (RAG Assistant, Matching, Briefing, Ricerca Semantica).
-                Ottieni la tua chiave da{" "}
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Google AI Studio
-                </a>
-                {" "}(gratuita con limiti generosi).
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="form-label mb-2 block">
-                    Google API Key
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="AIza..."
-                    value={formData.googleApiKey}
-                    onChange={(e) =>
-                      setFormData({ ...formData, googleApiKey: e.target.value })
-                    }
-                    className="w-full rounded-lg border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  {settings?.googleApiKey && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      ✓ Chiave configurata: ***{settings.googleApiKey.slice(-8)}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  onClick={testGoogleApi}
-                  className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm hover:bg-accent"
-                >
-                  <TestTube className="h-4 w-4" />
-                  Testa Connessione
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-              className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" />
-              {updateMutation.isPending ? "Salvataggio..." : "Salva API Keys"}
-            </button>
-          </>
+          <div className="space-y-6">
+            <ApiKeyManager />
+            <ModelSelector />
+          </div>
         )}
 
         {/* PROFILE TAB */}

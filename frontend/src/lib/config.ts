@@ -228,7 +228,7 @@ export async function testGoogleAIConnection(apiKey?: string): Promise<{
     // Test connection usando Google Generative AI SDK
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // Simple test: list models or generate content
     const result = await model.generateContent('Test connection');

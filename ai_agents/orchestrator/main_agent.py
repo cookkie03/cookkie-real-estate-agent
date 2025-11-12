@@ -75,9 +75,9 @@ class OrchestratorAgent:
             genai.configure(api_key=self.google_api_key)
 
             # Use Gemini 2.5 Flash for optimal performance
-            self.ai_model = genai.GenerativeModel('gemini-2.0-flash-exp')
+            self.ai_model = genai.GenerativeModel('gemini-2.5-flash')
 
-            logger.info("AI client initialized successfully (Gemini 2.0 Flash)")
+            logger.info("AI client initialized successfully (Gemini 2.5 Flash)")
 
         except Exception as e:
             logger.error(f"Failed to initialize AI client: {e}")

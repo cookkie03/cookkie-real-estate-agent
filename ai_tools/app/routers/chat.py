@@ -132,7 +132,7 @@ async def chat_status():
     return {
         "status": "ready",
         "agent": "crm_chatbot",
-        "model": "gemini-2.0-flash-exp",
+        "model": "gemini-2.5-flash",
         "tools_count": 11,
         "capabilities": [
             "Property search (database + semantic)",

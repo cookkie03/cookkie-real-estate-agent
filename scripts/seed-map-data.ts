@@ -15,13 +15,15 @@
  * - Sample activities and matches
  * - Cadastral zones (Centro, Nord, Sud, Periferia)
  *
- * ⚠️  WARNING: This will DELETE existing data! Use only in development.
+ * ⚠️  WARNING: This will DELETE existing data!
+ * 🛡️  SAFETY: Automatic backup created before deletion
  *
  * @module scripts/seed-map-data
  * @since v3.2.0
  */
 
 import { PrismaClient } from '@prisma/client';
+import { backupBeforeDangerousOp } from './backup/auto-backup';
 
 const prisma = new PrismaClient();
 
@@ -358,6 +360,11 @@ async function main() {
   console.log('🌱 CRM Immobiliare - Seeding Map Test Data\n');
 
   try {
+    // SAFETY: Automatic backup before dangerous operation
+    console.log('🛡️  Creating safety backup before deletion...');
+    await backupBeforeDangerousOp('seed-map-data', true);
+    console.log('');
+
     // WARNING: Clear existing data
     console.log('⚠️  WARNING: This will DELETE all existing data!');
     console.log('⚠️  Press Ctrl+C within 3 seconds to cancel...\n');

@@ -20,6 +20,10 @@
     "prisma:studio": "cd database/prisma && npx prisma studio",
     "prisma:seed": "cd database/prisma && npx tsx seed.ts",
     "prisma:migrate": "cd database/prisma && npx prisma migrate dev",
+    "generate:sqlalchemy": "npx tsx scripts/generate-sqlalchemy-models.ts",
+    "validate:config": "npx tsx scripts/validate-database-config.ts",
+    "backup:create": "npx tsx scripts/backup/auto-backup.ts create",
+    "backup:list": "npx tsx scripts/backup/auto-backup.ts list",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
@@ -81,6 +85,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@prisma/internals": "^6.19.0",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "24.8.0",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
@@ -88,6 +94,7 @@
     "cross-env": "^10.1.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.18",
+    "fs-extra": "^11.3.2",
     "prisma": "^6.19.0",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.2",
