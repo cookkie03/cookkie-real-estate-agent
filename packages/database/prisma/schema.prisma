@@ -1,0 +1,1370 @@
+// ============================================================================
+// PRISMA SCHEMA - CRM Immobiliare
+// ============================================================================
+// This is the single source of truth for the database schema.
+// All TypeScript and Python models must stay in sync with this file.
+//
+// Database: SQLite (development) / PostgreSQL (production in Docker)
+// ORM: Prisma (TypeScript) + SQLAlchemy (Python mirror)
+//
+// Last Updated: 2025-11-09
+// Version: 3.2.0 (Sprint 3: Type Safety + Business Fields)
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS - Type Safety for Status Fields
+// ============================================================================
+
+enum ContactStatus {
+  active
+  inactive
+  archived
+  blacklist
+}
+
+enum PropertyStatus {
+  draft
+  available
+  option
+  sold
+  rented
+  suspended
+  archived
+}
+
+enum RequestStatus {
+  active
+  paused
+  satisfied
+  cancelled
+}
+
+enum MatchStatus {
+  suggested
+  sent
+  viewed
+  visited
+  interested
+  rejected
+  closed
+}
+
+enum ActivityStatus {
+  scheduled
+  completed
+  cancelled
+  missed
+}
+
+// ============================================================================
+// 1. USER PROFILE (Single-user application)
+// ============================================================================
+model UserProfile {
+  id    String @id @default(cuid())
+
+  // Personal Info
+  fullName String
+  email    String @unique
+  phone    String?
+
+  // Agency Info
+  agencyName    String?
+  agencyVat     String?
+  agencyAddress String?
+
+  // Settings (JSON)
+  settings Json?  // Default handled in application layer
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_profile")
+}
+
+// ============================================================================
+// 2. CONTACTS (Unified: clients, owners, leads)
+// ============================================================================
+model Contact {
+  id   String @id @default(cuid())
+  code String @unique // CNT-2025-0001
+
+  // Entity Type
+  entityType String @default("person") // person, company
+
+  // Personal Info
+  fullName    String
+  firstName   String?
+  lastName    String?
+  companyName String?
+
+  // Contact Info
+  primaryPhone   String?
+  secondaryPhone String?
+  primaryEmail   String?
+  secondaryEmail String?
+
+  // Address
+  street    String?
+  civic     String?
+  city      String?
+  province  String?
+  zip       String?
+  country   String? @default("Italia")
+  latitude  Float?
+  longitude Float?
+
+  // Fiscal Data
+  taxCode     String?   @unique
+  vatNumber   String?   @unique
+  birthDate   DateTime?
+  nationality String?
+
+  // Privacy (GDPR)
+  privacyFirstContact     Boolean   @default(false)
+  privacyFirstContactDate DateTime?
+  privacyExtended         Boolean   @default(false)
+  privacyExtendedDate     DateTime?
+  privacyMarketing        Boolean   @default(false)
+
+  // Profiling
+  source     String? // website, referral, cold_call, census, portal
+  leadScore  Int?    // 0-100
+  importance String  @default("normal") // low, normal, high, vip
+
+  // Budget (if searching for property)
+  budgetMin Decimal?
+  budgetMax Decimal?
+
+  // Status
+  status          ContactStatus @default(active)
+  lastContactDate DateTime?
+  notes           String?
+
+  // Communication tracking
+  lastEmailDate     DateTime?
+  lastWhatsAppDate  DateTime?
+  emailThreadId     String? // ID thread Gmail principale
+  whatsappThreadId  String? // ID chat WhatsApp
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  ownedProperties Property[]  @relation("PropertyOwner")
+  requests        Request[]
+  matches         Match[]
+  activities      Activity[]
+  tags            EntityTag[]
+  messages        MessageLog[]
+
+  // Indexes
+  @@index([code])
+  @@index([fullName])
+  @@index([city])
+  @@index([status])
+  @@index([source])
+  @@index([importance])
+  @@index([status, lastContactDate])
+  @@index([city, status])
+  @@index([importance, status])
+  @@index([lastEmailDate])
+  @@index([lastWhatsAppDate])
+  @@map("contacts")
+}
+
+// ============================================================================
+// 3. BUILDINGS (Building census)
+// ============================================================================
+model Building {
+  id   String @id @default(cuid())
+  code String @unique // BLD-2025-0001
+
+  // Address
+  street    String
+  civic     String
+  city      String
+  province  String
+  zip       String?
+  latitude  Float    // Required for map visualization
+  longitude Float    // Required for map visualization
+
+  // Cadastral Data
+  cadastralSheet    String?
+  cadastralParticle String?
+  cadastralZone     String? // Zona censuaria (A, B, C, etc.) for hierarchical aggregation
+
+  // Building Info
+  yearBuilt   Int?
+  totalFloors Int?
+  totalUnits  Int?
+  hasElevator Boolean @default(false)
+  condition   String? // excellent, good, fair, poor, needs_renovation
+
+  // Map Statistics (cached aggregates for performance)
+  activeUnits Int   @default(0) // Count of active properties in building
+  soldUnits   Int   @default(0) // Count of sold/rented properties
+  avgUrgency  Float?             // Average urgency score (0-5) for visualization
+
+  // Census
+  lastSurveyDate  DateTime?
+  nextSurveyDue   DateTime?
+  unitsSurveyed   Int       @default(0)
+  unitsInterested Int       @default(0)
+
+  // Administrator
+  administratorName  String?
+  administratorPhone String?
+  administratorEmail String?
+
+  notes String? 
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  properties Property[]
+  activities Activity[]
+  tags       EntityTag[]
+
+  // Indexes
+  @@index([code])
+  @@index([city, street, civic])
+  @@index([nextSurveyDue])
+  @@index([latitude, longitude])    // For map bbox queries
+  @@index([city, cadastralZone])    // For zone aggregation
+  @@index([avgUrgency])              // For urgency filtering
+  @@map("buildings")
+}
+
+// ============================================================================
+// 4. PROPERTIES (Real estate listings)
+// ============================================================================
+model Property {
+  id   String @id @default(cuid())
+  code String @unique // PROP-2025-0001
+
+  // Relations
+  ownerContactId String?
+  buildingId     String?
+
+  // Status
+  status     PropertyStatus @default(draft)
+  visibility String         @default("public") // public, private, network, archived
+
+  // Source
+  source     String    @default("direct_mandate") // direct_mandate, census, web_scraping, cadastre
+  sourceUrl  String?
+  importDate DateTime?
+  verified   Boolean   @default(false)
+
+  // Address
+  street    String
+  civic     String?
+  internal  String? // int. 3, scala A
+  floor     String?
+  city      String
+  province  String
+  zone      String? // neighborhood/zone
+  zip       String?
+  latitude  Float
+  longitude Float
+
+  // Type
+  contractType     String // sale, rent
+  propertyType     String // apartment, villa, office, garage, land
+  propertyCategory String? // residential, commercial, industrial
+
+  // Dimensions
+  sqmCommercial Float?
+  sqmLivable    Float?
+  rooms         Int?
+  bedrooms      Int?
+  bathrooms     Int?
+
+  // Features (boolean)
+  hasElevator      Boolean @default(false)
+  hasParking       Boolean @default(false)
+  hasGarage        Boolean @default(false)
+  hasGarden        Boolean @default(false)
+  hasTerrace       Boolean @default(false)
+  hasBalcony       Boolean @default(false)
+  hasCellar        Boolean @default(false)
+  hasAttic         Boolean @default(false)
+  hasSwimmingPool  Boolean @default(false)
+  hasFireplace     Boolean @default(false)
+  hasAlarm         Boolean @default(false)
+  hasAirConditioning Boolean @default(false)
+
+  // Characteristics
+  condition   String? // excellent, good, fair, needs_renovation
+  heatingType String? // autonomous, centralized, floor, heat_pump
+  energyClass String? // A+, A, B, C, D, E, F, G
+  yearBuilt   Int?
+  yearRenovated Int?
+
+  // Prices
+  priceSale          Decimal?
+  priceRentMonthly   Decimal?
+  priceMinAcceptable Decimal? // minimum price owner accepts
+  condominiumFees    Decimal?
+
+  // Estimated Values (AI)
+  estimatedValue       Decimal?
+  estimatedDaysToSell  Int?
+  estimatedRentMonthly Decimal?
+
+  // Mandate (if direct_mandate)
+  mandateType      String? // exclusive, simple, verbal
+  mandateStartDate DateTime?
+  mandateEndDate   DateTime?
+  mandateNumber    String?
+
+  // Census flags
+  needsInternalVisit Boolean @default(false)
+  needsPhotos        Boolean @default(false)
+  needsValuation     Boolean @default(false)
+  ownerToContact     Boolean @default(false)
+
+  // Marketing
+  title       String?
+  description String? 
+
+  // Media
+  photosCount           Int     @default(0)
+  hasProfessionalPhotos Boolean @default(false)
+  hasVirtualTour        Boolean @default(false)
+  has3DModel            Boolean @default(false)
+  hasFloorPlan          Boolean @default(false)
+
+  // Statistics
+  viewsCount     Int @default(0)
+  inquiriesCount Int @default(0)
+  visitsCount    Int @default(0)
+  daysOnMarket   Int @default(0)
+
+  // Urgency Tracking (for map visualization)
+  urgencyScore   Int      @default(0) // Cached urgency score (0-5): 0=sold, 1=new, 2=optimal, 3=monitor, 4=warning, 5=urgent
+  lastActivityAt DateTime?             // Last activity timestamp (calls, visits, proposals) for urgency calculation
+
+  // Notes
+  notes         String?
+  internalNotes String?  // private notes, not shown to clients
+
+  // Closure Tracking (when sold/rented)
+  soldDate    DateTime? // When property was sold
+  rentedDate  DateTime? // When property was rented
+  soldPrice   Decimal?  // Actual sale price (may differ from asking price)
+  rentedPrice Decimal?  // Actual rent price (may differ from asking price)
+  closedBy    String?   // Reason for closing: sold, rented, mandate_expired, owner_withdrawn
+
+  // Timestamps
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  publishedAt  DateTime?
+  archivedAt   DateTime?
+
+  // Relationships
+  owner      Contact?    @relation("PropertyOwner", fields: [ownerContactId], references: [id], onDelete: SetNull)
+  building   Building?   @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  matches    Match[]
+  activities Activity[]
+  tags       EntityTag[]
+
+  // Indexes
+  @@index([code])
+  @@index([ownerContactId])
+  @@index([buildingId])
+  @@index([status])
+  @@index([contractType])
+  @@index([propertyType])
+  @@index([city])
+  @@index([zone])
+  @@index([priceSale])
+  @@index([priceRentMonthly])
+  @@index([sqmCommercial])
+  @@index([rooms])
+  @@index([bedrooms])
+  @@index([status, contractType])
+  @@index([needsInternalVisit])
+  @@index([mandateEndDate])
+  @@index([urgencyScore])              // For urgency filtering on map
+  @@index([lastActivityAt])            // For sorting by last activity
+  @@index([latitude, longitude])       // For map bbox queries
+  @@index([status, contractType, city])
+  @@index([contractType, propertyType, city])
+  @@index([city, zone, status])
+  @@index([status, urgencyScore])
+  @@map("properties")
+}
+
+// ============================================================================
+// 5. REQUESTS (Client search requests)
+// ============================================================================
+model Request {
+  id   String @id @default(cuid())
+  code String @unique // REQ-2025-0001
+
+  // Relations
+  contactId String
+
+  // Type & Status
+  requestType String        @default("search_buy") // search_buy, search_rent, valuation
+  status      RequestStatus @default(active)
+  urgency     String        @default("medium") // low, medium, high
+
+  // Search Criteria
+  contractType  String? // sale, rent
+  searchCities  Json? // ["Milano", "Roma"]
+  searchZones   Json? // ["Centro", "Porta Romana"]
+  propertyTypes Json? // ["apartment", "villa"]
+
+  // Geographic Search
+  searchRadiusKm   Float?
+  centerLatitude   Float?
+  centerLongitude  Float?
+
+  // Budget
+  priceMin Decimal?
+  priceMax Decimal?
+
+  // Size Requirements
+  sqmMin    Float?
+  sqmMax    Float?
+  roomsMin  Int?
+  roomsMax  Int?
+  bedroomsMin Int?
+  bedroomsMax Int?
+  bathroomsMin Int?
+
+  // Required Features
+  requiresElevator Boolean @default(false)
+  requiresParking  Boolean @default(false)
+  requiresGarage   Boolean @default(false)
+  requiresGarden   Boolean @default(false)
+  requiresTerrace  Boolean @default(false)
+  requiresBalcony  Boolean @default(false)
+
+  // Exclusions
+  excludeGroundFloor         Boolean @default(false)
+  excludeTopFloorNoElevator  Boolean @default(false)
+  excludeBasement            Boolean @default(false)
+  excludeNorthFacing         Boolean @default(false)
+
+  // Quality Requirements
+  minCondition   String? // minimum condition: good, fair, etc.
+  minEnergyClass String? // minimum energy class
+  maxYearBuilt   Int? // property must be built after this year
+
+  // Timing
+  moveDate   DateTime? // when client needs to move
+  expiresAt  DateTime? // when this request expires
+
+  notes String?
+
+  // Satisfaction Tracking
+  satisfiedByMatchId String?   // ID of the Match that satisfied this request
+  satisfiedDate      DateTime? // When this request was satisfied
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  contact    Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  matches    Match[]
+  activities Activity[]
+  tags       EntityTag[]
+
+  // Indexes
+  @@index([code])
+  @@index([contactId])
+  @@index([status])
+  @@index([requestType])
+  @@index([urgency])
+  @@index([expiresAt])
+  @@index([contactId, status])
+  @@index([status, urgency])
+  @@index([requestType, status])
+  @@map("requests")
+}
+
+// ============================================================================
+// 6. MATCHES (AI-powered property-request matching)
+// ============================================================================
+model Match {
+  id String @id @default(cuid())
+
+  // Relations
+  requestId  String
+  propertyId String
+  contactId  String? // denormalized for quick access
+
+  // Scoring (0-100 per category)
+  scoreTotal    Int // sum of all scores
+  scoreLocation Int?
+  scorePrice    Int?
+  scoreSize     Int?
+  scoreFeatures Int?
+  scoreCondition Int?
+
+  // Status
+  status MatchStatus @default(suggested)
+
+  // Feedback
+  clientReaction String? // interested, neutral, not_interested
+  rejectionReason String? // too_expensive, wrong_location, too_small, etc.
+  clientNotes     String?
+
+  // Actions
+  sentDate    DateTime?
+  viewedDate  DateTime?
+  visitedDate DateTime?
+
+  agentNotes String?
+
+  // Closure Tracking
+  closedDate   DateTime? // When this match was closed
+  closedReason String?   // Why closed: client_bought, property_sold, client_lost_interest, etc. 
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  request  Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  contact  Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  // Indexes
+  @@index([requestId])
+  @@index([propertyId])
+  @@index([contactId])
+  @@index([scoreTotal])
+  @@index([status])
+  @@index([sentDate])
+  @@index([requestId, status])
+  @@index([propertyId, status])
+  @@index([contactId, status])
+  @@index([status, scoreTotal])
+  @@map("matches")
+}
+
+// ============================================================================
+// 7. ACTIVITIES (CRM timeline: calls, visits, emails, etc.)
+// ============================================================================
+model Activity {
+  id String @id @default(cuid())
+
+  // Polymorphic Relations (can be linked to multiple entities)
+  contactId  String?
+  propertyId String?
+  requestId  String?
+  buildingId String?
+
+  // Type & Status
+  activityType String         // call, email, meeting, visit, census, photo_shoot, valuation, etc.
+  status       ActivityStatus @default(scheduled)
+  priority     String         @default("normal") // low, normal, high, urgent
+
+  // Timing
+  scheduledAt DateTime?
+  completedAt DateTime?
+  dueDate     DateTime?
+  duration    Int? // minutes
+
+  // Content
+  title       String
+  description String?
+  outcome     String?  // what happened
+  details     Json? // flexible extra data (default handled in application)
+
+  // Location (for visits/meetings)
+  locationAddress String?
+  locationCity    String?
+  locationNotes   String?
+
+  // Reminders
+  reminderSent Boolean @default(false)
+  reminderDate DateTime?
+
+  // Google Calendar Integration
+  googleEventId    String? // ID evento su Google Calendar
+  googleCalendarId String? // ID calendario Google
+  googleEventUrl   String? // Link all'evento
+  syncedToGoogle   Boolean @default(false)
+  lastSyncedAt     DateTime?
+
+  notes String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  contact  Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  request  Request?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  building Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  tags     EntityTag[]
+
+  // Indexes
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([requestId])
+  @@index([buildingId])
+  @@index([activityType])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([dueDate])
+  @@index([contactId, status])
+  @@index([contactId, activityType])
+  @@index([status, scheduledAt])
+  @@index([activityType, scheduledAt])
+  @@index([googleEventId])
+  @@map("activities")
+}
+
+// ============================================================================
+// 8. TAGS (Universal tagging system)
+// ============================================================================
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+
+  // Category
+  category String? // property_feature, contact_interest, activity_type, etc.
+  color    String? // hex color for UI
+
+  // Usage
+  usageCount Int @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  entities EntityTag[]
+
+  @@index([name])
+  @@index([category])
+  @@map("tags")
+}
+
+// ============================================================================
+// 9. ENTITY_TAG (Polymorphic many-to-many for tags)
+// ============================================================================
+model EntityTag {
+  id String @id @default(cuid())
+
+  // Tag
+  tagId String
+
+  // Polymorphic Entity (one of these will be set)
+  contactId  String?
+  propertyId String?
+  requestId  String?
+  buildingId String?
+  activityId String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Relationships
+  tag      Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  contact  Contact?  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  request  Request?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  building Building? @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  activity Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  // Unique Constraints
+  @@unique([tagId, contactId], name: "unique_tag_contact")
+  @@unique([tagId, propertyId], name: "unique_tag_property")
+  @@unique([tagId, requestId], name: "unique_tag_request")
+  @@unique([tagId, buildingId], name: "unique_tag_building")
+  @@unique([tagId, activityId], name: "unique_tag_activity")
+
+  // Indexes
+  @@index([tagId])
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([requestId])
+  @@index([buildingId])
+  @@index([activityId])
+  @@map("entity_tags")
+}
+
+// ============================================================================
+// 10. AUDIT_LOG (Change tracking for compliance)
+// ============================================================================
+model AuditLog {
+  id String @id @default(cuid())
+
+  // Entity
+  entityType String // Contact, Property, Request, etc.
+  entityId   String
+
+  // Action
+  action String // create, update, delete
+
+  // Changes
+  oldValues Json?
+  newValues Json?
+
+  // User (future: when multi-user support is added)
+  userId String? @default("system")
+
+  // Context
+  ipAddress String?
+  userAgent String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  // Indexes
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// 11. CUSTOM FIELD DEFINITION (User-defined dynamic fields)
+// ============================================================================
+model CustomFieldDefinition {
+  id String @id @default(cuid())
+
+  // Metadata
+  name       String // Slug/key: "numeroProtocollo", "metraggioGiardino"
+  label      String // Display name: "Numero Protocollo", "Metraggio Giardino"
+  entityType String // "Contact", "Property", "Building", "Request", "Activity"
+
+  // Type & Validation
+  fieldType String  @default("text") // text, number, date, boolean, select, multiselect
+  required  Boolean @default(false)
+
+  // Validation Rules (JSON)
+  validationRules Json? // { min: 0, max: 1000, pattern: "regex", etc. }
+
+  // Options (for select/multiselect)
+  options Json? // ["Opzione 1", "Opzione 2", ...]
+
+  // UI Positioning
+  section      String? // "Dati Generali", "Caratteristiche", etc.
+  displayOrder Int     @default(0)
+
+  // Metadata
+  isActive Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  values CustomFieldValue[]
+
+  // Constraints
+  @@unique([entityType, name])
+  @@index([entityType, isActive])
+  @@map("custom_field_definitions")
+}
+
+// ============================================================================
+// 12. CUSTOM FIELD VALUE (Values for user-defined fields)
+// ============================================================================
+model CustomFieldValue {
+  id String @id @default(cuid())
+
+  // Field Reference
+  fieldId String
+
+  // Polymorphic Entity Reference
+  entityType String // "Contact", "Property", "Building", "Request", "Activity"
+  entityId   String
+
+  // Value Storage (type-specific columns)
+  valueText    String?
+  valueNumber  Float?
+  valueBoolean Boolean?
+  valueDate    DateTime?
+  valueJson    Json? // For arrays/complex objects
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  field CustomFieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  // Constraints
+  @@unique([fieldId, entityType, entityId])
+  @@index([entityType, entityId])
+  @@index([fieldId])
+  @@map("custom_field_values")
+}
+
+// ============================================================================
+// 13. SCRAPING JOB (Web scraping job persistence)
+// ============================================================================
+model ScrapingJob {
+  id String @id @default(cuid())
+
+  // Configuration
+  portal       String // immobiliare_it, casa_it, idealista_it, etc.
+  location     String? // City or zone to search
+  contractType String? // sale, rent
+  propertyType String? // apartment, villa, etc.
+
+  // Filters
+  priceMin  Decimal?
+  priceMax  Decimal?
+  sqmMin    Float?
+  sqmMax    Float?
+  roomsMin  Int?
+  roomsMax  Int?
+  maxPages  Int     @default(5)
+
+  // Status
+  status String @default("queued") // queued, running, completed, failed, cancelled
+
+  // Results
+  listingsFound Int @default(0)
+  listingsSaved Int @default(0)
+  errors        Json? // Array of error messages
+
+  // Timing
+  startedAt   DateTime?
+  completedAt DateTime?
+  duration    Int?      // seconds
+
+  // Metadata
+  createdBy String @default("user")
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([status])
+  @@index([portal])
+  @@index([createdAt])
+  @@map("scraping_jobs")
+}
+
+// ============================================================================
+// 14. SCRAPING SESSION (Browser session persistence)
+// ============================================================================
+model ScrapingSession {
+  id String @id @default(cuid())
+
+  // Identity
+  portal     String  @unique // immobiliare_it, casa_it, etc.
+  userAgent  String
+
+  // Session Data
+  cookies        Json // Browser cookies
+  localStorage   Json? // localStorage data
+  sessionStorage Json? // sessionStorage data
+
+  // Viewport
+  viewportWidth  Int @default(1920)
+  viewportHeight Int @default(1080)
+
+  // Authentication
+  isAuthenticated Boolean @default(false)
+  username        String?
+
+  // Proxy (optional)
+  proxyUrl      String?
+  proxyUsername String?
+
+  // Metrics
+  useCount     Int @default(0)
+  successCount Int @default(0)
+  failureCount Int @default(0)
+
+  // Validity
+  lastUsedAt  DateTime @default(now())
+  lastSuccess DateTime?
+  isValid     Boolean  @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([portal])
+  @@index([isAuthenticated])
+  @@index([lastUsedAt])
+  @@map("scraping_sessions")
+}
+
+// ============================================================================
+// 15. AGENT CONVERSATION (AI chat sessions)
+// ============================================================================
+model AgentConversation {
+  id String @id @default(cuid())
+
+  // User Request
+  userPrompt String  // Original natural language request
+
+  // AI Planning
+  agentPlan Json? // Plan generated by orchestrator
+
+  // Execution
+  tasks  AgentTask[]
+
+  // Results
+  results Json? // Aggregated results
+  summary String?  // AI-generated summary
+
+  // Status
+  status String @default("pending") // pending, running, completed, failed
+
+  // Timing
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  executionTime  Int?      // milliseconds
+
+  // Sources involved
+  sourcesUsed Json? // Array of portal names used
+
+  // Learning
+  userFeedback  String? // User feedback on results
+  confidence    Float?  // Confidence score (0-1)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([status])
+  @@index([startedAt])
+  @@index([createdAt])
+  @@map("agent_conversations")
+}
+
+// ============================================================================
+// 16. AGENT TASK (Individual AI tasks within a conversation)
+// ============================================================================
+model AgentTask {
+  id             String @id @default(cuid())
+  conversationId String
+
+  // Task Details
+  taskType    String // search, extract, navigate, login, compare, monitor
+  description String
+  parameters  Json   // Task-specific parameters
+
+  // Source
+  sourceName String? // Portal name if applicable
+
+  // Status
+  status String @default("pending") // pending, running, completed, failed, skipped
+
+  // Results
+  result Json?  // Task result data
+  error  String? // Error message if failed
+
+  // Timing
+  startedAt   DateTime?
+  completedAt DateTime?
+  duration    Int?      // milliseconds
+
+  // Dependencies
+  dependsOn Json? // Array of task IDs this depends on
+  priority  Int   @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  conversation AgentConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([conversationId])
+  @@index([status])
+  @@index([taskType])
+  @@index([startedAt])
+  @@map("agent_tasks")
+}
+
+// ============================================================================
+// 17. AGENT MEMORY (AI learning and pattern recognition)
+// ============================================================================
+model AgentMemory {
+  id String @id @default(cuid())
+
+  // Memory Type
+  memoryType String // pattern, preference, site_knowledge, error_handling
+
+  // Key-Value Storage
+  key   String @unique // Unique identifier for this memory
+  value Json           // Structured memory data
+
+  // Context
+  scope   String? // global, portal-specific, user-specific
+  context Json?   // Additional context data
+
+  // Confidence & Learning
+  confidence Float @default(0.5) // 0-1, how confident is this memory
+
+  // Usage Tracking
+  usageCount Int       @default(0)
+  lastUsed   DateTime?
+
+  // Success Metrics
+  successCount Int @default(0)
+  failureCount Int @default(0)
+
+  // Metadata
+  source      String? // How was this learned: user_feedback, auto_discovery, manual
+  description String? // Human-readable description
+
+  // Validity
+  isActive   Boolean   @default(true)
+  expiresAt  DateTime? // Optional expiration
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([memoryType])
+  @@index([scope])
+  @@index([confidence])
+  @@index([usageCount])
+  @@index([lastUsed])
+  @@map("agent_memories")
+}
+
+// ============================================================================
+// 18. SCRAPING SOURCE (Dynamic source configuration)
+// ============================================================================
+model ScrapingSource {
+  id String @id @default(cuid())
+
+  // Identity
+  name    String @unique // immobiliare_it, casa_it, custom_crm_1
+  baseUrl String         // Base URL of the site
+
+  // Type
+  sourceType String @default("portal") // portal, crm, institutional, custom
+
+  // Status
+  isActive     Boolean @default(true)
+  requiresAuth Boolean @default(false)
+
+  // AI Knowledge
+  aiKnowledge  Json?     // Structure learned by AI
+  lastLearning DateTime? // When AI last analyzed this source
+
+  // Credentials (encrypted in application layer)
+  credentials Json? // Username, password, API keys, etc.
+
+  // Performance Metrics
+  successRate    Float    @default(0.0) // 0-1
+  avgResponseTime Int     @default(0)   // milliseconds
+  totalJobs      Int      @default(0)
+  successfulJobs Int      @default(0)
+  failedJobs     Int      @default(0)
+
+  // Rate Limiting
+  rateLimit      Float?   // Requests per second
+  lastRequestAt  DateTime?
+
+  // Metadata
+  description String?
+  notes       String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([name])
+  @@index([sourceType])
+  @@index([isActive])
+  @@map("scraping_sources")
+}
+
+// ============================================================================
+// 19. INTEGRATION AUTH (OAuth credentials for external services)
+// ============================================================================
+model IntegrationAuth {
+  id       String @id @default(cuid())
+
+  // Provider info
+  provider String  // "google_calendar", "gmail", "whatsapp"
+  isActive Boolean @default(true)
+
+  // OAuth2 tokens
+  accessToken  String   @db.Text
+  refreshToken String?  @db.Text
+  tokenType    String?  @default("Bearer")
+  expiresAt    DateTime?
+
+  // Scopes
+  scope String?  // Requested scopes
+
+  // Account info
+  email         String? // Email dell'account Google
+  accountId     String? // ID account esterno
+  accountName   String? // Nome visualizzato
+
+  // Sync settings
+  syncEnabled   Boolean  @default(true)
+  syncInterval  Int      @default(300) // secondi
+  lastSyncAt    DateTime?
+  nextSyncAt    DateTime?
+
+  // Error handling
+  lastError     String?  @db.Text
+  errorCount    Int      @default(0)
+  lastErrorAt   DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, email])
+  @@index([provider, isActive])
+  @@index([nextSyncAt])
+  @@map("integration_auth")
+}
+
+// ============================================================================
+// 20. MESSAGE LOG (Email and WhatsApp messages)
+// ============================================================================
+model MessageLog {
+  id String @id @default(cuid())
+
+  // Provider info
+  provider   String   // "gmail", "whatsapp"
+  messageId  String   // ID esterno del messaggio
+  threadId   String?  // ID thread/conversazione
+
+  // Contact relation
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  // Direction
+  direction String   // "inbound", "outbound"
+  status    String   @default("received") // received, sent, failed, delivered, read
+
+  // Content
+  subject     String?     @db.Text
+  body        String      @db.Text
+  bodyHtml    String?     @db.Text
+  snippet     String?     // Preview del contenuto (primi 200 caratteri)
+
+  // Metadata
+  fromEmail   String?
+  fromPhone   String?
+  fromName    String?
+  toEmail     String?
+  toPhone     String?
+  toName      String?
+  cc          Json?       // Array di email in CC
+  bcc         Json?       // Array di email in BCC
+
+  // Attachments
+  hasAttachments  Boolean @default(false)
+  attachments     Json?   // Array di: { name, mimeType, size, url }
+
+  // Timing
+  sentAt      DateTime
+  receivedAt  DateTime?
+  readAt      DateTime?
+
+  // Processing
+  isProcessed      Boolean   @default(false)
+  processedAt      DateTime?
+  processingError  String?   @db.Text
+
+  // AI Analysis
+  aiCategory      String?   // "property_inquiry", "appointment_request", "general", etc.
+  aiSentiment     String?   // "positive", "neutral", "negative"
+  aiPriority      String?   // "low", "normal", "high", "urgent"
+  aiExtractedData Json?     // Dati estratti dall'AI
+  aiSummary       String?   @db.Text
+
+  // Relations created
+  activityCreated  Boolean @default(false)
+  activityId       String?
+  propertyMentioned String? // ID proprietà menzionata
+  requestMentioned  String? // ID richiesta menzionata
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, messageId])
+  @@index([contactId])
+  @@index([provider, direction])
+  @@index([sentAt])
+  @@index([isProcessed])
+  @@index([aiCategory])
+  @@index([aiPriority])
+  @@index([threadId])
+  @@map("message_logs")
+}
+
+// ============================================================================
+// 21. CALENDAR SYNC (Google Calendar sync state)
+// ============================================================================
+model CalendarSync {
+  id String @id @default(cuid())
+
+  // Calendar info
+  calendarId   String  // ID calendario Google
+  calendarName String?
+  isPrimary    Boolean @default(false)
+
+  // Sync settings
+  isActive       Boolean @default(true)
+  syncDirection  String  @default("bidirectional") // "pull", "push", "bidirectional"
+
+  // Sync state
+  lastSyncToken String?  @db.Text // Token per sync incrementale
+  lastSyncAt    DateTime?
+  nextSyncAt    DateTime?
+
+  // Statistics
+  eventsSynced  Int @default(0)
+  eventsCreated Int @default(0)
+  eventsUpdated Int @default(0)
+  eventsDeleted Int @default(0)
+
+  // Error handling
+  lastError   String?  @db.Text
+  errorCount  Int      @default(0)
+  lastErrorAt DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([calendarId])
+  @@index([isActive])
+  @@index([nextSyncAt])
+  @@map("calendar_sync")
+}
+
+// ============================================================================
+// 22. MESSAGE PROCESSING (Async processing queue)
+// ============================================================================
+model MessageProcessing {
+  id String @id @default(cuid())
+
+  // Reference
+  messageLogId String
+
+  // Processing state
+  status   String @default("pending") // pending, processing, completed, failed
+  priority Int    @default(0) // 0=normal, 1=high, 2=urgent
+
+  // Retry logic
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
+  lastAttemptAt DateTime?
+  nextRetryAt   DateTime?
+
+  // Processing details
+  processorType String? // "message_analyzer", "contact_matcher", "appointment_extractor"
+  result        Json?
+  error         String?  @db.Text
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, priority])
+  @@index([nextRetryAt])
+  @@index([messageLogId])
+  @@map("message_processing")
+}
+
+// ============================================================================
+// NOTES FOR MAINTENANCE
+// ============================================================================
+// 1. When adding new models, update:
+//    - This file (schema.prisma)
+//    - database/python/models.py (SQLAlchemy mirror)
+//    - Backend API endpoints
+//    - Frontend TypeScript types
+//
+// 2. When changing fields, run:
+//    - npx prisma generate (regenerate Prisma Client)
+//    - npx prisma db push (update database)
+//    - Update SQLAlchemy models if needed
+//
+// 3. For production migrations:
+//    - npx prisma migrate dev --name description
+//    - Test migration on staging first
+//    - Backup production database before migrating
+//
+// 4. Performance considerations:
+//    - All foreign keys are indexed
+//    - Add composite indexes for common queries
+//    - Use @@index for frequently filtered fields
+//    - Monitor query performance with Prisma Studio
+//
+// 5. Full-Text Search (PostgreSQL Production Only):
+//    Run these SQL commands after deploying to PostgreSQL:
+//
+//    -- Contact full-text search
+//    ALTER TABLE contacts ADD COLUMN search_vector tsvector
+//      GENERATED ALWAYS AS (
+//        to_tsvector('italian',
+//          coalesce(full_name, '') || ' ' ||
+//          coalesce(primary_email, '') || ' ' ||
+//          coalesce(primary_phone, '') || ' ' ||
+//          coalesce(notes, ''))
+//      ) STORED;
+//    CREATE INDEX contacts_search_idx ON contacts USING GIN(search_vector);
+//
+//    -- Property full-text search
+//    ALTER TABLE properties ADD COLUMN search_vector tsvector
+//      GENERATED ALWAYS AS (
+//        to_tsvector('italian',
+//          coalesce(title, '') || ' ' ||
+//          coalesce(description, '') || ' ' ||
+//          coalesce(street, '') || ' ' ||
+//          coalesce(city, '') || ' ' ||
+//          coalesce(zone, ''))
+//      ) STORED;
+//    CREATE INDEX properties_search_idx ON properties USING GIN(search_vector);
+//
+//    -- Building full-text search
+//    ALTER TABLE buildings ADD COLUMN search_vector tsvector
+//      GENERATED ALWAYS AS (
+//        to_tsvector('italian',
+//          coalesce(street, '') || ' ' ||
+//          coalesce(civic, '') || ' ' ||
+//          coalesce(city, '') || ' ' ||
+//          coalesce(notes, ''))
+//      ) STORED;
+//    CREATE INDEX buildings_search_idx ON buildings USING GIN(search_vector);
+//
+//    Usage example:
+//    SELECT * FROM contacts
+//    WHERE search_vector @@ to_tsquery('italian', 'mario & rossi')
+//    ORDER BY ts_rank(search_vector, to_tsquery('italian', 'mario & rossi')) DESC;
+// ============================================================================

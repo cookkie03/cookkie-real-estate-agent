@@ -1,0 +1,7 @@
+{
+  "name": "@crm-immobiliare/prettier-config",
+  "version": "1.0.0",
+  "description": "Shared Prettier configuration for CRM Immobiliare",
+  "main": "index.json",
+  "files": ["index.json"]
+}
