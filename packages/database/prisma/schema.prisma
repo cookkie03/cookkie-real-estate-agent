@@ -1368,3 +1368,248 @@ model MessageProcessing {
 //    WHERE search_vector @@ to_tsquery('italian', 'mario & rossi')
 //    ORDER BY ts_rank(search_vector, to_tsquery('italian', 'mario & rossi')) DESC;
 // ============================================================================
+
+// ============================================================================
+// 23. CALENDAR EVENT (Google Calendar events for property viewings)
+// ============================================================================
+model CalendarEvent {
+  id String @id @default(cuid())
+
+  // Google Calendar integration
+  googleEventId String? @unique
+  calendarId    String? // Which calendar this belongs to
+
+  // Event type
+  eventType String // property_viewing, client_meeting, contract_signing, follow_up, other
+  status    String @default("confirmed") // confirmed, tentative, cancelled
+
+  // Sync status
+  syncStatus    String    @default("pending") // pending, synced, failed
+  lastSyncedAt  DateTime?
+  syncError     String?   @db.Text
+
+  // Event details
+  title       String
+  description String?      @db.Text
+  location    String?
+  startTime   DateTime
+  endTime     DateTime
+  isAllDay    Boolean      @default(false)
+  timezone    String       @default("Europe/Rome")
+
+  // Participants (JSON objects)
+  organizer Json // { email, name, responseStatus, isOrganizer }
+  attendees Json? // Array of { email, name, responseStatus }
+
+  // Reminders (JSON array)
+  reminders Json? // Array of { method: 'email'|'popup'|'sms', minutes: number }
+
+  // Recurrence
+  recurrence         String?  // RRULE format
+  recurrenceParentId String?  // Parent event if recurring
+
+  // CRM linking
+  contactId  String?
+  propertyId String?
+  agentId    String?
+
+  // Metadata
+  propertyAddress String? // Cached for quick access
+  notes           String? @db.Text
+  viewingType     String? // in-person, virtual
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([googleEventId])
+  @@index([eventType])
+  @@index([status])
+  @@index([syncStatus])
+  @@index([startTime])
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([calendarId])
+  @@map("calendar_events")
+}
+
+// ============================================================================
+// 24. TASK (Task management and activity tracking)
+// ============================================================================
+model Task {
+  id String @id @default(cuid())
+
+  // Task type
+  taskType String // follow_up, property_viewing, phone_call, email, document_preparation, contract_signing, property_inspection, client_meeting, market_research, other
+  status   String @default("todo") // todo, in_progress, completed, cancelled, on_hold
+  priority String @default("medium") // low, medium, high, urgent
+
+  // Details
+  title       String
+  description String? @db.Text
+  notes       String? @db.Text
+
+  // Assignment
+  assignedTo String? // User/Agent ID
+  assignedBy String? // User/Agent ID
+
+  // Linked entities
+  contactId        String?
+  propertyId       String?
+  calendarEventId  String? // Link to CalendarEvent if applicable
+
+  // Timing
+  dueDate                  DateTime?
+  startDate                DateTime?
+  completedAt              DateTime?
+  estimatedDurationMinutes Int?
+  actualDurationMinutes    Int?
+
+  // Reminders (JSON array)
+  reminders Json? // Array of { reminderAt: Date, method: 'email'|'push'|'sms', sent: boolean }
+
+  // Attachments (JSON array)
+  attachments Json? // Array of { id, name, url, mimeType, size }
+
+  // Recurrence
+  isRecurring         Boolean @default(false)
+  recurrenceRule      String? // RRULE format
+  recurrenceParentId  String? // Parent task if recurring
+
+  // Collaboration
+  followers Json? // Array of user IDs
+  comments  Json? // Array of { id, userId, text, createdAt }
+
+  // Metadata
+  tags         Json? // Array of tags
+  customFields Json? // Custom field values
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskType])
+  @@index([status])
+  @@index([priority])
+  @@index([assignedTo])
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([dueDate])
+  @@index([status, dueDate])
+  @@index([assignedTo, status])
+  @@map("tasks")
+}
+
+// ============================================================================
+// 25. ANALYTICS METRIC (Time-series metrics for dashboards)
+// ============================================================================
+model AnalyticsMetric {
+  id String @id @default(cuid())
+
+  // Metric type
+  metricType  String // properties_active, clients_active, matches_generated, conversion_rate, revenue_total, etc.
+  aggregation String @default("sum") // sum, average, count, min, max, last
+  granularity String @default("day") // hour, day, week, month, quarter, year
+
+  // Time range
+  startDate DateTime
+  endDate   DateTime
+
+  // Data (JSON time series)
+  dataPoints Json // Array of { timestamp: Date, value: number, metadata?: object }
+
+  // Current values
+  currentValue     Float
+  previousValue    Float?
+  changePercentage Float?
+
+  // Filters applied (JSON)
+  filters Json? // { agentId, propertyType, location, priceRange }
+
+  // Display
+  unit        String? // count, euro, percentage, days
+  label       String
+  description String? @db.Text
+
+  // Timestamps
+  calculatedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([metricType])
+  @@index([startDate, endDate])
+  @@index([calculatedAt])
+  @@map("analytics_metrics")
+}
+
+// ============================================================================
+// 26. ANALYTICS REPORT (Generated reports with insights)
+// ============================================================================
+model AnalyticsReport {
+  id String @id @default(cuid())
+
+  // Report type
+  reportType String // overview_dashboard, property_performance, client_activity, agent_performance, matching_effectiveness, revenue_report, monthly_summary, quarterly_review, custom
+
+  // Details
+  title       String
+  description String? @db.Text
+
+  // Time range
+  startDate DateTime
+  endDate   DateTime
+
+  // Sections (JSON array)
+  sections Json // Array of { title, description, metrics: MetricDto[], charts: ChartDto[] }
+
+  // Insights (JSON array)
+  insights Json // Array of { type: 'positive'|'negative'|'neutral'|'warning', title, description, metric?, recommendation? }
+
+  // Summary metrics (JSON)
+  keyMetrics Json // { totalProperties, activeClients, matchesGenerated, conversionRate, totalRevenue }
+
+  // Filters (JSON)
+  filters Json? // { agentId, propertyType, location }
+
+  // Export options
+  format         String  @default("json") // json, pdf, excel, csv
+  includeCharts  Boolean @default(true)
+  includeRawData Boolean @default(false)
+
+  // Metadata
+  generatedAt DateTime @default(now())
+  generatedBy String?  // User ID
+
+  // Scheduling
+  isScheduled       Boolean @default(false)
+  scheduleFrequency String? // daily, weekly, monthly, quarterly
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reportType])
+  @@index([startDate, endDate])
+  @@index([generatedAt])
+  @@index([isScheduled])
+  @@map("analytics_reports")
+}
+
+// ============================================================================
+// SCHEMA VERSION & MIGRATION INFO
+// ============================================================================
+// Version: 4.0.0 (Phase 4 Complete - Calendar, Analytics, Tasks)
+// Last Updated: 2025-11-14
+// Total Models: 26
+//
+// New in v4.0.0:
+// - CalendarEvent (Google Calendar sync for viewings)
+// - Task (Advanced task management)
+// - AnalyticsMetric (Time-series metrics)
+// - AnalyticsReport (Report generation with insights)
+//
+// Migration Notes:
+// 1. Run: npx prisma generate
+// 2. Run: npx prisma db push (dev) or npx prisma migrate deploy (prod)
+// 3. Update application layer to use new models
+// ============================================================================
