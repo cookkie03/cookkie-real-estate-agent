@@ -129,65 +129,91 @@ python main.py  # Porta 8000
 
 ---
 
-## 📦 Architettura Modulare
+## 📦 Architettura Monorepo
 
-Il progetto è organizzato in moduli indipendenti con deployment unificato:
+**Clean Architecture + DDD** - Monorepo con packages condivisi:
 
 ```
-/
-├── frontend/          # Next.js App Unificata (UI + API, porta 3000)
-├── ai_tools/          # Python AI (porta 8000)
-├── database/          # Prisma + PostgreSQL (centralizzato)
-├── scraping/          # Web scraping modules
-├── config/            # Configurazione centralizzata
-├── scripts/           # Automation scripts
-├── tests/             # Test suite
-├── logs/              # Log centralizzati
-└── docs/              # Documentazione
+crm-immobiliare/
+├── packages/          # Shared libraries
+│   ├── database/      # Prisma schema & client
+│   ├── shared-types/  # DTOs & API contracts
+│   ├── ai-toolkit/    # AI agents & tools
+│   ├── config/        # Shared configs
+│   └── utils/         # Utilities
+│
+├── apps/
+│   ├── web/           # Next.js frontend
+│   └── api/           # NestJS backend (Phases 1-4 ✅)
+│
+├── docs/              # Architecture docs
+├── infrastructure/    # Docker & deployment
+│
+└── [LEGACY]           # Original code (preserved)
+    ├── frontend/      # Legacy Next.js
+    ├── ai_tools/      # Python FastAPI
+    └── database/      # Legacy Prisma
 ```
 
-### Moduli Principali
+### Moduli Implementati
 
-| Modulo | Linguaggio | Descrizione | Docs |
-|--------|------------|-------------|------|
-| **frontend** | TypeScript | App Next.js 14 (UI + API) | [README](frontend/README.md) |
-| **ai_tools** | Python | AI agents + tools | [README](ai_tools/README.md) |
-| **database** | SQL/TS/Py | Prisma + SQLAlchemy | [README](database/README.md) |
-| **scraping** | Python | Web scraping | [README](scraping/README.md) |
-| **config** | - | Configurazione | [README](config/README.md) |
+**Backend (apps/api)** - NestJS with Clean Architecture:
+- ✅ Auth (JWT + Google OAuth)
+- ✅ Properties (CRUD + filtering)
+- ✅ Clients (management)
+- ✅ Matching (7-component algorithm)
+- ✅ Scraping (3 portals)
+- ✅ Gmail (OAuth + AI parsing)
+- ✅ WhatsApp (Business API)
+- ✅ Calendar (Google sync)
+- ✅ Analytics (dashboards, KPIs)
+- ✅ Tasks (activity tracking)
 
-**Nota**: L'architettura è stata semplificata unificando Frontend e Backend in un'unica applicazione Next.js, riducendo da 4 a 3 servizi per deployment semplificato.
+**AI Toolkit** (packages/ai-toolkit):
+- 5 specialized agents
+- 11 custom tools
+- Datapizza AI integration
+
+**Shared Packages**:
+- @crm-immobiliare/database
+- @crm-immobiliare/shared-types
+- @crm-immobiliare/utils
+- @crm-immobiliare/config
+
+**Status**: Backend complete (Phases 1-4), database integration pending.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **Framework**: Next.js 14 (App Router)
+### Backend (NestJS)
+- **Framework**: NestJS 10.3.0
+- **Language**: TypeScript 5.8.3
+- **ORM**: Prisma 6.19.0
+- **Auth**: Passport (JWT + Google OAuth)
+- **Queue**: BullMQ 5.1.0
+- **Cache**: Redis (ioredis)
+- **WebSocket**: Socket.io 4.6.0
+- **Validation**: class-validator + Zod
+
+### Frontend (Next.js)
+- **Framework**: Next.js 14.2.18
 - **Language**: TypeScript
+- **State**: TanStack Query 5.17.0 + Zustand 4.4.7
 - **UI**: shadcn/ui (Radix UI)
-- **Styling**: Tailwind CSS
-- **State**: React Query
-- **Forms**: react-hook-form + Zod
+- **Styling**: Tailwind CSS 3.4.0
 
-### Backend
-- **Framework**: Next.js 14 (API Routes)
-- **Language**: TypeScript
-- **Database**: Prisma ORM
-- **Validation**: Zod
+### AI & Integrations
+- **AI**: Google Gemini (Datapizza framework)
+- **Scraping**: Playwright 1.41.0
+- **APIs**: Gmail API, WhatsApp Business API, Google Calendar API
+- **Python**: FastAPI (ai_tools/ service)
 
-### AI Tools
-- **Framework**: FastAPI
-- **Language**: Python 3.13
-- **AI**: DataPizza AI + Google Gemini
-- **Vector Store**: Qdrant
-- **Database**: SQLAlchemy
-
-### Database
-- **Development**: PostgreSQL (locale) o SQLite
-- **Production**: PostgreSQL (Docker Compose)
-- **ORM**: Prisma (Node.js) + SQLAlchemy (Python)
-- **Migrations**: Prisma Migrate
+### Database & Infrastructure
+- **DB**: PostgreSQL 16 (production), SQLite (dev)
+- **ORM**: Prisma + SQLAlchemy
+- **Storage**: MinIO (object storage)
+- **Docker**: Multi-stage builds
 
 ---
 
@@ -498,57 +524,52 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 ## 🗺️ Status & Roadmap
 
-### ✅ Completato (v3.0.0)
+### ✅ Completato (v4.0.0 - Phase 1-4)
 
-- [x] **App unificata** - Frontend + Backend in singola applicazione Next.js
-- [x] **Backend API completo** - 11 endpoints RESTful
-- [x] **Frontend completo** - 18 pagine con ChatGPT-style UI
-- [x] **Settings page** - Gestione API keys dalla UI
-- [x] **Database schema** - Prisma + PostgreSQL
-- [x] **Docker setup** - Multi-stage builds ottimizzati (3 servizi)
-- [x] **Production ready** - Deployment con Docker Compose
+**Backend (NestJS)**:
+- [x] Core architecture (Clean Architecture + DDD)
+- [x] Auth module (JWT + Google OAuth)
+- [x] Properties module (CRUD + filtering)
+- [x] Clients module (management)
+- [x] Matching algorithm (7-component scoring)
+- [x] Scraping module (3 portals: Immobiliare.it, Casa.it, Idealista.it)
+- [x] Gmail integration (OAuth + AI parsing)
+- [x] WhatsApp integration (Business API + webhooks)
+- [x] Calendar integration (Google sync)
+- [x] Analytics module (dashboards + KPIs)
+- [x] Tasks module (activity tracking + reminders)
+
+**AI Toolkit**:
+- [x] 5 specialized agents
+- [x] 11 custom tools
+- [x] Datapizza AI framework integration
+
+**Shared Packages**:
+- [x] Database package (Prisma)
+- [x] Shared types (DTOs + validation)
+- [x] Utils package
+- [x] Config package
 
 ### 🔄 In Sviluppo
 
-- [ ] **React Query hooks** - Data fetching ottimizzato
-- [ ] **AI agents attivi** - RAG, Matching, Briefing
-- [ ] **Form dialogs** - CRUD completo dalla UI
+- [ ] **Database integration** - Connect modules to Prisma
+- [ ] **Frontend migration** - Update to new API endpoints
+- [ ] **WebSocket gateway** - Real-time updates
+- [ ] **Testing** - Unit + integration + E2E tests
+- [ ] **CI/CD pipelines** - Automated deployment
 
 ### 📋 Roadmap Futuro
 
-- [ ] **Authentication** - JWT + OAuth
-- [ ] **Web scraping attivo** - Import automatico portali
+- [ ] **OpenAPI documentation** - Auto-generated API docs
 - [ ] **Mobile app** - React Native
-- [ ] **Multi-tenant** - Supporto agenzie
-
----
-
----
-
-## 📦 Reorganization Complete
-
-This project has been fully reorganized into a modular, scalable architecture:
-
-✅ **9 Phases Completed**:
-1. ✅ Cleanup and Code Consolidation
-2. ✅ Configuration Centralization
-3. ✅ Structured Documentation
-4. ✅ Automation Scripts
-5. ✅ Docker & Containerization
-6. ✅ Testing & CI/CD
-7. ✅ Logging & Monitoring
-8. ✅ Database Standardization
-9. ✅ Finalization & Cleanup
-
-**Result**: Clean, modular, production-ready architecture.
-
-See [docs/](docs/) for complete reorganization reports.
+- [ ] **Multi-tenant** - Agency support
+- [ ] **Advanced AI** - Predictive analytics
 
 ---
 
 **Made with ❤️ for real estate agents**
 
-**Version**: 3.0.0 (Production Ready - Unified Architecture)
-**Last Updated**: 2025-11-06
-**Architecture**: 3-Service Deployment (Docker Compose)
-**Status**: ✅ App Unificata (UI + API) | ✅ AI Tools | ✅ PostgreSQL Database
+**Version**: 4.0.0 (Phases 1-4 Complete - Clean Architecture)
+**Last Updated**: 2025-11-14
+**Architecture**: Monorepo + DDD + Clean Architecture
+**Status**: ✅ Backend (10 modules) | ✅ AI Toolkit | 🔄 Database Integration Pending
