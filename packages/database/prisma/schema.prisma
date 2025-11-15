@@ -1238,7 +1238,7 @@ model CalendarSync {
   syncDirection  String  @default("bidirectional") // "pull", "push", "bidirectional"
 
   // Sync state
-  lastSyncToken String?  @db.Text // Token per sync incrementale
+  lastSyncToken String?  // Token per sync incrementale
   lastSyncAt    DateTime?
   nextSyncAt    DateTime?
 
