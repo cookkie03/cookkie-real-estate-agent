@@ -1113,9 +1113,7 @@ model IntegrationAuth {
   isActive Boolean @default(true)
 
   // OAuth2 tokens
-  accessToken  String   @db.Text
-  refreshToken String?  @db.Text
-  tokenType    String?  @default("Bearer")
+  accessToken  String    refreshToken String?   tokenType    String?  @default("Bearer")
   expiresAt    DateTime?
 
   // Scopes
@@ -1133,8 +1131,7 @@ model IntegrationAuth {
   nextSyncAt    DateTime?
 
   // Error handling
-  lastError     String?  @db.Text
-  errorCount    Int      @default(0)
+  lastError     String?   errorCount    Int      @default(0)
   lastErrorAt   DateTime?
 
   // Timestamps
@@ -1167,10 +1164,7 @@ model MessageLog {
   status    String   @default("received") // received, sent, failed, delivered, read
 
   // Content
-  subject     String?     @db.Text
-  body        String      @db.Text
-  bodyHtml    String?     @db.Text
-  snippet     String?     // Preview del contenuto (primi 200 caratteri)
+  subject     String?      body        String       bodyHtml    String?      snippet     String?     // Preview del contenuto (primi 200 caratteri)
 
   // Metadata
   fromEmail   String?
@@ -1194,15 +1188,13 @@ model MessageLog {
   // Processing
   isProcessed      Boolean   @default(false)
   processedAt      DateTime?
-  processingError  String?   @db.Text
-
+  processingError  String?  
   // AI Analysis
   aiCategory      String?   // "property_inquiry", "appointment_request", "general", etc.
   aiSentiment     String?   // "positive", "neutral", "negative"
   aiPriority      String?   // "low", "normal", "high", "urgent"
   aiExtractedData Json?     // Dati estratti dall'AI
-  aiSummary       String?   @db.Text
-
+  aiSummary       String?  
   // Relations created
   activityCreated  Boolean @default(false)
   activityId       String?
@@ -1251,8 +1243,7 @@ model CalendarSync {
   eventsDeleted Int @default(0)
 
   // Error handling
-  lastError   String?  @db.Text
-  errorCount  Int      @default(0)
+  lastError   String?   errorCount  Int      @default(0)
   lastErrorAt DateTime?
 
   // Timestamps
@@ -1287,8 +1278,7 @@ model MessageProcessing {
   // Processing details
   processorType String? // "message_analyzer", "contact_matcher", "appointment_extractor"
   result        Json?
-  error         String?  @db.Text
-
+  error         String? 
   // Timestamps
   createdAt   DateTime @default(now())
   startedAt   DateTime?
@@ -1386,12 +1376,10 @@ model CalendarEvent {
   // Sync status
   syncStatus    String    @default("pending") // pending, synced, failed
   lastSyncedAt  DateTime?
-  syncError     String?   @db.Text
-
+  syncError     String?  
   // Event details
   title       String
-  description String?      @db.Text
-  location    String?
+  description String?       location    String?
   startTime   DateTime
   endTime     DateTime
   isAllDay    Boolean      @default(false)
@@ -1415,8 +1403,7 @@ model CalendarEvent {
 
   // Metadata
   propertyAddress String? // Cached for quick access
-  notes           String? @db.Text
-  viewingType     String? // in-person, virtual
+  notes           String?  viewingType     String? // in-person, virtual
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -1446,9 +1433,7 @@ model Task {
 
   // Details
   title       String
-  description String? @db.Text
-  notes       String? @db.Text
-
+  description String?  notes       String?
   // Assignment
   assignedTo String? // User/Agent ID
   assignedBy String? // User/Agent ID
@@ -1529,8 +1514,7 @@ model AnalyticsMetric {
   // Display
   unit        String? // count, euro, percentage, days
   label       String
-  description String? @db.Text
-
+  description String?
   // Timestamps
   calculatedAt DateTime @default(now())
   createdAt    DateTime @default(now())
@@ -1553,8 +1537,7 @@ model AnalyticsReport {
 
   // Details
   title       String
-  description String? @db.Text
-
+  description String?
   // Time range
   startDate DateTime
   endDate   DateTime
