@@ -3,3 +3,5 @@ packages:
   - 'packages/*'
   # Applications
   - 'apps/*'
+  - 'apps/web/frontend'
+  - 'frontend'
