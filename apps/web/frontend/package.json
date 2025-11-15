@@ -8,10 +8,10 @@
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",
-    "prisma:generate": "cd ../database/prisma && npx prisma generate",
-    "prisma:push": "cd ../database/prisma && npx prisma db push",
-    "prisma:studio": "cd ../database/prisma && npx prisma studio",
-    "prisma:seed": "cd ../database/prisma && npx tsx seed.ts"
+    "prisma:generate": "cd ../../../packages/database && pnpm generate",
+    "prisma:push": "cd ../../../packages/database && pnpm push",
+    "prisma:studio": "cd ../../../packages/database && pnpm studio",
+    "prisma:seed": "cd ../../../packages/database && pnpm seed"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
