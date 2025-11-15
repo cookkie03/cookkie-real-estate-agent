@@ -1113,7 +1113,9 @@ model IntegrationAuth {
   isActive Boolean @default(true)
 
   // OAuth2 tokens
-  accessToken  String    refreshToken String?   tokenType    String?  @default("Bearer")
+  accessToken  String
+  refreshToken String?
+  tokenType    String?  @default("Bearer")
   expiresAt    DateTime?
 
   // Scopes
@@ -1131,7 +1133,8 @@ model IntegrationAuth {
   nextSyncAt    DateTime?
 
   // Error handling
-  lastError     String?   errorCount    Int      @default(0)
+  lastError     String?
+  errorCount    Int      @default(0)
   lastErrorAt   DateTime?
 
   // Timestamps
@@ -1164,7 +1167,10 @@ model MessageLog {
   status    String   @default("received") // received, sent, failed, delivered, read
 
   // Content
-  subject     String?      body        String       bodyHtml    String?      snippet     String?     // Preview del contenuto (primi 200 caratteri)
+  subject     String?
+  body        String
+  bodyHtml    String?
+  snippet     String?     // Preview del contenuto (primi 200 caratteri)
 
   // Metadata
   fromEmail   String?
@@ -1243,7 +1249,8 @@ model CalendarSync {
   eventsDeleted Int @default(0)
 
   // Error handling
-  lastError   String?   errorCount  Int      @default(0)
+  lastError   String?
+  errorCount  Int      @default(0)
   lastErrorAt DateTime?
 
   // Timestamps
@@ -1379,7 +1386,8 @@ model CalendarEvent {
   syncError     String?  
   // Event details
   title       String
-  description String?       location    String?
+  description String?
+  location    String?
   startTime   DateTime
   endTime     DateTime
   isAllDay    Boolean      @default(false)
@@ -1403,7 +1411,8 @@ model CalendarEvent {
 
   // Metadata
   propertyAddress String? // Cached for quick access
-  notes           String?  viewingType     String? // in-person, virtual
+  notes           String?
+  viewingType     String? // in-person, virtual
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -1433,7 +1442,8 @@ model Task {
 
   // Details
   title       String
-  description String?  notes       String?
+  description String?
+  notes       String?
   // Assignment
   assignedTo String? // User/Agent ID
   assignedBy String? // User/Agent ID
