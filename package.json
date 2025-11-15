@@ -9,6 +9,7 @@
     "frontend"
   ],
   "scripts": {
+    "quick-start": "node scripts/quick-start.js",
     "setup": "node scripts/setup-env.js",
     "dev": "node scripts/setup-env.js && concurrently -n \"WEB,AI\" -c \"blue,magenta\" \"pnpm dev:web\" \"pnpm dev:ai\"",
     "dev:web": "cd apps/web && pnpm dev",
