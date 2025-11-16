@@ -41,14 +41,14 @@ export class CalendarService {
   }
 
   /**
-   * Get OAuth authorization URL
+   * Get OAuth authorization URL (READ-ONLY scope)
    */
   getAuthUrl(): string {
     return this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: [
-        'https://www.googleapis.com/auth/calendar',
-        'https://www.googleapis.com/auth/calendar.events',
+        'https://www.googleapis.com/auth/calendar.readonly', // READ-ONLY!
+        'https://www.googleapis.com/auth/calendar.events.readonly', // READ-ONLY!
       ],
       prompt: 'consent',
     });
@@ -99,76 +99,30 @@ export class CalendarService {
   }
 
   /**
-   * Create calendar event
+   * Create calendar event (DISABLED - Read-only mode)
    */
   async createEvent(event: CalendarEvent): Promise<CalendarEvent> {
-    this.logger.log(`Creating calendar event: ${event.title}`);
-
-    try {
-      const response = await this.calendar.events.insert({
-        calendarId: 'primary',
-        requestBody: event.toGoogleCalendarFormat(),
-        sendUpdates: 'all', // Send email notifications to attendees
-      });
-
-      event.markAsSynced(response.data.id!);
-
-      this.logger.log(`✅ Event created: ${event.title}`);
-      return event;
-    } catch (error) {
-      this.logger.error('Error creating calendar event:', error);
-      event.markAsSyncFailed(error.message);
-      throw error;
-    }
+    throw new Error(
+      'Calendar is in read-only mode. Creating events is disabled. Use Google Calendar directly.',
+    );
   }
 
   /**
-   * Update calendar event
+   * Update calendar event (DISABLED - Read-only mode)
    */
   async updateEvent(event: CalendarEvent): Promise<CalendarEvent> {
-    this.logger.log(`Updating calendar event: ${event.title}`);
-
-    if (!event.googleEventId) {
-      throw new Error('Cannot update event without Google Calendar ID');
-    }
-
-    try {
-      const response = await this.calendar.events.update({
-        calendarId: 'primary',
-        eventId: event.googleEventId,
-        requestBody: event.toGoogleCalendarFormat(),
-        sendUpdates: 'all',
-      });
-
-      event.markAsSynced(response.data.id!);
-
-      this.logger.log(`✅ Event updated: ${event.title}`);
-      return event;
-    } catch (error) {
-      this.logger.error('Error updating calendar event:', error);
-      event.markAsSyncFailed(error.message);
-      throw error;
-    }
+    throw new Error(
+      'Calendar is in read-only mode. Updating events is disabled. Use Google Calendar directly.',
+    );
   }
 
   /**
-   * Delete calendar event
+   * Delete calendar event (DISABLED - Read-only mode)
    */
   async deleteEvent(googleEventId: string): Promise<void> {
-    this.logger.log(`Deleting calendar event: ${googleEventId}`);
-
-    try {
-      await this.calendar.events.delete({
-        calendarId: 'primary',
-        eventId: googleEventId,
-        sendUpdates: 'all',
-      });
-
-      this.logger.log(`✅ Event deleted: ${googleEventId}`);
-    } catch (error) {
-      this.logger.error('Error deleting calendar event:', error);
-      throw error;
-    }
+    throw new Error(
+      'Calendar is in read-only mode. Deleting events is disabled. Use Google Calendar directly.',
+    );
   }
 
   /**
@@ -223,13 +177,13 @@ export class CalendarService {
   }
 
   /**
-   * Sync events from Google Calendar
+   * Sync events from Google Calendar (READ-ONLY)
    */
   async syncFromGoogle(params?: {
     timeMin?: Date;
     timeMax?: Date;
   }): Promise<{ created: number; updated: number; deleted: number }> {
-    this.logger.log('Starting Google Calendar sync');
+    this.logger.log('Starting Google Calendar sync (read-only)');
 
     const stats = { created: 0, updated: 0, deleted: 0 };
 
@@ -240,12 +194,79 @@ export class CalendarService {
         maxResults: 250,
       });
 
-      // TODO: Store events in database
-      // For now, just return stats
-      stats.created = events.length;
+      this.logger.log(`Fetched ${events.length} events from Google Calendar`);
+
+      // Store events in database (upsert)
+      for (const event of events) {
+        if (!event.googleEventId) {
+          this.logger.warn('Event missing googleEventId, skipping');
+          continue;
+        }
+
+        try {
+          // Check if event exists
+          const existing = await this.prisma.calendarEvent.findUnique({
+            where: { googleEventId: event.googleEventId },
+          });
+
+          if (existing) {
+            // Update existing event
+            await this.prisma.calendarEvent.update({
+              where: { googleEventId: event.googleEventId },
+              data: {
+                type: event.type,
+                status: event.status,
+                syncStatus: SyncStatus.SYNCED,
+                title: event.title,
+                description: event.description,
+                location: event.location,
+                startTime: event.startTime,
+                endTime: event.endTime,
+                isAllDay: event.isAllDay,
+                timezone: event.timezone,
+                organizer: event.organizer,
+                attendees: event.attendees as any,
+                reminders: event.reminders as any,
+                metadata: event.metadata as any,
+                recurrence: event.recurrence as any,
+                lastSyncedAt: new Date(),
+                updatedAt: new Date(),
+              },
+            });
+            stats.updated++;
+          } else {
+            // Create new event
+            await this.prisma.calendarEvent.create({
+              data: {
+                googleEventId: event.googleEventId,
+                type: event.type,
+                status: event.status,
+                syncStatus: SyncStatus.SYNCED,
+                title: event.title,
+                description: event.description,
+                location: event.location,
+                startTime: event.startTime,
+                endTime: event.endTime,
+                isAllDay: event.isAllDay,
+                timezone: event.timezone,
+                organizer: event.organizer,
+                attendees: event.attendees as any,
+                reminders: event.reminders as any,
+                metadata: event.metadata as any,
+                recurrence: event.recurrence as any,
+                lastSyncedAt: new Date(),
+              },
+            });
+            stats.created++;
+          }
+        } catch (error) {
+          this.logger.error(`Error storing event ${event.googleEventId}:`, error);
+          // Continue with other events
+        }
+      }
 
       this.logger.log(
-        `✅ Sync completed: ${stats.created} events synced`,
+        `✅ Sync completed: ${stats.created} created, ${stats.updated} updated`,
       );
 
       return stats;
