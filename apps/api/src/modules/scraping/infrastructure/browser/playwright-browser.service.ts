@@ -20,18 +20,27 @@ export class PlaywrightBrowserService
   /**
    * Get or create browser instance
    */
-  private async getBrowser(): Promise<Browser> {
+  private async getBrowser(headful = false): Promise<Browser> {
     if (!this.browser) {
-      this.logger.log('Launching Playwright browser...');
+      this.logger.log(
+        `Launching Playwright browser (${headful ? 'headful' : 'headless'})...`,
+      );
       this.browser = await chromium.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--disable-gpu',
-        ],
+        headless: !headful,
+        args: headful
+          ? [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--start-maximized',
+            ]
+          : [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--disable-gpu',
+            ],
+        devtools: headful, // Open DevTools in headful mode
       });
       this.logger.log('✅ Browser launched successfully');
     }
@@ -41,15 +50,21 @@ export class PlaywrightBrowserService
   /**
    * Get or create browser context
    */
-  private async getContext(): Promise<BrowserContext> {
+  private async getContext(headful = false): Promise<BrowserContext> {
     if (!this.context) {
-      const browser = await this.getBrowser();
+      const browser = await this.getBrowser(headful);
       this.context = await browser.newContext({
         userAgent:
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        viewport: { width: 1920, height: 1080 },
+        viewport: headful ? { width: 1920, height: 1080 } : { width: 1920, height: 1080 },
         locale: 'it-IT',
         timezoneId: 'Europe/Rome',
+        recordVideo: headful
+          ? {
+              dir: '/tmp/playwright-videos',
+              size: { width: 1920, height: 1080 },
+            }
+          : undefined,
       });
     }
     return this.context;
@@ -58,22 +73,44 @@ export class PlaywrightBrowserService
   /**
    * Create a new page
    */
-  private async createPage(): Promise<Page> {
-    const context = await this.getContext();
+  private async createPage(
+    headful = false,
+    onScreenshot?: (screenshot: Buffer) => void,
+  ): Promise<Page> {
+    const context = await this.getContext(headful);
     const page = await context.newPage();
 
     // Set default timeout
     page.setDefaultTimeout(30000);
 
-    // Block unnecessary resources to speed up scraping
-    await page.route('**/*', (route) => {
-      const resourceType = route.request().resourceType();
-      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
-        route.abort();
-      } else {
-        route.continue();
-      }
-    });
+    // Block unnecessary resources to speed up scraping (only in headless mode)
+    if (!headful) {
+      await page.route('**/*', (route) => {
+        const resourceType = route.request().resourceType();
+        if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+          route.abort();
+        } else {
+          route.continue();
+        }
+      });
+    }
+
+    // Stream screenshots in headful mode
+    if (headful && onScreenshot) {
+      // Take screenshot every 500ms and send via callback
+      const screenshotInterval = setInterval(async () => {
+        try {
+          const screenshot = await page.screenshot({ type: 'png' });
+          onScreenshot(screenshot);
+        } catch (error) {
+          // Page might be closed
+          clearInterval(screenshotInterval);
+        }
+      }, 500);
+
+      // Cleanup interval when page closes
+      page.on('close', () => clearInterval(screenshotInterval));
+    }
 
     this.activePagesCount++;
     this.logger.debug(`Active pages: ${this.activePagesCount}`);
@@ -103,6 +140,8 @@ export class PlaywrightBrowserService
       waitForSelector?: string;
       timeout?: number;
       screenshot?: boolean;
+      headful?: boolean;
+      onScreenshot?: (screenshot: Buffer) => void;
     } = {},
   ): Promise<string> {
     let page: Page | null = null;
@@ -110,7 +149,7 @@ export class PlaywrightBrowserService
     try {
       this.logger.debug(`Fetching HTML from: ${url}`);
 
-      page = await this.createPage();
+      page = await this.createPage(options.headful, options.onScreenshot);
 
       // Navigate to URL
       await page.goto(url, {
@@ -148,6 +187,63 @@ export class PlaywrightBrowserService
       throw new Error(
         `Failed to fetch HTML: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
+    } finally {
+      if (page) {
+        await this.closePage(page);
+      }
+    }
+  }
+
+  /**
+   * Scrape with headful browser and streaming (for user visibility)
+   */
+  async scrapeWithStreaming(
+    url: string,
+    onProgress: (event: {
+      type: 'screenshot' | 'log' | 'complete' | 'error';
+      data: any;
+    }) => void,
+  ): Promise<string> {
+    let page: Page | null = null;
+
+    try {
+      this.logger.log(`Starting headful scraping: ${url}`);
+      onProgress({ type: 'log', data: `Navigating to ${url}...` });
+
+      // Create page with screenshot streaming
+      page = await this.createPage(true, (screenshot) => {
+        onProgress({
+          type: 'screenshot',
+          data: screenshot.toString('base64'),
+        });
+      });
+
+      // Navigate
+      await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: 60000,
+      });
+
+      onProgress({ type: 'log', data: 'Page loaded, extracting data...' });
+
+      // Wait for dynamic content
+      await page.waitForTimeout(2000);
+
+      // Get HTML
+      const html = await page.content();
+
+      onProgress({
+        type: 'complete',
+        data: { htmlLength: html.length },
+      });
+
+      return html;
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Scraping error: ${errorMsg}`);
+      onProgress({ type: 'error', data: errorMsg });
+      throw error;
     } finally {
       if (page) {
         await this.closePage(page);
