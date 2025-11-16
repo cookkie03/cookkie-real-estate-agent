@@ -34,6 +34,8 @@ export interface ScrapingJobConfig {
   };
   deduplication?: boolean;
   importToDatabase?: boolean;
+  headful?: boolean;
+  mode?: 'portal' | 'crm' | 'institutional';
 }
 
 export interface ScrapingJobResult {

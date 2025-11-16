@@ -83,6 +83,8 @@ export class ScrapingController {
       },
       deduplication: dto.deduplication ?? true,
       importToDatabase: dto.importToDatabase ?? true,
+      headful: dto.headful ?? false,
+      mode: dto.mode ?? 'portal',
     });
 
     return this.mapJobToDto(job);

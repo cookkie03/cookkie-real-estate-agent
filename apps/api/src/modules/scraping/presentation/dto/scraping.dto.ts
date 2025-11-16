@@ -146,6 +146,24 @@ export class CreateScrapingJobDto {
   @IsBoolean()
   @Type(() => Boolean)
   importToDatabase?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Run browser in headful mode (visible browser for debugging)',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  headful?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Scraping mode: portal, crm, or institutional',
+    enum: ['portal', 'crm', 'institutional'],
+    default: 'portal',
+  })
+  @IsOptional()
+  @IsEnum(['portal', 'crm', 'institutional'])
+  mode?: 'portal' | 'crm' | 'institutional';
 }
 
 /**
