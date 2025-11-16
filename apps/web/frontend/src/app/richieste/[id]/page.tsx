@@ -56,22 +56,23 @@ export default function RequestDetailPage() {
     },
   });
 
-  // Fetch matches for this request
+  // Fetch matches for this request (Deterministic Algorithm)
   const { data: matchesData, isLoading: matchesLoading } = useQuery({
     queryKey: ["property-matches", requestId],
     queryFn: async () => {
+      // Using NestJS deterministic matching endpoint
       const response = await fetch(
-        `/api/scoring/calculate?request_id=${requestId}&min_score=60&limit=20`
+        `http://localhost:3001/api/matching/clients/${requestId}/properties?minScore=40&maxResults=20`
       );
-      if (!response.ok) return { matches: [] };
+      if (!response.ok) return [];
       const data = await response.json();
-      return data.success ? { matches: data.matches } : { matches: [] };
+      return Array.isArray(data) ? data : [];
     },
     enabled: activeTab === "matches",
   });
 
   const request = requestData?.request;
-  const matches = matchesData?.matches || [];
+  const matches = matchesData || [];
 
   if (isLoading) {
     return (
@@ -392,21 +393,20 @@ export default function RequestDetailPage() {
           )}
         </TabsContent>
 
-        {/* TAB 2: Match AI */}
+        {/* TAB 2: Match Deterministico */}
         <TabsContent value="matches" className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold">
-                Abbinamenti AI per questa richiesta
+                Abbinamenti Deterministici per questa richiesta
               </h3>
               <p className="text-sm text-muted-foreground">
-                Immobili che corrispondono ai criteri di ricerca
+                Immobili che corrispondono ai criteri (algoritmo matematico, no AI)
               </p>
             </div>
-            <Button size="sm" variant="outline">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Rigenera Match
-            </Button>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+              Algoritmo Deterministico 7 componenti
+            </Badge>
           </div>
 
           {matchesLoading ? (
@@ -425,78 +425,185 @@ export default function RequestDetailPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {matches.map((match: any, index: number) => (
-                <Card key={index}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      {/* Score Badge */}
-                      <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                        <div
-                          className={cn(
-                            "text-3xl font-bold",
-                            getScoreColor(Math.round(match.total_score))
-                          )}
-                        >
-                          {Math.round(match.total_score)}
-                        </div>
-                        <Progress value={match.total_score} className="h-1.5 w-full" />
-                        <span className="text-xs text-muted-foreground">Score</span>
-                      </div>
+            <div className="space-y-4">
+              {matches.map((match: any, index: number) => {
+                const score = Math.round(match.totalScore || 0);
+                const breakdown = match.scoreBreakdown || {};
+                const qualityCategory =
+                  score >= 80 ? 'excellent' :
+                  score >= 60 ? 'good' :
+                  score >= 40 ? 'fair' : 'poor';
 
-                      {/* Property Info */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div>
-                            <h4 className="font-semibold mb-1">
-                              {match.property_title || "Immobile"}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              {match.property_city}
-                              {match.property_zone && `, ${match.property_zone}`}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                          <span className="font-semibold text-foreground">
-                            €{match.property_price?.toLocaleString() || "N/D"}
-                          </span>
-                          {match.rooms && <span>{match.rooms} locali</span>}
-                          {match.sqm && <span>{match.sqm} m²</span>}
-                        </div>
-
-                        {/* Match Reasons */}
-                        {match.match_reasons && match.match_reasons.length > 0 && (
-                          <div className="space-y-1 mb-3">
-                            <p className="text-xs font-medium text-muted-foreground">
-                              Motivi del match:
-                            </p>
-                            {match.match_reasons.slice(0, 2).map((reason: string, i: number) => (
-                              <div key={i} className="flex items-start gap-2 text-xs">
-                                <Star className="h-3 w-3 text-yellow-500 mt-0.5 flex-shrink-0" />
-                                <span>{reason}</span>
-                              </div>
-                            ))}
-                            {match.match_reasons.length > 2 && (
-                              <p className="text-xs text-muted-foreground">
-                                +{match.match_reasons.length - 2} altri motivi
-                              </p>
+                return (
+                  <Card key={index} className={cn(
+                    "border-2",
+                    score >= 70 && "border-green-300 bg-green-50/50 dark:bg-green-950/20"
+                  )}>
+                    <CardContent className="p-5">
+                      <div className="flex items-start gap-4 mb-4">
+                        {/* Score Badge */}
+                        <div className="flex flex-col items-center gap-1 min-w-[70px]">
+                          <div
+                            className={cn(
+                              "text-4xl font-bold tabular-nums",
+                              getScoreColor(score)
                             )}
+                          >
+                            {score}
                           </div>
-                        )}
-
-                        {/* Actions */}
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" asChild>
-                            <Link href={`/immobili/${match.property_id}`}>
-                              <Building2 className="h-4 w-4 mr-2" />
-                              Vedi Immobile
-                            </Link>
-                          </Button>
-                          <Button size="sm">Crea Proposta</Button>
+                          <Progress value={score} className="h-2 w-full" />
+                          <Badge
+                            variant={qualityCategory === 'excellent' ? 'default' : 'outline'}
+                            className={cn(
+                              qualityCategory === 'excellent' && "bg-green-600",
+                              qualityCategory === 'good' && "bg-blue-600 text-white",
+                              qualityCategory === 'fair' && "bg-orange-600 text-white"
+                            )}
+                          >
+                            {qualityCategory === 'excellent' ? 'Eccellente' :
+                             qualityCategory === 'good' ? 'Buono' :
+                             qualityCategory === 'fair' ? 'Discreto' : 'Scarso'}
+                          </Badge>
                         </div>
-                      </div>
+
+                        {/* Property Info */}
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between gap-2 mb-3">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-lg">
+                                  {match.propertyId || "Immobile"}
+                                </h4>
+                                {score >= 70 && (
+                                  <Badge className="bg-green-600">
+                                    <Star className="h-3 w-3 mr-1" />
+                                    Ottimo Match
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                ID: {match.propertyId}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Score Breakdown */}
+                          <div className="space-y-2 mb-4">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              Breakdown Score (7 componenti)
+                            </p>
+                            <div className="grid gap-2">
+                              {/* Zona - 25% */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-medium">🗺️ Zona</span>
+                                  <span className="text-muted-foreground">
+                                    {Math.round(breakdown.zone || 0)}/100 (peso 25%)
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={breakdown.zone || 0}
+                                  className="h-1.5"
+                                />
+                              </div>
+
+                              {/* Budget - 20% */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-medium">💰 Budget</span>
+                                  <span className="text-muted-foreground">
+                                    {Math.round(breakdown.budget || 0)}/100 (peso 20%)
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={breakdown.budget || 0}
+                                  className="h-1.5"
+                                />
+                              </div>
+
+                              {/* Tipologia - 15% */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-medium">🏠 Tipologia</span>
+                                  <span className="text-muted-foreground">
+                                    {Math.round(breakdown.type || 0)}/100 (peso 15%)
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={breakdown.type || 0}
+                                  className="h-1.5"
+                                />
+                              </div>
+
+                              {/* Superficie - 15% */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-medium">📐 Superficie</span>
+                                  <span className="text-muted-foreground">
+                                    {Math.round(breakdown.surface || 0)}/100 (peso 15%)
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={breakdown.surface || 0}
+                                  className="h-1.5"
+                                />
+                              </div>
+
+                              {/* Disponibilità - 10% */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-medium">📅 Disponibilità</span>
+                                  <span className="text-muted-foreground">
+                                    {Math.round(breakdown.availability || 0)}/100 (peso 10%)
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={breakdown.availability || 0}
+                                  className="h-1.5"
+                                />
+                              </div>
+
+                              {/* Priorità - 10% */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-medium">⭐ Priorità</span>
+                                  <span className="text-muted-foreground">
+                                    {Math.round(breakdown.priority || 0)}/100 (peso 10%)
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={breakdown.priority || 0}
+                                  className="h-1.5"
+                                />
+                              </div>
+
+                              {/* Affinità - 5% */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-medium">💝 Affinità</span>
+                                  <span className="text-muted-foreground">
+                                    {Math.round(breakdown.affinity || 0)}/100 (peso 5%)
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={breakdown.affinity || 0}
+                                  className="h-1.5"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex gap-2 pt-3 border-t">
+                            <Button size="sm" variant="outline" asChild>
+                              <Link href={`/immobili/${match.propertyId}`}>
+                                <Building2 className="h-4 w-4 mr-2" />
+                                Vedi Immobile
+                              </Link>
+                            </Button>
+                            <Button size="sm">Crea Proposta</Button>
+                          </div>
+                        </div>
                     </div>
                   </CardContent>
                 </Card>
