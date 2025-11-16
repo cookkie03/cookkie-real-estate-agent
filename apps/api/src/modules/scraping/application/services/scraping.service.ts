@@ -4,7 +4,7 @@
  * Orchestrates property scraping from real estate portals.
  */
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/database/prisma.service';
 import { QueueService } from '../../../../shared/queue/queue.service';
 import {
@@ -18,6 +18,7 @@ import { PortalParser } from '../../domain/interfaces/portal-parser.interface';
 import { ImmobiliareItParser } from '../../infrastructure/parsers/immobiliare-it.parser';
 import { CasaItParser } from '../../infrastructure/parsers/casa-it.parser';
 import { IdealistaItParser } from '../../infrastructure/parsers/idealista-it.parser';
+import { ScrapingGateway } from '../../presentation/gateways/scraping.gateway';
 
 @Injectable()
 export class ScrapingService {
@@ -31,6 +32,8 @@ export class ScrapingService {
     private immobiliareParser: ImmobiliareItParser,
     private casaParser: CasaItParser,
     private idealistaParser: IdealistaItParser,
+    @Inject(forwardRef(() => ScrapingGateway))
+    private gateway: ScrapingGateway,
   ) {
     this.parsers = new Map();
     this.activeJobs = new Map();
@@ -137,6 +140,9 @@ export class ScrapingService {
     try {
       job.start();
 
+      // Broadcast job start
+      this.gateway.broadcastLog(jobId, `Starting scraping job for ${job.config.portal}`, 'info');
+
       const parser = this.parsers.get(job.config.portal);
       if (!parser) {
         throw new Error(`Parser not found for ${job.config.portal}`);
@@ -158,12 +164,21 @@ export class ScrapingService {
       // Scrape pages
       while (currentUrl && currentPage <= maxPages) {
         this.logger.log(`Scraping page ${currentPage}/${maxPages}: ${currentUrl}`);
+        this.gateway.broadcastLog(jobId, `Scraping page ${currentPage}/${maxPages}`, 'info');
 
         // Scrape page
         const searchPage = await parser.scrapePage(currentUrl);
 
         job.addPageScraped();
         job.updateProgress(currentPage, maxPages);
+
+        // Broadcast progress
+        this.gateway.broadcastJobProgress(jobId, {
+          status: job.status,
+          progress: job.progress,
+          currentPage: job.currentPage,
+          propertiesFound: job.result?.propertiesFound,
+        });
 
         // Process properties
         for (const property of searchPage.properties) {
@@ -207,10 +222,22 @@ export class ScrapingService {
 
       job.complete();
       this.logger.log(`✅ Job ${jobId} completed successfully`);
+
+      // Broadcast completion
+      this.gateway.broadcastJobCompleted(jobId, {
+        status: job.status,
+        propertiesFound: job.result?.propertiesFound || 0,
+        propertiesImported: job.result?.propertiesImported || 0,
+        duration: job.result?.duration || 0,
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       job.fail(errorMessage);
       this.logger.error(`❌ Job ${jobId} failed:`, error);
+
+      // Broadcast failure
+      this.gateway.broadcastJobFailed(jobId, errorMessage);
+
       throw error;
     }
   }

@@ -34,6 +34,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../shared/database/database.module';
 import { QueueModule } from '../../shared/queue/queue.module';
 import { ScrapingController } from './presentation/controllers/scraping.controller';
+import { ScrapingGateway } from './presentation/gateways/scraping.gateway';
 import { ScrapingService } from './application/services/scraping.service';
 import { PlaywrightBrowserService } from './infrastructure/browser/playwright-browser.service';
 import { ImmobiliareItParser } from './infrastructure/parsers/immobiliare-it.parser';
@@ -45,6 +46,7 @@ import { IdealistaItParser } from './infrastructure/parsers/idealista-it.parser'
   controllers: [ScrapingController],
   providers: [
     ScrapingService,
+    ScrapingGateway,
     PlaywrightBrowserService,
     ImmobiliareItParser,
     CasaItParser,
