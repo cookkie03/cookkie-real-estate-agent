@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Globe, Play, Pause, Download, Settings, CheckCircle2, AlertCircle, Eye, Database } from "lucide-react";
+import { connectToScrapingJob } from "@/lib/websocket";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -97,6 +98,11 @@ export default function ScrapingPage() {
   const [currentJob, setCurrentJob] = useState<JobStatus | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [results, setResults] = useState<any[]>([]);
+  const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
+
+  // Refs
+  const logsEndRef = useRef<HTMLDivElement>(null);
+  const disconnectWebSocketRef = useRef<(() => void) | null>(null);
 
   // Update config helper
   const updateConfig = (updates: Partial<ScrapingConfig>) => {
@@ -107,6 +113,20 @@ export default function ScrapingPage() {
   const addLog = (message: string) => {
     setLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
   };
+
+  // Auto-scroll logs to bottom
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
+
+  // Cleanup WebSocket on unmount
+  useEffect(() => {
+    return () => {
+      if (disconnectWebSocketRef.current) {
+        disconnectWebSocketRef.current();
+      }
+    };
+  }, []);
 
   // Build search URL for portal mode
   const buildSearchUrl = async (): Promise<string> => {
@@ -201,74 +221,54 @@ export default function ScrapingPage() {
       addLog(`Job created: ${job.id}`);
       addLog(`Status: ${job.status}`);
 
-      // Poll for status updates
-      pollJobStatus(job.id);
+      // Connect to WebSocket for real-time updates
+      const disconnect = connectToScrapingJob(job.id, {
+        onProgress: (event) => {
+          addLog(`Progress: ${event.progress}% (Page ${event.currentPage || 0})`);
+          setCurrentJob((prev) => prev ? { ...prev, progress: event.progress, currentPage: event.currentPage } : null);
+        },
+        onCompleted: (event) => {
+          addLog(`Scraping completed!`);
+          addLog(`Found: ${event.propertiesFound} properties`);
+          addLog(`Imported: ${event.propertiesImported} properties`);
+          setCurrentJob((prev) => prev ? {
+            ...prev,
+            status: "completed",
+            progress: 100,
+            result: {
+              propertiesFound: event.propertiesFound,
+              propertiesImported: event.propertiesImported,
+              propertiesDuplicated: 0,
+              propertiesSkipped: 0,
+              pagesScraped: 0,
+              errors: [],
+            },
+          } : null);
+          setIsRunning(false);
+          setActiveTab("results");
+        },
+        onFailed: (event) => {
+          addLog(`Scraping failed: ${event.error}`);
+          setCurrentJob((prev) => prev ? { ...prev, status: "failed", error: event.error } : null);
+          setIsRunning(false);
+        },
+        onScreenshot: (event) => {
+          // Update screenshot for headful mode
+          setCurrentScreenshot(event.screenshot);
+        },
+        onLog: (event) => {
+          addLog(`[${event.level.toUpperCase()}] ${event.message}`);
+        },
+      });
+
+      // Store disconnect function for cleanup
+      disconnectWebSocketRef.current = disconnect;
     } catch (error) {
       addLog(`ERROR: ${error instanceof Error ? error.message : "Unknown error"}`);
       setIsRunning(false);
     }
   };
 
-  // Poll job status
-  const pollJobStatus = async (jobId: string) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/scraping/jobs/${jobId}`);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch job status");
-        }
-
-        const job: JobStatus = await response.json();
-        setCurrentJob(job);
-
-        // Update logs based on status changes
-        if (job.status === "in_progress") {
-          addLog(
-            `Progress: ${job.progress}% (Page ${job.currentPage || 0})`
-          );
-        } else if (job.status === "completed") {
-          addLog(`Scraping completed!`);
-          if (job.result) {
-            addLog(`Found: ${job.result.propertiesFound} properties`);
-            addLog(`Imported: ${job.result.propertiesImported} properties`);
-            addLog(`Duplicates: ${job.result.propertiesDuplicated}`);
-            addLog(`Skipped: ${job.result.propertiesSkipped}`);
-          }
-
-          clearInterval(pollInterval);
-          setIsRunning(false);
-          setActiveTab("results");
-
-          // Fetch results
-          await fetchResults();
-        } else if (job.status === "failed") {
-          addLog(`Scraping failed: ${job.error || "Unknown error"}`);
-          clearInterval(pollInterval);
-          setIsRunning(false);
-        } else if (job.status === "cancelled") {
-          addLog("Scraping cancelled");
-          clearInterval(pollInterval);
-          setIsRunning(false);
-        }
-      } catch (error) {
-        addLog(`Poll error: ${error}`);
-        clearInterval(pollInterval);
-        setIsRunning(false);
-      }
-    }, 2000); // Poll every 2 seconds
-  };
-
-  // Fetch results from backend
-  const fetchResults = async () => {
-    try {
-      // TODO: Implement results fetching from backend
-      // For now, use job result statistics
-      addLog("Results fetched successfully");
-    } catch (error) {
-      addLog(`Error fetching results: ${error}`);
-    }
-  };
 
   // Stop scraping
   const handleStopScraping = async () => {
@@ -281,6 +281,12 @@ export default function ScrapingPage() {
 
       addLog("Scraping stopped");
       setIsRunning(false);
+
+      // Disconnect WebSocket
+      if (disconnectWebSocketRef.current) {
+        disconnectWebSocketRef.current();
+        disconnectWebSocketRef.current = null;
+      }
     } catch (error) {
       addLog(`Error stopping scraping: ${error}`);
     }
@@ -624,17 +630,30 @@ export default function ScrapingPage() {
                 </div>
               )}
 
-              {/* Browser Stream (TODO) */}
+              {/* Browser Stream */}
               {config.headfulMode && isRunning && (
                 <div className="p-4 rounded-lg border border-dashed">
                   <div className="flex items-center gap-2 mb-2">
                     <Eye className="h-4 w-4" />
-                    <span className="text-sm font-medium">Browser Stream</span>
+                    <span className="text-sm font-medium">Browser Stream (Live)</span>
+                    <Badge variant="outline" className="ml-auto">
+                      {currentScreenshot ? "Connesso" : "In attesa..."}
+                    </Badge>
                   </div>
-                  <div className="bg-gray-100 dark:bg-gray-900 rounded h-64 flex items-center justify-center">
-                    <p className="text-sm text-muted-foreground">
-                      Screenshot streaming in sviluppo...
-                    </p>
+                  <div className="bg-gray-100 dark:bg-gray-900 rounded overflow-hidden">
+                    {currentScreenshot ? (
+                      <img
+                        src={`data:image/png;base64,${currentScreenshot}`}
+                        alt="Browser screenshot"
+                        className="w-full h-auto"
+                      />
+                    ) : (
+                      <div className="h-64 flex items-center justify-center">
+                        <p className="text-sm text-muted-foreground">
+                          In attesa del primo screenshot...
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -646,9 +665,12 @@ export default function ScrapingPage() {
                   {logs.length === 0 ? (
                     <p className="text-gray-500">In attesa di avvio...</p>
                   ) : (
-                    logs.map((log, i) => (
-                      <div key={i}>{log}</div>
-                    ))
+                    <>
+                      {logs.map((log, i) => (
+                        <div key={i}>{log}</div>
+                      ))}
+                      <div ref={logsEndRef} />
+                    </>
                   )}
                 </div>
               </div>
