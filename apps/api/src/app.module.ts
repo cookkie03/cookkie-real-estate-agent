@@ -20,7 +20,6 @@ import { DatabaseModule } from '@shared/database/database.module';
 import { CacheModule } from '@shared/cache/cache.module';
 import { QueueModule } from '@shared/queue/queue.module';
 import { StorageModule } from '@shared/storage/storage.module';
-import { WebSocketModule } from '@shared/websocket/websocket.module';
 
 // Feature modules
 import { AuthModule } from '@modules/auth/auth.module';
@@ -58,7 +57,6 @@ import { ThrottlerGuard } from '@nestjs/throttler';
     CacheModule,
     QueueModule,
     StorageModule,
-    WebSocketModule,
 
     // Feature modules (Domain-Driven Design)
     AuthModule,
