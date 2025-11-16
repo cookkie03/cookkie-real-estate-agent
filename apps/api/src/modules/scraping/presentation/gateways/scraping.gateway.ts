@@ -135,4 +135,27 @@ export class ScrapingGateway {
       error,
     });
   }
+
+  /**
+   * Broadcast screenshot for headful mode
+   */
+  broadcastScreenshot(jobId: string, screenshot: string): void {
+    this.server.to(`job:${jobId}`).emit('job:screenshot', {
+      jobId,
+      screenshot, // Base64-encoded screenshot
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Broadcast log message
+   */
+  broadcastLog(jobId: string, message: string, level: 'info' | 'warn' | 'error' = 'info'): void {
+    this.server.to(`job:${jobId}`).emit('job:log', {
+      jobId,
+      message,
+      level,
+      timestamp: new Date().toISOString(),
+    });
+  }
 }
