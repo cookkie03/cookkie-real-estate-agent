@@ -308,6 +308,37 @@ export const dashboardApi = {
 };
 
 // ============================================================================
+// MATCHING ALGORITHM
+// ============================================================================
+
+export const matchingApi = {
+  findPropertiesForClient: (clientId: string, options?: {
+    minScore?: number;
+    limit?: number;
+    includeBreakdown?: boolean;
+  }) => {
+    const query = options ? buildQueryString(options) : "";
+    return apiFetch<ApiResponse<any>>(`/api/matching/clients/${clientId}/properties${query}`);
+  },
+
+  findClientsForProperty: (propertyId: string, options?: {
+    minScore?: number;
+    limit?: number;
+    includeBreakdown?: boolean;
+  }) => {
+    const query = options ? buildQueryString(options) : "";
+    return apiFetch<ApiResponse<any>>(`/api/matching/properties/${propertyId}/clients${query}`);
+  },
+
+  calculateSpecificMatch: (propertyId: string, clientId: string, options?: {
+    includeBreakdown?: boolean;
+  }) => {
+    const query = options ? buildQueryString(options) : "";
+    return apiFetch<ApiResponse<any>>(`/api/matching/properties/${propertyId}/clients/${clientId}${query}`);
+  },
+};
+
+// ============================================================================
 // AI FEATURES (Placeholder - will be implemented later)
 // ============================================================================
 
@@ -341,6 +372,7 @@ export const api = {
   contacts: contactsApi,
   requests: requestsApi,
   matches: matchesApi,
+  matching: matchingApi,
   activities: activitiesApi,
   buildings: buildingsApi,
   tags: tagsApi,

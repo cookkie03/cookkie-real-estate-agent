@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { api } from "@/lib/api";
 
 /**
  * CRM IMMOBILIARE - AI Matching Dashboard
@@ -72,9 +73,8 @@ export default function MatchingPage() {
   const { data: requestsData, isLoading: requestsLoading } = useQuery({
     queryKey: ["client-requests"],
     queryFn: async () => {
-      const response = await fetch("/api/requests?status=active");
-      if (!response.ok) throw new Error("Failed to fetch requests");
-      const data = await response.json();
+      const response = await api.requests.list({ status: "active" });
+      const data = response.data;
 
       // Transform to match interface
       const transformedRequests = data.requests?.map((req: any) => ({
@@ -101,49 +101,57 @@ export default function MatchingPage() {
     },
   });
 
-  // Fetch matches for selected request using AI scoring
+  // Fetch matches for selected request using deterministic algorithm
   const { data: matchesData, isLoading: matchesLoading } = useQuery({
     queryKey: ["property-matches", selectedRequest],
     queryFn: async () => {
       if (!selectedRequest) return { matches: [] };
 
-      // Call scoring API
       try {
-        const response = await fetch(
-          `/api/scoring/calculate?request_id=${selectedRequest}&min_score=60&limit=10`
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch matches');
-        }
-
-        const data = await response.json();
-
-        if (!data.success) {
-          console.error('Scoring API error:', data.error);
+        // First, get the request to find the contactId
+        const requestData = requests.find((r) => r.id === selectedRequest);
+        if (!requestData || !requestData.contactId) {
+          console.error('Request or contactId not found');
           return { matches: [] };
         }
 
+        // Call NestJS matching API with contactId
+        const response = await api.matching.findPropertiesForClient(
+          requestData.contactId,
+          {
+            minScore: 60,
+            limit: 10,
+            includeBreakdown: true,
+          }
+        );
+
+        const matchResults = response.data?.matches || [];
+
         // Transform backend format to frontend format
-        const transformedMatches = data.matches.map((match: any, index: number) => ({
-          id: `match-${index + 1}`,
-          propertyId: match.property_id,
+        const transformedMatches = matchResults.map((match: any, index: number) => ({
+          id: `match-${match.propertyId}-${index}`,
+          propertyId: match.propertyId,
           requestId: selectedRequest,
-          score: Math.round(match.total_score),
+          score: Math.round(match.totalScore),
           property: {
-            id: match.property_id,
-            title: match.property_title,
-            street: match.property_city, // Simplified
-            city: match.property_city,
-            zone: match.property_zone,
-            contractType: 'sale', // From match data
-            propertyType: 'apartment', // Could be extracted
-            priceSale: match.property_price,
-            rooms: match.rooms,
-            sqmCommercial: match.sqm,
+            id: match.propertyId,
+            title: match.property?.title || 'N/D',
+            street: match.property?.street || '',
+            city: match.property?.city || '',
+            zone: match.property?.zone,
+            contractType: match.property?.contractType || 'sale',
+            propertyType: match.property?.propertyType || 'apartment',
+            priceSale: match.property?.priceSale,
+            priceRentMonthly: match.property?.priceRentMonthly,
+            rooms: match.property?.rooms,
+            sqmCommercial: match.property?.sqmCommercial,
           },
-          matchReasons: match.match_reasons || [],
-          proposalStatus: 'none' as const, // Default status
+          matchReasons: match.scoreBreakdown
+            ? Object.entries(match.scoreBreakdown).map(([key, value]: [string, any]) =>
+                `${key}: ${Math.round(value?.score || 0)}%`
+              )
+            : [],
+          proposalStatus: 'none' as const,
         }));
 
         return { matches: transformedMatches };
@@ -153,7 +161,7 @@ export default function MatchingPage() {
         return { matches: [] };
       }
     },
-    enabled: !!selectedRequest,
+    enabled: !!selectedRequest && requests.length > 0,
   });
 
   const requests = requestsData?.requests || [];

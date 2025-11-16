@@ -28,11 +28,8 @@ export default function DashboardPage() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const response = await fetch("/api/dashboard/stats");
-      if (!response.ok) {
-        throw new Error("Failed to fetch dashboard stats");
-      }
-      return response.json();
+      const response = await api.dashboard.stats();
+      return response.data;
     },
   });
 

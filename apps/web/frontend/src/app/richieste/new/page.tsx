@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { api } from "@/lib/api";
 
 /**
  * CRM IMMOBILIARE - New Request Form
@@ -152,9 +153,8 @@ export default function NewRequestPage() {
   const { data: contactsData } = useQuery({
     queryKey: ["contacts"],
     queryFn: async () => {
-      const response = await fetch("/api/contacts?status=active");
-      if (!response.ok) throw new Error("Failed to fetch contacts");
-      return response.json();
+      const response = await api.contacts.list({ status: "active" });
+      return response.data;
     },
   });
 
@@ -163,23 +163,15 @@ export default function NewRequestPage() {
   // Create request mutation
   const createMutation = useMutation({
     mutationFn: async (data: RequestFormData) => {
-      const response = await fetch("/api/requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          searchCities: selectedCities,
-          searchZones: selectedZones.length > 0 ? selectedZones : undefined,
-          propertyTypes: selectedPropertyTypes.length > 0 ? selectedPropertyTypes : undefined,
-          moveDate: data.moveDate ? new Date(data.moveDate) : undefined,
-          expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
-        }),
+      const response = await api.requests.create({
+        ...data,
+        searchCities: selectedCities,
+        searchZones: selectedZones.length > 0 ? selectedZones : undefined,
+        propertyTypes: selectedPropertyTypes.length > 0 ? selectedPropertyTypes : undefined,
+        moveDate: data.moveDate ? new Date(data.moveDate) : undefined,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create request");
-      }
-      return response.json();
+      return response.data;
     },
     onSuccess: () => {
       router.push("/richieste");
