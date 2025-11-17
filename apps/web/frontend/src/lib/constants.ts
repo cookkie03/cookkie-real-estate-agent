@@ -23,6 +23,8 @@ export const ROUTES = {
   CALENDAR: "/agenda",
   ACTIONS: "/actions",
   TOOL: "/tool",
+  EMAIL: "/email",
+  WHATSAPP: "/whatsapp",
 } as const;
 
 // Navigation Menu Items - 7 voci essenziali consolidate
@@ -52,16 +54,16 @@ export const NAV_ITEMS = [
     description: "Acquisizione automatica da web",
   },
   {
-    label: "Mappa",
-    href: ROUTES.MAP,
-    icon: "Map",
-    description: "Visualizzazione geografica immobili",
+    label: "Email",
+    href: ROUTES.EMAIL,
+    icon: "Mail",
+    description: "Email da contatti CRM",
   },
   {
-    label: "Richieste & Matching",
-    href: ROUTES.MATCHING,
-    icon: "Target",
-    description: "Richieste clienti e abbinamenti AI",
+    label: "WhatsApp",
+    href: ROUTES.WHATSAPP,
+    icon: "MessageCircle",
+    description: "Messaggi WhatsApp clienti",
   },
   {
     label: "Agenda",
@@ -70,10 +72,10 @@ export const NAV_ITEMS = [
     description: "Appuntamenti e attività",
   },
   {
-    label: "Impostazioni",
-    href: ROUTES.SETTINGS,
-    icon: "Settings",
-    description: "Configurazione sistema",
+    label: "Matching",
+    href: ROUTES.MATCHING,
+    icon: "Target",
+    description: "Richieste clienti e abbinamenti",
   },
 ] as const;
 

@@ -16,6 +16,8 @@ import {
   X,
   Moon,
   Sun,
+  Mail,
+  MessageCircle,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
@@ -41,6 +43,8 @@ const iconMap: Record<string, any> = {
   Target,
   Calendar,
   Settings,
+  Mail,
+  MessageCircle,
 };
 
 /**
