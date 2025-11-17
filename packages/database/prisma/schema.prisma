@@ -162,12 +162,14 @@ model Contact {
   updatedAt DateTime @updatedAt
 
   // Relationships
-  ownedProperties Property[]  @relation("PropertyOwner")
-  requests        Request[]
-  matches         Match[]
-  activities      Activity[]
-  tags            EntityTag[]
-  messages        MessageLog[]
+  ownedProperties  Property[]        @relation("PropertyOwner")
+  requests         Request[]
+  matches          Match[]
+  activities       Activity[]
+  tags             EntityTag[]
+  messages         MessageLog[]
+  emailMessages    EmailMessage[]
+  whatsappMessages WhatsAppMessage[]
 
   // Indexes
   @@index([code])
@@ -377,11 +379,13 @@ model Property {
   archivedAt   DateTime?
 
   // Relationships
-  owner      Contact?    @relation("PropertyOwner", fields: [ownerContactId], references: [id], onDelete: SetNull)
-  building   Building?   @relation(fields: [buildingId], references: [id], onDelete: SetNull)
-  matches    Match[]
-  activities Activity[]
-  tags       EntityTag[]
+  owner            Contact?          @relation("PropertyOwner", fields: [ownerContactId], references: [id], onDelete: SetNull)
+  building         Building?         @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  matches          Match[]
+  activities       Activity[]
+  tags             EntityTag[]
+  emailMessages    EmailMessage[]
+  whatsappMessages WhatsAppMessage[]
 
   // Indexes
   @@index([code])
@@ -1430,7 +1434,131 @@ model CalendarEvent {
 }
 
 // ============================================================================
-// 24. TASK (Task management and activity tracking)
+// 24. EMAIL MESSAGE (Gmail integration for client communication)
+// ============================================================================
+model EmailMessage {
+  id String @id @default(cuid())
+
+  // Gmail integration
+  gmailId  String  @unique
+  threadId String
+
+  // Direction & Status
+  direction String // inbound, outbound
+  status    String // unread, read, archived, deleted
+
+  // Sender & Recipients
+  fromName  String?
+  fromEmail String
+  toEmails  Json // EmailParticipant[]
+  ccEmails  Json? // EmailParticipant[]
+  bccEmails Json? // EmailParticipant[]
+
+  // Content
+  subject     String
+  textContent String
+  htmlContent String?
+
+  // Attachments (JSON array)
+  attachments Json? // Array of { filename, mimeType, size, attachmentId, downloaded, localPath }
+
+  // Timing
+  sentAt     DateTime
+  receivedAt DateTime
+  readAt     DateTime?
+
+  // Gmail labels & threading
+  labels    Json
+  inReplyTo String?
+
+  // CRM Links
+  contactId  String?
+  contact    Contact?  @relation(fields: [contactId], references: [id])
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+
+  // AI Parsing
+  parsedData Json? // { intent, propertyRequirements, urgency, sentiment, suggestedActions, extractedPhoneNumbers, extractedDates }
+  isParsed   Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([gmailId])
+  @@index([threadId])
+  @@index([direction])
+  @@index([status])
+  @@index([fromEmail])
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([receivedAt])
+  @@index([status, receivedAt])
+  @@index([contactId, receivedAt])
+  @@map("email_messages")
+}
+
+// ============================================================================
+// 25. WHATSAPP MESSAGE (WhatsApp Business API integration)
+// ============================================================================
+model WhatsAppMessage {
+  id String @id @default(cuid())
+
+  // WhatsApp integration
+  whatsappId String @unique
+
+  // Direction & Status
+  direction String // inbound, outbound
+  status    String // sent, delivered, read, failed
+  type      String // text, image, document, audio, video, location, template, interactive
+
+  // Participants (phone numbers)
+  fromPhone String
+  toPhone   String
+
+  // CRM Link
+  contactId String?
+  contact   Contact?  @relation(fields: [contactId], references: [id])
+
+  // Content
+  text        String?
+  media       Json? // { id, url, mimeType, caption, filename, sha256 }
+  location    Json? // { latitude, longitude, name, address }
+  interactive Json? // { type, header, body, footer, action }
+
+  // Metadata
+  timestamp        DateTime
+  contextMessageId String? // Reply to message ID
+  referralUrl      String?
+
+  // CRM Integration
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+
+  // AI Parsing
+  parsedData Json? // { intent, requirements, urgency }
+  isParsed   Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([whatsappId])
+  @@index([direction])
+  @@index([status])
+  @@index([type])
+  @@index([fromPhone])
+  @@index([toPhone])
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([timestamp])
+  @@index([status, timestamp])
+  @@index([contactId, timestamp])
+  @@map("whatsapp_messages")
+}
+
+// ============================================================================
+// 26. TASK (Task management and activity tracking)
 // ============================================================================
 model Task {
   id String @id @default(cuid())

@@ -361,7 +361,7 @@ export class WhatsAppService {
   }
 
   /**
-   * Handle incoming webhook message
+   * Handle incoming webhook message and persist to database
    */
   async handleIncomingMessage(webhookData: any): Promise<WhatsAppMessage> {
     const entry = webhookData.entry[0];
@@ -426,10 +426,36 @@ export class WhatsAppService {
         break;
     }
 
+    // 🔥 NEW: Match with CRM contacts by phone number
+    const matchingContact = await this.prisma.contact.findFirst({
+      where: {
+        OR: [
+          { primaryPhone: message.from },
+          { secondaryPhone: message.from },
+        ],
+      },
+    });
+
+    if (matchingContact) {
+      message.contactId = matchingContact.id;
+      this.logger.debug(
+        `✅ Matched WhatsApp message from ${message.from} to contact ${matchingContact.fullName}`,
+      );
+    }
+
+    // 🔥 NEW: Persist to database
+    const dbData = message.toDatabaseFormat();
+    await this.prisma.whatsAppMessage.create({
+      data: {
+        ...dbData,
+        id: undefined, // Let Prisma generate the ID
+      },
+    });
+
     // Mark as read automatically
     await this.markAsRead(msg.id);
 
-    this.logger.log(`✅ Incoming message processed: ${message.whatsappId}`);
+    this.logger.log(`✅ Incoming message processed and saved: ${message.whatsappId}`);
 
     return message;
   }
@@ -453,6 +479,74 @@ export class WhatsAppService {
     );
 
     // TODO: Update message status in database
+  }
+
+  /**
+   * List WhatsApp messages from CRM contacts only
+   */
+  async listMessagesFromContacts(params?: {
+    contactId?: string;
+    propertyId?: string;
+    status?: string;
+    direction?: string;
+    type?: string;
+    limit?: number;
+  }): Promise<WhatsAppMessage[]> {
+    this.logger.log('Fetching WhatsApp messages from CRM contacts');
+
+    const where: any = {
+      contactId: { not: null }, // Only messages linked to CRM contacts
+    };
+
+    if (params?.contactId) where.contactId = params.contactId;
+    if (params?.propertyId) where.propertyId = params.propertyId;
+    if (params?.status) where.status = params.status;
+    if (params?.direction) where.direction = params.direction;
+    if (params?.type) where.type = params.type;
+
+    const dbMessages = await this.prisma.whatsAppMessage.findMany({
+      where,
+      orderBy: { timestamp: 'desc' },
+      take: params?.limit || 100,
+      include: {
+        contact: true,
+        property: true,
+      },
+    });
+
+    // Convert from DB format to WhatsAppMessage entities
+    const messages = dbMessages.map((dbMsg) => {
+      const message = new WhatsAppMessage({
+        id: dbMsg.id,
+        whatsappId: dbMsg.whatsappId,
+        direction: dbMsg.direction as any,
+        status: dbMsg.status as any,
+        type: dbMsg.type as any,
+        from: dbMsg.fromPhone,
+        to: dbMsg.toPhone,
+        contactId: dbMsg.contactId || undefined,
+        text: dbMsg.text || undefined,
+        media: dbMsg.media ? JSON.parse(dbMsg.media as string) : undefined,
+        location: dbMsg.location ? JSON.parse(dbMsg.location as string) : undefined,
+        interactive: dbMsg.interactive
+          ? JSON.parse(dbMsg.interactive as string)
+          : undefined,
+        timestamp: dbMsg.timestamp,
+        contextMessageId: dbMsg.contextMessageId || undefined,
+        referralUrl: dbMsg.referralUrl || undefined,
+        propertyId: dbMsg.propertyId || undefined,
+        parsedData: dbMsg.parsedData
+          ? JSON.parse(dbMsg.parsedData as string)
+          : undefined,
+        isParsed: dbMsg.isParsed,
+      });
+
+      return message;
+    });
+
+    this.logger.log(`✅ Found ${messages.length} WhatsApp messages from CRM contacts`);
+
+    return messages;
   }
 
   /**

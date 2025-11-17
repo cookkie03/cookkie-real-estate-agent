@@ -287,6 +287,75 @@ export class WhatsAppController {
   }
 
   /**
+   * GET /whatsapp/contacts/messages
+   * List messages from CRM contacts only
+   */
+  @Get('contacts/messages')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'List WhatsApp messages from CRM contacts',
+    description: 'List WhatsApp messages from contacts in the CRM database.',
+  })
+  @ApiQuery({
+    name: 'contactId',
+    required: false,
+    description: 'Filter by specific contact ID',
+  })
+  @ApiQuery({
+    name: 'propertyId',
+    required: false,
+    description: 'Filter by specific property ID',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by status (sent, delivered, read, failed)',
+  })
+  @ApiQuery({
+    name: 'direction',
+    required: false,
+    description: 'Filter by direction (inbound, outbound)',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Filter by type (text, image, document, etc.)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Maximum number of messages to return',
+    example: 100,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'WhatsApp messages from CRM contacts',
+    type: [WhatsAppMessageDto],
+  })
+  async listMessagesFromContacts(
+    @Query('contactId') contactId?: string,
+    @Query('propertyId') propertyId?: string,
+    @Query('status') status?: string,
+    @Query('direction') direction?: string,
+    @Query('type') type?: string,
+    @Query('limit') limit?: number,
+  ): Promise<WhatsAppMessageDto[]> {
+    this.logger.log('Fetching WhatsApp messages from CRM contacts');
+
+    const messages = await this.whatsappService.listMessagesFromContacts({
+      contactId,
+      propertyId,
+      status,
+      direction,
+      type,
+      limit,
+    });
+
+    return messages.map((m) => this.mapMessageToDto(m));
+  }
+
+  /**
    * Map message entity to DTO
    */
   private mapMessageToDto(message: any): WhatsAppMessageDto {

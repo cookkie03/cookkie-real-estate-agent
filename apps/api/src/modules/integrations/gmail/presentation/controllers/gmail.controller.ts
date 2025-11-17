@@ -338,6 +338,68 @@ export class GmailController {
   }
 
   /**
+   * GET /gmail/contacts/emails
+   * List emails from CRM contacts only
+   */
+  @Get('contacts/emails')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'List emails from CRM contacts',
+    description: 'List emails from contacts in the CRM database.',
+  })
+  @ApiQuery({
+    name: 'contactId',
+    required: false,
+    description: 'Filter by specific contact ID',
+  })
+  @ApiQuery({
+    name: 'propertyId',
+    required: false,
+    description: 'Filter by specific property ID',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter by status (unread, read, archived)',
+  })
+  @ApiQuery({
+    name: 'direction',
+    required: false,
+    description: 'Filter by direction (inbound, outbound)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Maximum number of emails to return',
+    example: 100,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Emails from CRM contacts',
+    type: [EmailDto],
+  })
+  async listEmailsFromContacts(
+    @Query('contactId') contactId?: string,
+    @Query('propertyId') propertyId?: string,
+    @Query('status') status?: string,
+    @Query('direction') direction?: string,
+    @Query('limit') limit?: number,
+  ): Promise<EmailDto[]> {
+    this.logger.log('Fetching emails from CRM contacts');
+
+    const emails = await this.gmailService.listEmailsFromContacts({
+      contactId,
+      propertyId,
+      status,
+      direction,
+      limit,
+    });
+
+    return emails.map((e) => this.mapEmailToDto(e));
+  }
+
+  /**
    * POST /gmail/watch
    * Setup Gmail push notifications
    */

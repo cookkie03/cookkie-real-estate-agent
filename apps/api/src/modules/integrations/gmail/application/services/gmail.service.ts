@@ -106,7 +106,7 @@ export class GmailService {
   }
 
   /**
-   * Sync inbox messages
+   * Sync inbox messages and persist to database
    */
   async syncInbox(maxResults: number = 50): Promise<EmailMessage[]> {
     this.logger.log(`Syncing inbox (max ${maxResults} messages)`);
@@ -119,12 +119,46 @@ export class GmailService {
       });
 
       const messages: EmailMessage[] = [];
+      let persistedCount = 0;
 
       if (response.data.messages) {
         for (const msgRef of response.data.messages) {
           try {
             const email = await this.fetchMessage(msgRef.id!);
             if (email) {
+              // 🔥 NEW: Match with CRM contacts by email
+              const matchingContact = await this.prisma.contact.findFirst({
+                where: {
+                  OR: [
+                    { primaryEmail: email.from.email },
+                    { secondaryEmail: email.from.email },
+                  ],
+                },
+              });
+
+              if (matchingContact) {
+                email.contactId = matchingContact.id;
+                this.logger.debug(
+                  `✅ Matched email from ${email.from.email} to contact ${matchingContact.fullName}`,
+                );
+              }
+
+              // 🔥 NEW: Persist to database
+              const dbData = email.toDatabaseFormat();
+              await this.prisma.emailMessage.upsert({
+                where: { gmailId: email.gmailId },
+                create: {
+                  ...dbData,
+                  id: undefined, // Let Prisma generate the ID
+                },
+                update: {
+                  ...dbData,
+                  id: undefined,
+                  gmailId: undefined, // Don't update unique fields
+                },
+              });
+
+              persistedCount++;
               messages.push(email);
             }
           } catch (error) {
@@ -133,7 +167,9 @@ export class GmailService {
         }
       }
 
-      this.logger.log(`✅ Synced ${messages.length} inbox messages`);
+      this.logger.log(
+        `✅ Synced ${messages.length} inbox messages (${persistedCount} persisted to DB)`,
+      );
 
       return messages;
     } catch (error) {
@@ -427,6 +463,78 @@ export class GmailService {
     extractPart(payload);
 
     return attachments;
+  }
+
+  /**
+   * List emails from CRM contacts only
+   */
+  async listEmailsFromContacts(params?: {
+    contactId?: string;
+    propertyId?: string;
+    status?: string;
+    direction?: string;
+    limit?: number;
+  }): Promise<EmailMessage[]> {
+    this.logger.log('Fetching emails from CRM contacts');
+
+    const where: any = {
+      contactId: { not: null }, // Only emails linked to CRM contacts
+    };
+
+    if (params?.contactId) where.contactId = params.contactId;
+    if (params?.propertyId) where.propertyId = params.propertyId;
+    if (params?.status) where.status = params.status;
+    if (params?.direction) where.direction = params.direction;
+
+    const dbEmails = await this.prisma.emailMessage.findMany({
+      where,
+      orderBy: { receivedAt: 'desc' },
+      take: params?.limit || 100,
+      include: {
+        contact: true,
+        property: true,
+      },
+    });
+
+    // Convert from DB format to EmailMessage entities
+    const emails = dbEmails.map((dbEmail) => {
+      const email = new EmailMessage({
+        id: dbEmail.id,
+        gmailId: dbEmail.gmailId,
+        threadId: dbEmail.threadId,
+        direction: dbEmail.direction as any,
+        status: dbEmail.status as any,
+        from: {
+          name: dbEmail.fromName || undefined,
+          email: dbEmail.fromEmail,
+        },
+        to: JSON.parse(dbEmail.toEmails as string),
+        cc: dbEmail.ccEmails ? JSON.parse(dbEmail.ccEmails as string) : undefined,
+        subject: dbEmail.subject,
+        textContent: dbEmail.textContent,
+        htmlContent: dbEmail.htmlContent || undefined,
+        attachments: dbEmail.attachments
+          ? JSON.parse(dbEmail.attachments as string)
+          : undefined,
+        sentAt: dbEmail.sentAt,
+        receivedAt: dbEmail.receivedAt,
+        readAt: dbEmail.readAt || undefined,
+        labels: JSON.parse(dbEmail.labels as string),
+        inReplyTo: dbEmail.inReplyTo || undefined,
+        contactId: dbEmail.contactId || undefined,
+        propertyId: dbEmail.propertyId || undefined,
+        parsedData: dbEmail.parsedData
+          ? JSON.parse(dbEmail.parsedData as string)
+          : undefined,
+        isParsed: dbEmail.isParsed,
+      });
+
+      return email;
+    });
+
+    this.logger.log(`✅ Found ${emails.length} emails from CRM contacts`);
+
+    return emails;
   }
 
   /**
