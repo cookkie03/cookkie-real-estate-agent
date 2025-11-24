@@ -1,0 +1,11 @@
+{
+  "extends": "./packages/config/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@crm-immobiliare/database": ["./packages/database/src"],
+      "@crm-immobiliare/shared-types": ["./packages/shared-types/src"],
+      "@crm-immobiliare/utils": ["./packages/utils/src"]
+    }
+  }
+}

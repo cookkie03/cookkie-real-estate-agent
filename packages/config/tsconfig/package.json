@@ -1,0 +1,7 @@
+{
+  "name": "@crm-immobiliare/tsconfig",
+  "version": "1.0.0",
+  "description": "Shared TypeScript configuration for CRM Immobiliare",
+  "main": "base.json",
+  "files": ["base.json", "react.json", "nextjs.json"]
+}
